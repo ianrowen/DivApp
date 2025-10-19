@@ -676,7 +676,7 @@ export default function TarotApp() {
       {querentQuestion.trim() && drawMethod !== null && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg shadow-inner">
           <label className="block text-md font-semibold text-gray-700 mb-2">
-            Querent's Question:
+            Querent&apos;s Question:
           </label>
           <p className="text-gray-700 italic">{querentQuestion}</p>
         </div>
