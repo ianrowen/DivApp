@@ -1,22 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Playfair+Display:wght@700&display=swap');
-@import "tailwindcss";
 
-:root {
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: 'Playfair Display', serif;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-body {
-  background-color: #f3f4f6;
-  font-family: var(--font-sans);
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+  }
 }
 
 .font-sans {
-  font-family: var(--font-sans);
+  font-family: 'Inter', sans-serif;
 }
 
 .font-serif {
-  font-family: var(--font-serif);
+  font-family: 'Playfair Display', serif;
 }
 
 .card-component {
