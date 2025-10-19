@@ -1,4 +1,8 @@
-import Image from "next/image";
+console.log('🔥 ENV CHECK:', {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? '✅' : '❌',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  gemini: process.env.NEXT_PUBLIC_GEMINI_API_KEY ? '✅' : '❌'
+});import Image from "next/image";
 
 export default function Home() {
   return (
