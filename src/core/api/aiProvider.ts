@@ -1,12 +1,10 @@
 // src/core/api/aiProvider.ts
 /**
- * AI Provider Abstraction Layer
- * 
- * CRITICAL: This abstracts the AI backend so we can:
+ * AI Provider Abstraction Layer (CRITICAL ARCHITECTURE)
+ * * This abstracts the AI backend so we can:
  * 1. Switch providers (Gemini → Claude → GPT) without changing app code
  * 2. Hide implementation details from users
- * 3. A/B test different providers
- * 4. Negotiate better rates with leverage
+ * 3. Control cost and quality globally
  */
 
 export interface AIGenerateParams {
@@ -64,7 +62,6 @@ const registry = new AIProviderRegistry();
 export const AIProvider = {
   /**
    * Generate AI response
-   * The app ALWAYS calls this, never directly calls Gemini/Claude/GPT
    */
   async generate(params: AIGenerateParams): Promise<AIGenerateResult> {
     const provider = registry.getActiveProvider();
@@ -72,7 +69,7 @@ export const AIProvider = {
   },
 
   /**
-   * Generate streaming response (optional - for follow-ups)
+   * Generate streaming response (optional)
    */
   async generateStream(params: AIGenerateParams): AsyncGenerator<string> {
     const provider = registry.getActiveProvider();

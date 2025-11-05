@@ -1,15 +1,17 @@
 // src/systems/tarot/models/TarotReading.ts
 /**
  * Tarot Reading Implementation
- * 
- * Extends the base Reading class with Tarot-specific logic:
+ * * Extends the base Reading class with Tarot-specific logic:
  * - Card drawing (shuffle, draw, reversals)
  * - Spread layouts
  * - Card interpretation prompts
  */
 
-import Reading, { ReadingMetadata, ElementDrawn } from '../../../core/models/Reading';
+import { Reading, ReadingMetadata, ElementDrawn } from '../../../core/models/Reading'; // Corrected import
 import { supabase } from '../../../core/api/supabase';
+
+// --- INTERFACE DEFINITIONS ---
+// You provided these earlier, maintaining them here for context
 
 export interface TarotCard {
   id: string;
@@ -53,13 +55,15 @@ export interface TarotMetadata extends ReadingMetadata {
 export interface TarotElementDrawn extends ElementDrawn {
   cardId: string;
   position: string; // "Past", "Present", "Future", etc.
-  reversed: boolean;
   metadata: {
     cardTitle: string;
     cardCode: string;
     positionLabel: string;
+    reversed: boolean;
   };
 }
+
+// --- CLASS IMPLEMENTATION ---
 
 export class TarotReading extends Reading {
   private spread?: TarotSpread;
@@ -67,11 +71,11 @@ export class TarotReading extends Reading {
   private drawnCards: (TarotCard & { reversed: boolean })[] = [];
 
   constructor(metadata: TarotMetadata) {
-    super(metadata);
+    super(metadata as ReadingMetadata); // Pass to base class
   }
 
   /**
-   * Validate Tarot-specific requirements
+   * HOOK: Validate Tarot-specific requirements
    */
   protected async validate(): Promise<void> {
     await super.validate();
@@ -84,7 +88,7 @@ export class TarotReading extends Reading {
 
     // Load spread definition
     const { data: spreadData, error: spreadError } = await supabase
-      .from('tarot_spreads')
+      .from('tarot_spreads') // Assumes a 'tarot_spreads' table exists
       .select('*')
       .eq('id', meta.spreadId)
       .single();
@@ -97,29 +101,29 @@ export class TarotReading extends Reading {
   }
 
   /**
-   * Load the deck and shuffle
+   * HOOK: Load the deck (context)
    */
   protected async loadUserContext(): Promise<void> {
     const meta = this.metadata as TarotMetadata;
-    const deckId = meta.deckId || 'default-rws'; // Default to Rider-Waite-Smith
+    const deckId = meta.deckId || 'default-rws';
 
-    // Load all cards from the deck
+    // Load all cards for the specified deck
     const { data: cardsData, error: cardsError } = await supabase
-      .from('tarot_deck_cards')
+      .from('tarot_deck_cards') // Assumes a 'tarot_deck_cards' table exists
       .select('*')
       .eq('deck_id', deckId)
-      .order('code');
+      .order('card_number');
 
     if (cardsError || !cardsData || cardsData.length !== 78) {
+      console.warn(`Deck load failed: ${cardsError?.message}`);
       throw new Error('Failed to load deck or incomplete deck');
     }
 
     this.deck = cardsData as TarotCard[];
-    console.log(`Loaded ${this.deck.length} cards from deck ${deckId}`);
   }
 
   /**
-   * Draw cards for the reading
+   * HOOK: Draw cards for the reading
    */
   protected async draw(): Promise<void> {
     if (!this.spread) {
@@ -130,77 +134,62 @@ export class TarotReading extends Reading {
     const cardCount = this.spread.card_count;
     const allowReversals = meta.allowReversals !== false; // Default true
 
-    // Handle different drawing modes
-    if (meta.customData?.drawingMode === 'manual' && meta.customData.selectedCards) {
-      // Manual selection mode
-      await this.drawManual(meta.customData.selectedCards, allowReversals);
-    } else {
-      // Automatic draw (default)
-      await this.drawAutomatic(cardCount, allowReversals);
-    }
+    // Only implementing automatic draw for MVP
+    await this.drawAutomatic(cardCount, allowReversals);
 
     // Convert drawn cards to ElementDrawn format
-    this.elementsDrawn = this.drawnCards.map((card, index) => ({
-      elementId: card.id,
-      position: this.spread!.positions[index]?.label[this.metadata.language || 'en'] || `Position ${index + 1}`,
-      metadata: {
-        cardTitle: card.title,
-        cardCode: card.code,
-        positionLabel: this.spread!.positions[index]?.label[this.metadata.language || 'en'] || '',
-        reversed: card.reversed,
-      },
-    })) as TarotElementDrawn[];
+    this.elementsDrawn = this.drawnCards.map((card, index) => {
+      const position = this.spread!.positions[index];
+      const language = this.metadata.language || 'en';
+      
+      return {
+        elementId: card.id,
+        position: position?.label[language] || `Position ${index + 1}`,
+        metadata: {
+          cardTitle: card.title,
+          cardCode: card.code,
+          positionLabel: position?.label[language] || '',
+          reversed: card.reversed,
+        },
+      } as TarotElementDrawn;
+    });
   }
 
   /**
-   * Automatic card drawing (shuffle and draw)
+   * Automatic card drawing logic
    */
   private async drawAutomatic(count: number, allowReversals: boolean): Promise<void> {
-    // Fisher-Yates shuffle
     const shuffled = [...this.deck];
+    // Simple shuffle
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    // Draw cards
     for (let i = 0; i < count; i++) {
       const card = shuffled[i];
       const reversed = allowReversals ? Math.random() < 0.3 : false; // 30% chance of reversal
       this.drawnCards.push({ ...card, reversed });
     }
   }
-
+  
   /**
-   * Manual card selection
-   */
-  private async drawManual(cardCodes: string[], allowReversals: boolean): Promise<void> {
-    for (const code of cardCodes) {
-      const card = this.deck.find(c => c.code === code);
-      if (!card) {
-        throw new Error(`Card with code ${code} not found in deck`);
-      }
-      const reversed = allowReversals ? Math.random() < 0.3 : false;
-      this.drawnCards.push({ ...card, reversed });
-    }
-  }
-
-  /**
-   * Generate AI interpretation
+   * HOOK: Generate AI interpretation
    */
   protected async interpret(): Promise<void> {
     const language = this.metadata.language || 'en';
     const systemPrompt = this.buildSystemPrompt(language);
     const prompt = this.buildPrompt(language);
 
-    this.interpretation = await this.callAI(prompt, systemPrompt);
+    // Call base class helper, which sets this.interpretation and this.aiResult
+    await this.callAI(prompt, systemPrompt);
   }
 
   /**
    * Build system prompt for AI
    */
   private buildSystemPrompt(language: string): string {
-    const systemPrompts = {
+    const systemPrompts: Record<string, string> = {
       en: `You are an expert Tarot reader with deep knowledge of symbolism, archetypes, and intuitive interpretation. 
 Your readings are insightful, compassionate, and empowering. You help people gain clarity and perspective.
 Provide a cohesive narrative that weaves the cards together, not just individual card meanings.
@@ -225,19 +214,16 @@ Be specific to their question if provided. Use rich imagery and metaphor.`,
       ? `請為以下塔羅牌解讀提供詳細的詮釋：\n\n`
       : `Please provide a detailed interpretation for this Tarot reading:\n\n`;
 
-    // Add question if provided
     if (question) {
       prompt += language === 'zh-TW'
         ? `問題：${question}\n\n`
         : `Question: ${question}\n\n`;
     }
 
-    // Add spread name
     prompt += language === 'zh-TW'
-      ? `牌陣：${this.spread!.name[language]}\n\n`
+      ? `牌陣：${this.spread!.name[language] || this.spread!.name.en}\n\n`
       : `Spread: ${this.spread!.name[language] || this.spread!.name.en}\n\n`;
 
-    // Add each card with position
     prompt += language === 'zh-TW' ? `抽到的牌：\n` : `Cards Drawn:\n`;
     
     this.drawnCards.forEach((card, index) => {
@@ -247,7 +233,6 @@ Be specific to their question if provided. Use rich imagery and metaphor.`,
       
       prompt += `${index + 1}. ${positionLabel}: ${card.title}${reversed}\n`;
       
-      // Add keywords
       const meaning = card.reversed 
         ? card.reversed_meaning[language] || card.reversed_meaning.en
         : card.upright_meaning[language] || card.upright_meaning.en;
@@ -256,7 +241,6 @@ Be specific to their question if provided. Use rich imagery and metaphor.`,
       prompt += `   ${language === 'zh-TW' ? '基本含義' : 'Basic Meaning'}: ${meaning}\n\n`;
     });
 
-    // Add reflection if provided
     if (meta.customData?.reflection) {
       prompt += language === 'zh-TW'
         ? `\n提問者的思考：${meta.customData.reflection}\n`
