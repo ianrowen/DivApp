@@ -1,5 +1,7 @@
 // src/core/api/supabase.ts
+import 'react-native-url-polyfill/auto'; // CRITICAL: Required for Supabase in RN
 import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // CRITICAL: Required for session persistence
 
 // Environment variables - set these in your .env file
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -11,6 +13,8 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
+    // CRITICAL FIX: Use AsyncStorage for session persistence in React Native
+    storage: AsyncStorage as any, 
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
@@ -60,20 +64,26 @@ export const supabaseHelpers = {
       .eq('id', userId)
       .single();
     
-    if (error) throw error;
-    return data?.subscription_tier || 'free';
+    if (error) {
+        console.warn('Could not fetch user tier, defaulting to free:', error.message);
+        return 'free'; 
+    }
+    return (data?.subscription_tier as 'free' | 'premium' | 'pro' | 'expert') || 'free';
   },
 
   // Check if user can access a feature based on tier
-  async canAccessFeature(userId: string, featureName: string): Promise<boolean> {
+  async canAccessFeature(userId: string, featureName: string, requiredTier: 'free' | 'premium' | 'pro' | 'expert' = 'premium'): Promise<boolean> {
     const { data, error } = await supabase
       .rpc('check_tier_access', {
         user_uuid: userId,
-        required_tier: 'premium', // This should be dynamic based on feature
+        required_tier: requiredTier, 
         feature_name: featureName,
       });
     
-    if (error) throw error;
+    if (error) {
+        console.error('RPC call to check_tier_access failed:', error.message);
+        throw error;
+    }
     return data || false;
   },
 };
