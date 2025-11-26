@@ -1,223 +1,277 @@
 // src/features/auth/screens/LoginScreen.tsx
-import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
+import React, { useState } from 'react';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { supabase, supabaseHelpers } from '../../../core/api/supabase';
-
-// CRITICAL: Must be registered in app.json under "scheme"
-// Used to tell the web browser how to redirect back to your app
-const REDIRECT_URL = 'com.divin8.app://supabase-auth'; 
-
-// IMPORTANT: This tells Expo Auth Session to not close the browser immediately
-// and wait for the redirect.
-WebBrowser.maybeCompleteAuthSession();
+import theme from '../../../shared/theme';
+import MysticalBackground from '../../../shared/components/ui/MysticalBackground';
+import ThemedText from '../../../shared/components/ui/ThemedText';
+import ThemedButton from '../../../shared/components/ui/ThemedButton';
+import ThemedCard from '../../../shared/components/ui/ThemedCard';
 
 export default function LoginScreen() {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
-  const [oauthLoading, setOAuthLoading] = React.useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
-  // --- Email/Password Handlers ---
+  async function handleEmailAuth() {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
+    }
 
-  const handleSignIn = async () => {
     setLoading(true);
     try {
-      await supabaseHelpers.signInWithEmail(email, password);
-    } catch (error: any) {
-      Alert.alert("Login Failed", error.message || "Could not sign in.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (isSignUp) {
+        // Sign up
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: 'https://bawkzybwbpoxftgawvha.supabase.co',
+          },
+        });
 
-  const handleSignUp = async () => {
-    setLoading(true);
-    try {
-      await supabaseHelpers.signUpWithEmail(email, password);
-      Alert.alert("Check Email", "Please check your inbox to confirm your account!");
-    } catch (error: any) {
-      Alert.alert("Sign Up Failed", error.message || "Could not sign up.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (error) throw error;
 
-  // --- Google OAuth Handler (New) ---
-  
-  const handleGoogleSignIn = async () => {
-    setOAuthLoading(true);
-    try {
-      // The redirectTo URL must exactly match one of your Supabase Callback URLs
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: REDIRECT_URL,
-          // You can also add scopes like 'email', 'profile'
-        },
-      });
+        Alert.alert(
+          'Success!',
+          'Check your email for verification link',
+          [{ text: 'OK' }]
+        );
+      } else {
+        // Sign in
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
-        Alert.alert("Google Login Error", error.message);
+        if (error) throw error;
+
+        console.log('✅ Signed in:', data.user?.email);
       }
-      // Success is handled by the onAuthStateChange listener in App.tsx
-      
-    } catch (e: any) {
-      Alert.alert("OAuth Error", e.message || "An unknown error occurred during Google sign-in.");
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+      console.error('Auth error:', error);
     } finally {
-      // This finally block might run before the browser closes,
-      // but we set it back to false just in case.
-      setOAuthLoading(false); 
+      setLoading(false);
     }
-  };
+  }
 
-  const isDisabled = loading || oauthLoading;
+  async function handleGoogleSignIn() {
+    setLoading(true);
+    try {
+      const session = await supabaseHelpers.signInWithGoogle();
+      if (session?.user?.email) {
+        console.log('✅ Google sign in:', session.user.email);
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+      console.error('Google sign in error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Divin8</Text>
-      <Text style={styles.subtitle}>Sign in or create an account</Text>
-
-      {/* Email/Password Fields */}
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        editable={!isDisabled}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        autoCapitalize="none"
-        editable={!isDisabled}
-      />
-      
-      {/* Sign In Button */}
-      <TouchableOpacity 
-        style={[styles.button, styles.primaryButton]} 
-        onPress={handleSignIn} 
-        disabled={isDisabled}
+    <MysticalBackground variant="default">
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>Sign In</Text>}
-      </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <ThemedText variant="h1" style={styles.logo}>
+              🔮
+            </ThemedText>
+            <ThemedText variant="h1">Divin8</ThemedText>
+            <View style={styles.subtitleSpacer} />
+            <ThemedText variant="body">
+              {isSignUp ? 'Create your account' : 'Welcome back'}
+            </ThemedText>
+          </View>
 
-      {/* Sign Up Button */}
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handleSignUp} 
-        disabled={isDisabled}
-      >
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
-      
-      {/* Divider */}
-      <View style={styles.dividerContainer}>
-          <View style={styles.line} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.line} />
-      </View>
-// ... Find the Google Button's TouchableOpacity
-      {/* Google Button */}
-      <TouchableOpacity 
-        style={[styles.button, styles.googleButton]} 
-        onPress={handleGoogleSignIn} 
-        disabled={false} // <--- TEMPORARY CHANGE: Set to FALSE
-      >
-        {oauthLoading ? (
-            <ActivityIndicator color="#4F46E5" />
-        ) : (
-            <Text style={[styles.buttonText, { color: '#4F46E5' }]}>
-                Sign In with Google
-            </Text>
-        )}
-      </TouchableOpacity>
+          {/* Login Form Card */}
+          <ThemedCard variant="elevated" style={styles.formCard}>
+            <View style={styles.form}>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor={theme.colors.text.tertiary}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                editable={!loading}
+              />
 
-      <Text style={styles.link}>Forgot Password?</Text>
-    </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor={theme.colors.text.tertiary}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                editable={!loading}
+              />
+
+              <ThemedButton
+                title={loading ? '...' : isSignUp ? 'Sign Up' : 'Sign In'}
+                onPress={handleEmailAuth}
+                variant="primary"
+                disabled={loading}
+                style={styles.primaryButton}
+              />
+
+              <ThemedButton
+                title={
+                  isSignUp
+                    ? 'Already have an account? Sign In'
+                    : "Don't have an account? Sign Up"
+                }
+                onPress={() => setIsSignUp(!isSignUp)}
+                variant="ghost"
+                disabled={loading}
+                style={styles.switchButton}
+              />
+            </View>
+          </ThemedCard>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <ThemedText variant="caption" style={styles.dividerText}>
+              OR
+            </ThemedText>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google Sign In Button */}
+          <ThemedButton
+            title="Continue with Google"
+            onPress={handleGoogleSignIn}
+            variant="secondary"
+            disabled={loading}
+            style={styles.googleButton}
+            textStyle={styles.googleButtonText}
+          />
+
+          {/* Test Button - Remove after deep linking works */}
+          {__DEV__ && (
+            <ThemedButton
+              title="🧪 Test Deep Link"
+              onPress={() => {
+                Alert.alert(
+                  'Test Deep Link',
+                  'This will test if deep linking works',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel',
+                    },
+                    {
+                      text: 'Test',
+                      onPress: async () => {
+                        // Simulate receiving a token via deep link
+                        console.log('🧪 Testing deep link handling...');
+                        console.log('In production, this would come from OAuth callback');
+                      },
+                    },
+                  ]
+                );
+              }}
+              variant="ghost"
+              style={styles.testButton}
+              textStyle={styles.testButtonText}
+            />
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </MysticalBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+    padding: theme.spacing.spacing.lg,
+    paddingVertical: theme.spacing.spacing.xl,
+  },
+  header: {
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#F9FAFB',
+    marginBottom: theme.spacing.spacing.xl,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#4F46E5',
-    marginBottom: 8,
+  logo: {
+    fontSize: 64,
+    marginBottom: theme.spacing.spacing.md,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 40,
+  subtitleSpacer: {
+    height: theme.spacing.spacing.sm,
+  },
+  formCard: {
+    marginBottom: theme.spacing.spacing.lg,
+  },
+  form: {
+    gap: theme.spacing.spacing.md,
   },
   input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    backgroundColor: theme.colors.neutrals.darkGray,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  button: {
-    width: '100%',
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
+    borderColor: theme.colors.primary.goldDark,
+    borderRadius: theme.spacing.borderRadius.md,
+    padding: theme.spacing.spacing.md,
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.text.secondary,
+    fontFamily: theme.typography.fontFamily.body,
   },
   primaryButton: {
-    backgroundColor: '#4F46E5', // Indigo for Sign In
+    marginTop: theme.spacing.spacing.sm,
   },
-  googleButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+  switchButton: {
+    marginTop: theme.spacing.spacing.xs,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  link: {
-    marginTop: 10,
-    color: '#4F46E5',
-    fontSize: 14,
-  },
-  dividerContainer: {
+  divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    marginVertical: 20,
+    marginVertical: theme.spacing.spacing.lg,
   },
-  line: {
+  dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: theme.colors.neutrals.midGray,
   },
   dividerText: {
-    width: 50,
-    textAlign: 'center',
-    color: '#6B7280',
-    fontSize: 14,
-  }
+    marginHorizontal: theme.spacing.spacing.md,
+    color: theme.colors.text.tertiary,
+  },
+  googleButton: {
+    marginBottom: theme.spacing.spacing.md,
+  },
+  googleButtonText: {
+    color: theme.colors.primary.gold,
+  },
+  testButton: {
+    marginTop: theme.spacing.spacing.sm,
+  },
+  testButtonText: {
+    color: theme.colors.semantic.warning,
+    fontSize: theme.typography.fontSize.sm,
+  },
 });

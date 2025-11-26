@@ -1,10 +1,19 @@
 // src/screens/HomeScreen.tsx
 import React from 'react';
-import { View, Text, StyleSheet, Button, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import type { StackScreenProps } from '@react-navigation/stack';
 import { supabaseHelpers } from '../core/api/supabase';
+import type { AppStackParamList } from '../../App';
+import theme from '../shared/theme';
+import MysticalBackground from '../shared/components/ui/MysticalBackground';
+import ThemedText from '../shared/components/ui/ThemedText';
+import ThemedButton from '../shared/components/ui/ThemedButton';
+import ThemedCard from '../shared/components/ui/ThemedCard';
 
-// This is the main screen after login
-export default function HomeScreen() {
+type Props = StackScreenProps<AppStackParamList, 'Home'>;
+
+// This is the main screen after login - mystical divination portal
+export default function HomeScreen({ navigation }: Props) {
   const [loading, setLoading] = React.useState(false);
   
   const handleSignOut = async () => {
@@ -20,56 +29,112 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back, Querent.</Text>
-      <Text style={styles.subtitle}>Your journey awaits.</Text>
-      
-      {/* Quick Access Buttons to Divination Systems */}
-      <View style={styles.buttonContainer}>
-        <Button title="Start Tarot Reading" onPress={() => console.log('Navigate to Tarot')} color="#4F46E5" />
-        <View style={{ height: 16 }} />
-        <Button title="View Journal" onPress={() => console.log('Navigate to Journal')} color="#6B7280" />
-      </View>
+    <MysticalBackground variant="default">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scrollView}
+      >
+        {/* Welcome Section */}
+        <View style={styles.header}>
+          <ThemedText variant="h1" style={styles.welcomeEmoji}>
+            🔮
+          </ThemedText>
+          <ThemedText variant="h1">Welcome Back, Querent.</ThemedText>
+          <View style={styles.subtitleSpacer} />
+          <ThemedText variant="body">Your journey awaits.</ThemedText>
+        </View>
 
-      <View style={styles.signOutContainer}>
-        {loading ? (
-          <ActivityIndicator size="small" color="#4F46E5" />
-        ) : (
-          <Button title="Sign Out" onPress={handleSignOut} color="#EF4444" />
-        )}
-      </View>
-    </View>
+        {/* Divination Systems Card */}
+        <ThemedCard variant="elevated" style={styles.systemsCard}>
+          <ThemedText variant="h2" style={styles.cardTitle}>
+            Divination Systems
+          </ThemedText>
+          <View style={styles.buttonContainer}>
+            <ThemedButton
+              title="Start Tarot Reading"
+              onPress={() => navigation.navigate('TarotReading')}
+              variant="primary"
+              style={styles.primaryActionButton}
+            />
+            <View style={styles.buttonSpacer} />
+            <ThemedButton
+              title="Reading History"
+              onPress={() => navigation.navigate('History')}
+              variant="secondary"
+            />
+          </View>
+        </ThemedCard>
+
+        {/* Sign Out Section */}
+        <View style={styles.signOutContainer}>
+          {loading ? (
+            <ActivityIndicator size="small" color={theme.colors.primary.gold} />
+          ) : (
+            <ThemedButton
+              title="Sign Out"
+              onPress={handleSignOut}
+              variant="ghost"
+              style={styles.signOutButton}
+              textStyle={styles.signOutText}
+            />
+          )}
+        </View>
+      </ScrollView>
+    </MysticalBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
-    justifyContent: 'flex-start',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: theme.spacing.spacing.lg,
+    paddingTop: theme.spacing.spacing.xxl,
+    paddingBottom: theme.spacing.spacing.xl,
     alignItems: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 24,
-    backgroundColor: '#F9FAFB',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 8,
+  header: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.spacing.xl,
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#6B7280',
-    marginBottom: 40,
+  welcomeEmoji: {
+    fontSize: 64,
+    marginBottom: theme.spacing.spacing.md,
+  },
+  subtitleSpacer: {
+    height: theme.spacing.spacing.sm,
+  },
+  systemsCard: {
+    width: '100%',
+    maxWidth: 400,
+    marginBottom: theme.spacing.spacing.xl,
+  },
+  cardTitle: {
+    marginBottom: theme.spacing.spacing.lg,
+    textAlign: 'center',
   },
   buttonContainer: {
     width: '100%',
-    maxWidth: 300,
-    marginBottom: 40,
+  },
+  primaryActionButton: {
+    marginBottom: 0,
+  },
+  buttonSpacer: {
+    height: theme.spacing.spacing.md,
   },
   signOutContainer: {
-    position: 'absolute',
-    bottom: 50,
-    width: '80%',
+    marginTop: 'auto',
+    paddingTop: theme.spacing.spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  signOutButton: {
+    width: '100%',
+  },
+  signOutText: {
+    color: theme.colors.text.tertiary,
   },
 });

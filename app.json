@@ -2,35 +2,67 @@
   "expo": {
     "name": "Divin8",
     "slug": "divin8-app",
+    "extra": {
+      "EXPO_PUBLIC_EXPO_PROJECT_FULL_NAME": "@irowen/divin8-app",
+      "eas": {
+        "projectId": "b3361d2b-b33f-4918-8442-cd6b2bdb7c9a"
+      }
+    },
+    "owner": "irowen",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "com.divin8.app",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#4F46E5"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.divin8.app"
+      "bundleIdentifier": "com.divin8.app",
+      "associatedDomains": ["applinks:bawkzybwbpoxftgawvha.supabase.co"]
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4F46E5"
       },
-      "package": "com.divin8.app"
+      "package": "com.divin8.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "auth.expo.io",
+              "pathPrefix": "/@irowen/divin8-app"
+            },
+            {
+              "scheme": "com.divin8.app",
+              "host": "supabase-auth"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "com.divin8.app",
     "plugins": [
-      "expo-web-browser"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "expo-font"
     ]
   }
 }

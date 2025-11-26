@@ -71,7 +71,7 @@ export const AIProvider = {
   /**
    * Generate streaming response (optional)
    */
-  async generateStream(params: AIGenerateParams): AsyncGenerator<string> {
+  generateStream(params: AIGenerateParams): AsyncGenerator<string> {
     const provider = registry.getActiveProvider();
     if (!provider.generateStream) {
       throw new Error('Active provider does not support streaming');
