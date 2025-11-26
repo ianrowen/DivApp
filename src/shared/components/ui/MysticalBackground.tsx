@@ -13,8 +13,9 @@
  */
 
 import React from 'react';
-import { ViewProps, StyleSheet, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, ViewProps, StyleSheet, ViewStyle } from 'react-native';
+// TODO: Fix LinearGradient native module issue
+// import { LinearGradient } from 'expo-linear-gradient';
 import theme from '../../theme';
 
 /**
@@ -96,18 +97,17 @@ const MysticalBackground: React.FC<MysticalBackgroundProps> = ({
     }
   };
 
-  const gradientColors = getGradientColors();
+  // TODO: Fix LinearGradient native module issue
+  // Temporarily using plain View with black background to avoid ViewManager crash
+  // const gradientColors = getGradientColors();
 
   return (
-    <LinearGradient
-      colors={gradientColors}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[styles.container, style]}
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.neutrals.black }, style]}
       {...viewProps}
     >
       {children}
-    </LinearGradient>
+    </View>
   );
 };
 

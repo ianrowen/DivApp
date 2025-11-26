@@ -182,7 +182,8 @@ export const supabaseHelpers = {
   },
 
   async signInWithGoogle(): Promise<Session | null> {
-    const redirectTo = getRedirectUri();
+    // Use custom deep link scheme instead of Expo auth proxy
+    const redirectTo = 'com.divin8.app://supabase-auth';
     console.log('[Supabase] Using redirect URI:', redirectTo);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
