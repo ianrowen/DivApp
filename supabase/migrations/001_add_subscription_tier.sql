@@ -54,3 +54,9 @@ GRANT SELECT, UPDATE ON public.users TO authenticated;
 -- Add comment
 COMMENT ON COLUMN public.users.subscription_tier IS 'User subscription tier: free, premium, pro, or expert';
 
+
+
+
+
+
+

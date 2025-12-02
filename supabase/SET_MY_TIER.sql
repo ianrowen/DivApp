@@ -16,3 +16,9 @@ SELECT id, email, subscription_tier
 FROM public.users 
 WHERE subscription_tier = 'expert';
 
+
+
+
+
+
+

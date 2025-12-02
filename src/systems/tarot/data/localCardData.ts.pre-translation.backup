@@ -1,0 +1,2055 @@
+// src/systems/tarot/data/localCardData.ts
+/**
+ * Enhanced Tarot card data for Divin8
+ * 
+ * Meanings: TarotAPI.dev (based on A.E. Waite's Pictorial Key to the Tarot)
+ * Structure & Correspondences: Divin8 custom data
+ * 
+ * Enhanced: 2025-11-27
+ * Chinese translations: To be added via translate-tarot-data script
+ */
+
+export interface LocalTarotCard {
+  code: string;
+  title: string;
+  arcana: 'Major' | 'Minor' | 'Court';
+  suit?: 'Wands' | 'Cups' | 'Swords' | 'Pentacles';
+  filename: string;
+  keywords: string[];
+  astro: string;
+  element: string;
+  upright_meaning: { en: string; zh: string };
+  reversed_meaning: { en: string; zh: string };
+  description: { en: string; zh: string };
+}
+
+export const LOCAL_RWS_CARDS: LocalTarotCard[] = [
+  {
+    "code": "00",
+    "title": "The Fool",
+    "arcana": "Major",
+    "filename": "00_Fool.jpg",
+    "keywords": [
+      "Innocence",
+      "Beginnings",
+      "Spontaneity"
+    ],
+    "astro": "Uranus",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Folly, mania, extravagance, intoxication, delirium, frenzy, bewrayment.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Negligence, absence, distribution, carelessness, apathy, nullity, vanity.",
+      "zh": ""
+    },
+    "description": {
+      "en": "With light step, as if earth and its trammels had little power to restrain him, a young man in gorgeous vestments pauses at the brink of a precipice among the great heights of the world; he surveys the blue distance before him-its expanse of sky rather than the prospect below. His act of eager walking is still indicated, though he is stationary at the given moment; his dog is still bounding. The edge which opens on the depth has no terror; it is as if angels were waiting to uphold him, if it came about that he leaped from the height. His countenance is full of intelligence and expectant dream. He has a rose in one hand and in the other a costly wand, from which depends over his right shoulder a wallet curiously embroidered. He is a prince of the other world on his travels through this one-all amidst the morning glory, in the keen air. The sun, which shines behind him, knows whence he came, whither he is going, and how he will return by another path after many days. He is the spirit in search of experience. Many symbols of the Instituted Mysteries are summarized in this card, which reverses, under high warrants, all the confusions that have preceded it.\nIn his Manual of Cartomancy, Grand Orient has a curious suggestion of the office of Mystic Fool, as apart of his process in higher divination; but it might call for more than ordinary gifts to put it into operation. We shall see how the card fares according to the common arts of fortune-telling, and it will be an example, to those who can discern, of the fact, otherwise so evident, that the Trumps Major had no place originally in the arts of psychic gambling, when cards are used as the counters and pretexts. Of the circumstances under which this art arose we know, however, very little. The conventional explanations say that the Fool signifies the flesh, the sensitive life, and by a peculiar satire its subsidiary name was at one time the alchemist, as depicting folly at the most insensate stage.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "01",
+    "title": "The Magician",
+    "arcana": "Major",
+    "filename": "01_Magician.jpg",
+    "keywords": [
+      "Power",
+      "Skill",
+      "Concentration"
+    ],
+    "astro": "Mercury",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Skill, diplomacy, address, subtlety; sickness, pain, loss, disaster, snares of enemies; self-confidence, will; the Querent, if male.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Physician, Magus, mental disease, disgrace, disquiet.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A youthful figure in the robe of a magician, having the countenance of divine Apollo, with smile of confidence and shining eyes. Above his head is the mysterious sign of the Holy Spirit, the sign of life, like an endless cord, forming the figure 8 in a horizontal position . About his waist is a serpent-cincture, the serpent appearing to devour its own tail. This is familiar to most as a conventional symbol of eternity, but here it indicates more especially the eternity of attainment in the spirit. In the Magician's right hand is a wand raised towards heaven, while the left hand is pointing to the earth. This dual sign is known in very high grades of the Instituted Mysteries; it shews the descent of grace, virtue and light, drawn from things above and derived to things below. The suggestion throughout is therefore the possession and communication of the Powers and Gifts of the Spirit. On the table in front of the Magician are the symbols of the four Tarot suits, signifying the elements of natural life, which lie like counters before the adept, and he adapts them as he wills. Beneath are roses and lilies, the flos campi and lilium convallium, changed into garden flowers, to shew the culture of aspiration. This card signifies the divine motive in man, reflecting God, the will in the liberation of its union with that which is above. It is also the unity of individual being on all planes, and in a very high sense it is thought, in the fixation thereof. With further reference to what I have called the sign of life and its connexion with the number 8, it may be remembered that Christian Gnosticism speaks of rebirth in Christ as a change \"unto the Ogdoad.\" The mystic number is termed Jerusalem above, the Land flowing with Milk and Honey, the Holy Spirit and the Land of the Lord. According to Martinism, 8 is the number of Christ.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "02",
+    "title": "The High Priestess",
+    "arcana": "Major",
+    "filename": "02_High_Priestess.jpg",
+    "keywords": [
+      "Intuition",
+      "Mystery",
+      "Subconscious"
+    ],
+    "astro": "Moon",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Secrets, mystery, the future as yet unrevealed; the woman who interests the Querent, if male; the Querent herself, if female; silence, tenacity; mystery, wisdom, science.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Passion, moral or physical ardour, conceit, surface knowledge.",
+      "zh": ""
+    },
+    "description": {
+      "en": "She has the lunar crescent at her feet, a horned diadem on her head, with a globe in the middle place, and a large solar cross on her breast. The scroll in her hands is inscribed with the word Tora, signifying the Greater Law, the Secret Law and the second sense of the Word. It is partly covered by her mantle, to shew that some things are implied and some spoken. She is seated between the white and black pillars--J. and B.--of the mystic Temple, and the veil of the Temple is behind her: it is embroidered with palms and pomegranates. The vestments are flowing and gauzy, and the mantle suggests light--a shimmering radiance. She has been called occult Science on the threshold of the Sanctuary of Isis, but she is really the Secret Church, the House which is of God and man. She represents also the Second Marriage of the Prince who is no longer of this world; she is the spiritual Bride and Mother, the daughter of the stars and the Higher Garden of Eden. She is, in fine, the Queen of the borrowed light, but this is the light of all. She is the Moon nourished by the milk of the Supernal Mother.\nIn a manner, she is also the Supernal Mother herself--that is to say, she is the bright reflection. It is in this sense of reflection that her truest and highest name in bolism is Shekinah--the co-habiting glory. According to Kabalism, there is a Shekinah both above and below. In the superior world it is called Binah, the Supernal Understanding which reflects to the emanations that are beneath. In the lower world it is MaIkuth--that world being, for this purpose, understood as a blessed Kingdom that with which it is made blessed being the Indwelling Glory. Mystically speaking, the Shekinah is the Spiritual Bride of the just man, and when he reads the Law she gives the Divine meaning. There are some respects in which this card is the highest and holiest of the Greater Arcana.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "03",
+    "title": "The Empress",
+    "arcana": "Major",
+    "filename": "03_Empress.jpg",
+    "keywords": [
+      "Fertility",
+      "Nurturing",
+      "Abundance"
+    ],
+    "astro": "Venus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Fruitfulness, action, initiative, length of days; the unknown, clandestine; also difficulty, doubt, ignorance.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Light, truth, the unravelling of involved matters, public rejoicings; according to another reading, vacillation.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A stately figure, seated, having rich vestments and royal aspect, as of a daughter of heaven and earth. Her diadem is of twelve stars, gathered in a cluster. The symbol of Venus is on the shield which rests near her. A field of corn is ripening in front of her, and beyond there is a fall of water. The sceptre which she bears is surmounted by the globe of this world. She is the inferior Garden of Eden, the Earthly Paradise, all that is symbolized by the visible house of man. She is not Regina coeli, but she is still refugium peccatorum, the fruitful mother of thousands. There are also certain aspects in which she has been correctly described as desire and the wings thereof, as the woman clothed with the sun, as Gloria Mundi and the veil of the Sanctum Sanctorum; but she is not, I may add, the soul that has attained wings, unless all the symbolism is counted up another and unusual way. She is above all things universal fecundity and the outer sense of the Word. This is obvious, because there is no direct message which has been given to man like that which is borne by woman; but she does not herself carry its interpretation.\nIn another order of ideas, the card of the Empress signifies the door or gate by which an entrance is obtained into this life, as into the Garden of Venus; and then the way which leads out therefrom, into that which is beyond, is the secret known to the High Priestess: it is communicated by her to the elect. Most old attributions of this card are completely wrong on the symbolism--as, for example, its identification with the Word, Divine Nature, the Triad, and so forth.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "04",
+    "title": "The Emperor",
+    "arcana": "Major",
+    "filename": "04_Emperor.jpg",
+    "keywords": [
+      "Authority",
+      "Structure",
+      "Control"
+    ],
+    "astro": "Aries",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Stability, power, protection, realization; a great person; aid, reason, conviction; also authority and will.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Benevolence, compassion, credit; also confusion to enemies, obstruction, immaturity.",
+      "zh": ""
+    },
+    "description": {
+      "en": "He has a form of the Crux ansata for his sceptre and a globe in his left hand. He is a crowned monarch--commanding, stately, seated on a throne, the arms of which axe fronted by rams' heads. He is executive and realization, the power of this world, here clothed with the highest of its natural attributes. He is occasionally represented as seated on a cubic stone, which, however, confuses some of the issues. He is the virile power, to which the Empress responds, and in this sense is he who seeks to remove the Veil of Isis; yet she remains virgo intacta.\nIt should be understood that this card and that of the Empress do not precisely represent the condition of married life, though this state is implied. On the surface, as I have indicated, they stand for mundane royalty, uplifted on the seats of the mighty; but above this there is the suggestion of another presence. They signify also--and the male figure especially--the higher kingship, occupying the intellectual throne. Hereof is the lordship of thought rather than of the animal world. Both personalities, after their own manner, are \"full of strange experience,\" but theirs is not consciously the wisdom which draws from a higher world. The Emperor has been described as (a) will in its embodied form, but this is only one of its applications, and (b) as an expression of virtualities contained in the Absolute Being--but this is fantasy.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "05",
+    "title": "The Hierophant",
+    "arcana": "Major",
+    "filename": "05_Hierophant.jpg",
+    "keywords": [
+      "Tradition",
+      "Guidance",
+      "Education"
+    ],
+    "astro": "Taurus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Marriage, alliance, captivity, servitude; by another account, mercy and goodness; inspiration; the man to whom the Querent has recourse.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Society, good understanding, concord, overkindness, weakness.",
+      "zh": ""
+    },
+    "description": {
+      "en": "He wears the triple crown and is seated between two pillars, but they are not those of the Temple which is guarded by the High Priestess. In his left hand he holds a sceptre terminating in the triple cross, and with his right hand he gives the well-known ecclesiastical sign which is called that of esotericism, distinguishing between the manifest and concealed part of doctrine. It is noticeable in this connexion that the High Priestess makes no sign. At his feet are the crossed keys, and two priestly ministers in albs kneel before him. He has been usually called the Pope, which is a particular application of the more general office that he symbolizes. He is the ruling power of external religion, as the High Priestess is the prevailing genius of the esoteric, withdrawn power. The proper meanings of this card have suffered woeful admixture from nearly all hands. Grand Orient says truly that the Hierophant is the power of the keys, exoteric orthodox doctrine, and the outer side of the life which leads to the doctrine; but he is certainly not the prince of occult doctrine, as another commentator has suggested.\nHe is rather the summa totius theologiæ, when it has passed into the utmost rigidity of expression; but he symbolizes also all things that are righteous and sacred on the manifest side. As such, he is the channel of grace belonging to the world of institution as distinct from that of Nature, and he is the leader of salvation for the human race at large. He is the order and the head of the recognized hierarchy, which is the reflection of another and greater hierarchic order; but it may so happen that the pontiff forgets the significance of this his symbolic state and acts as if he contained within his proper measures all that his sign signifies or his symbol seeks to shew forth. He is not, as it has been thought, philosophy-except on the theological side; he is not inspiration; and he is not religion, although he is a mode of its expression.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "06",
+    "title": "The Lovers",
+    "arcana": "Major",
+    "filename": "06_Lovers.jpg",
+    "keywords": [
+      "Union",
+      "Choices",
+      "Partnership"
+    ],
+    "astro": "Gemini",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Attraction, love, beauty, trials overcome.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Failure, foolish designs. Another account speaks of marriage frustrated and contrarieties of all kinds.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The sun shines in the zenith, and beneath is a great winged figure with arms extended, pouring down influences. In the foreground are two human figures, male and female, unveiled before each other, as if Adam and Eve when they first occupied the paradise of the earthly body. Behind the man is the Tree of Life, bearing twelve fruits, and the Tree of the Knowledge of Good and Evil is behind the woman; the serpent is twining round it. The figures suggest youth, virginity, innocence and love before it is contaminated by gross material desire. This is in all simplicity the card of human love, here exhibited as part of the way, the truth and the life. It replaces, by recourse to first principles, the old card of marriage, which I have described previously, and the later follies which depicted man between vice and virtue. In a very high sense, the card is a mystery of the Covenant and Sabbath.\nThe suggestion in respect of the woman is that she signifies that attraction towards the sensitive life which carries within it the idea of the Fall of Man, but she is rather the working of a Secret Law of Providence than a willing and conscious temptress. It is through her imputed lapse that man shall arise ultimately, and only by her can he complete himself. The card is therefore in its way another intimation concerning the great mystery of womanhood. The old meanings fall to pieces of necessity with the old pictures, but even as interpretations of the latter, some of them were of the order of commonplace and others were false in symbolism.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "07",
+    "title": "The Chariot",
+    "arcana": "Major",
+    "filename": "07_Chariot.jpg",
+    "keywords": [
+      "Victory",
+      "Willpower",
+      "Direction"
+    ],
+    "astro": "Cancer",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Succour, providence also war, triumph, presumption, vengeance, trouble.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Riot, quarrel, dispute, litigation, defeat.",
+      "zh": ""
+    },
+    "description": {
+      "en": "An erect and princely figure carrying a drawn sword and corresponding, broadly speaking, to the traditional description which I have given in the first part. On the shoulders of the victorious hero are supposed to be the Urim and Thummim. He has led captivity captive; he is conquest on all planes--in the mind, in science, in progress, in certain trials of initiation. He has thus replied to the sphinx, and it is on this account that I have accepted the variation of Éliphas Lévi; two sphinxes thus draw his chariot. He is above all things triumph in the mind.\nIt is to be understood for this reason (a) that the question of the sphinx is concerned with a Mystery of Nature and not of the world of Grace, to which the charioteer could offer no answer; (b) that the planes of his conquest are manifest or external and not within himself; (c) that the liberation which he effects may leave himself in the bondage of the logical understanding; (d) that the tests of initiation through which he has passed in triumph are to be understood physically or rationally; and (e) that if he came to the pillars of that Temple between which the High Priestess is seated, he could not open the scroll called Tora, nor if she questioned him could he answer. He is not hereditary royalty and he is not priesthood.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "08",
+    "title": "Strength",
+    "arcana": "Major",
+    "filename": "08_Strength.jpg",
+    "keywords": [
+      "Courage",
+      "Patience",
+      "Compassion"
+    ],
+    "astro": "Leo",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Strength represents Courage, Patience, Compassion.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "When reversed, Strength indicates challenges.",
+      "zh": ""
+    },
+    "description": {
+      "en": "",
+      "zh": ""
+    }
+  },
+  {
+    "code": "09",
+    "title": "The Hermit",
+    "arcana": "Major",
+    "filename": "09_Hermit.jpg",
+    "keywords": [
+      "Introspection",
+      "Solitude",
+      "Guidance"
+    ],
+    "astro": "Virgo",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Prudence, circumspection; also and especially treason, dissimulation, roguery, corruption.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Concealment, disguise, policy, fear, unreasoned caution.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The variation from the conventional models in this card is only that the lamp is not enveloped partially in the mantle of its bearer, who blends the idea of the Ancient of Days with the Light of the World It is a star which shines in the lantern. I have said that this is a card of attainment, and to extend this conception the figure is seen holding up his beacon on an eminence. Therefore the Hermit is not, as Court de Gebelin explained, a wise man in search of truth and justice; nor is he, as a later explanation proposes, an especial example of experience. His beacon intimates that \"where I am, you also may be.\"\nIt is further a card which is understood quite incorrectly when it is connected with the idea of occult isolation, as the protection of personal magnetism against admixture. This is one of the frivolous renderings which we owe to Éliphas Lévi. It has been adopted by the French Order of Martinism and some of us have heard a great deal of the Silent and Unknown Philosophy enveloped by his mantle from the knowledge of the profane. In true Martinism, the significance of the term Philosophe inconnu was of another order. It did not refer to the intended concealment of the Instituted Mysteries, much less of their substitutes, but--like the card itself--to the truth that the Divine Mysteries secure their own protection from those who are unprepared.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "10",
+    "title": "Wheel of Fortune",
+    "arcana": "Major",
+    "filename": "10_Wheel_of_Fortune.jpg",
+    "keywords": [
+      "Change",
+      "Cycles",
+      "Destiny"
+    ],
+    "astro": "Jupiter",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Destiny, fortune, success, elevation, luck, felicity.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Increase, abundance, superfluity.",
+      "zh": ""
+    },
+    "description": {
+      "en": "In this symbol I have again followed the reconstruction of Éliphas Lévi, who has furnished several variants. It is legitimate--as I have intimated--to use Egyptian symbolism when this serves our purpose, provided that no theory of origin is implied therein. I have, however, presented Typhon in his serpent form. The symbolism is, of course, not exclusively Egyptian, as the four Living Creatures of Ezekiel occupy the angles of the card, and the wheel itself follows other indications of Lévi in respect of Ezekiel's vision, as illustrative of the particular Tarot Key. With the French occultist, and in the design itself, the symbolic picture stands for the perpetual motion of a fluidic universe and for the flux of human life. The Sphinx is the equilibrium therein. The transliteration of Taro as Rota is inscribed on the wheel, counterchanged with the letters of the Divine Name--to shew that Providence is imphed through all. But this is the Divine intention within, and the similar intention without is exemplified by the four Living Creatures. Sometimes the sphinx is represented couchant on a pedestal above, which defrauds the symbolism by stultifying the essential idea of stability amidst movement.\nBehind the general notion expressed in the symbol there lies the denial of chance and the fatality which is implied therein. It may be added that, from the days of Lévi onward, the occult explanations of this card are--even for occultism itself--of a singularly fatuous kind. It has been said to mean principle, fecundity, virile honour, ruling authority, etc. The findings of common fortune-telling are better than this on their own plane.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "11",
+    "title": "Justice",
+    "arcana": "Major",
+    "filename": "11_Justice.jpg",
+    "keywords": [
+      "Fairness",
+      "Law",
+      "Truth"
+    ],
+    "astro": "Libra",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Equity, rightness, probity, executive; triumph of the deserving side in law.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Law in all its departments, legal complications, bigotry, bias, excessive severity.",
+      "zh": ""
+    },
+    "description": {
+      "en": "As this card follows the traditional symbolism and carries above all its obvious meanings, there is little to say regarding it outside the few considerations collected in the first part, to which the reader is referred.\nIt will be seen, however, that the figure is seated between pillars, like the High Priestess, and on this account it seems desirable to indicate that the moral principle which deals unto every man according to his works--while, of course, it is in strict analogy with higher things;--differs in its essence from the spiritual justice which is involved in the idea of election. The latter belongs to a mysterious order of Providence, in virtue of which it is possible for certain men to conceive the idea of dedication to the highest things. The operation of this is like the breathing of the Spirit where it wills, and we have no canon of criticism or ground of explanation concerning it. It is analogous to the possession of the fairy gifts and the high gifts and the gracious gifts of the poet: we have them or have not, and their presence is as much a mystery as their absence. The law of Justice is not however involved by either alternative. In conclusion, the pillars of Justice open into one world and the pillars of the High Priestess into another.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "12",
+    "title": "The Hanged Man",
+    "arcana": "Major",
+    "filename": "12_Hanged_Man.jpg",
+    "keywords": [
+      "Sacrifice",
+      "New perspective",
+      "Release"
+    ],
+    "astro": "Neptune",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Wisdom, circumspection, discernment, trials, sacrifice, intuition, divination, prophecy.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Selfishness, the crowd, body politic.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The gallows from which he is suspended forms a Tau cross, while the figure--from the position of the legs--forms a fylfot cross. There is a nimbus about the head of the seeming martyr. It should be noted (1) that the tree of sacrifice is living wood, with leaves thereon; (2) that the face expresses deep entrancement, not suffering; (3) that the figure, as a whole, suggests life in suspension, but life and not death. It is a card of profound significance, but all the significance is veiled. One of his editors suggests that Éliphas Lévi did not know the meaning, which is unquestionable nor did the editor himself. It has been called falsely a card of martyrdom, a card a of prudence, a card of the Great Work, a card of duty; but we may exhaust all published interpretations and find only vanity. I will say very simply on my own part that it expresses the relation, in one of its aspects, between the Divine and the Universe.\nHe who can understand that the story of his higher nature is imbedded in this symbolism will receive intimations concerning a great awakening that is possible, and will know that after the sacred Mystery of Death there is a glorious Mystery of Resurrection.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "13",
+    "title": "Death",
+    "arcana": "Major",
+    "filename": "13_Death.jpg",
+    "keywords": [
+      "Endings",
+      "Transformation",
+      "Transition"
+    ],
+    "astro": "Scorpio",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "End, mortality, destruction, corruption also, for a man, the loss of a benefactor for a woman, many contrarieties; for a maid, failure of marriage projects.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Inertia, sleep, lethargy, petrifaction, somnambulism; hope destroyed.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The veil or mask of life is perpetuated in change, transformation and passage from lower to higher, and this is more fitly represented in the rectified Tarot by one of the apocalyptic visions than by the crude notion of the reaping skeleton. Behind it lies the whole world of ascent in the spirit. The mysterious horseman moves slowly, bearing a black banner emblazoned with the Mystic Rose, which signifies life. Between two pillars on the verge of the horizon there shines the sun of immortality. The horseman carries no visible weapon, but king and child and maiden fall before him, while a prelate with clasped hands awaits his end.\nThere should be no need to point out that the suggestion of death which I have made in connection with the previous card is, of course, to be understood mystically, but this is not the case in the present instance. The natural transit of man to the next stage of his being either is or may be one form of his progress, but the exotic and almost unknown entrance, while still in this life, into the state of mystical death is a change in the form of consciousness and the passage into a state to which ordinary death is neither the path nor gate. The existing occult explanations of the 13th card are, on the whole, better than usual, rebirth, creation, destination, renewal, and the rest.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "14",
+    "title": "Temperance",
+    "arcana": "Major",
+    "filename": "14_Temperance.jpg",
+    "keywords": [
+      "Balance",
+      "Moderation",
+      "Purpose"
+    ],
+    "astro": "Sagittarius",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Economy, moderation, frugality, management, accommodation.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Things connected with churches, religions, sects, the priesthood, sometimes even the priest who will marry the Querent; also disunion, unfortunate combinations, competing interests.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A winged angel, with the sign of the sun upon his forehead and on his breast the square and triangle of the septenary. I speak of him in the masculine sense, but the figure is neither male nor female. It is held to be pouring the essences of life from chalice to chalice. It has one foot upon the earth and one upon waters, thus illustrating the nature of the essences. A direct path goes up to certain heights on the verge of the horizon, and above there is a great light, through which a crown is seen vaguely. Hereof is some part of the Secret of Eternal Life, as it is possible to man in his incarnation. All the conventional emblems are renounced herein.\nSo also are the conventional meanings, which refer to changes in the seasons, perpetual movement of life and even the combination of ideas. It is, moreover, untrue to say that the figure symbolizes the genius of the sun, though it is the analogy of solar light, realized in the third part of our human triplicity. It is called Temperance fantastically, because, when the rule of it obtains in our consciousness, it tempers, combines and harmonises the psychic and material natures. Under that rule we know in our rational part something of whence we came and whither we are going.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "15",
+    "title": "The Devil",
+    "arcana": "Major",
+    "filename": "15_Devil.jpg",
+    "keywords": [
+      "Bondage",
+      "Addiction",
+      "Materialism"
+    ],
+    "astro": "Capricorn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Ravage, violence, vehemence, extraordinary efforts, force, fatality; that which is predestined but is not for this reason evil.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Evil fatality, weakness, pettiness, blindness.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The design is an accommodation, mean or harmony, between several motives mentioned in the first part. The Horned Goat of Mendes, with wings like those of a bat, is standing on an altar. At the pit of the stomach there is the sign of Mercury. The right hand is upraised and extended, being the reverse of that benediction which is given by the Hierophant in the fifth card. In the left hand there is a great flaming torch, inverted towards the earth. A reversed pentagram is on the forehead. There is a ring in front of the altar, from which two chains are carried to the necks of two figures, male and female. These are analogous with those of the fifth card, as if Adam and Eve after the Fall. Hereof is the chain and fatality of the material life.\nThe figures are tailed, to signify the animal nature, but there is human intelligence in the faces, and he who is exalted above them is not to be their master for ever. Even now, he is also a bondsman, sustained by the evil that is in him and blind to the liberty of service. With more than his usual derision for the arts which he pretended to respect and interpret as a master therein, Éliphas Lévi affirms that the Baphometic figure is occult science and magic. Another commentator says that in the Divine world it signifies predestination, but there is no correspondence in that world with the things which below are of the brute. What it does signify is the Dweller on the Threshold without the Mystical Garden when those are driven forth therefrom who have eaten the forbidden fruit.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "16",
+    "title": "The Tower",
+    "arcana": "Major",
+    "filename": "16_Tower.jpg",
+    "keywords": [
+      "Upheaval",
+      "Sudden change",
+      "Revelation"
+    ],
+    "astro": "Mars",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Misery, distress, indigence, adversity, calamity, disgrace, deception, ruin. It is a card in particular of unforeseen catastrophe.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "According to one account, the same in a lesser degree also oppression, imprisonment, tyranny.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Occult explanations attached to this card are meagre and mostly disconcerting. It is idle to indicate that it depicts min in all its aspects, because it bears this evidence on the surface. It is said further that it contains the first allusion to a material building, but I do not conceive that the Tower is more or less material than the pillars which we have met with in three previous cases. I see nothing to warrant Papus in supposing that it is literally the fall of Adam, but there is more in favour of his alternative--that it signifies the materialization of the spiritual word. The bibliographer Christian imagines that it is the downfall of the mind, seeking to penetrate the mystery of God. I agree rather with Grand Orient that it is the ruin of the House of We, when evil has prevailed therein, and above all that it is the rending of a House of Doctrine. I understand that the reference is, however, to a House of Falsehood. It illustrates also in the most comprehensive way the old truth that \"except the Lord build the house, they labour in vain that build it.\"\nThere is a sense in which the catastrophe is a reflection from the previous card, but not on the side of the symbolism which I have tried to indicate therein. It is more correctly a question of analogy; one is concerned with the fall into the material and animal state, while the other signifies destruction on the intellectual side. The Tower has been spoken of as the chastisement of pride and the intellect overwhelmed in the attempt to penetrate the Mystery of God; but in neither case do these explanations account for the two persons who are the living sufferers. The one is the literal word made void and the other its false interpretation. In yet a deeper sense, it may signify also the end of a dispensation, but there is no possibility here for the consideration of this involved question.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "17",
+    "title": "The Star",
+    "arcana": "Major",
+    "filename": "17_Star.jpg",
+    "keywords": [
+      "Hope",
+      "Faith",
+      "Renewal"
+    ],
+    "astro": "Aquarius",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Loss, theft, privation, abandonment; another reading says-hope and bright prospects,",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Arrogance, haughtiness, impotence.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A great, radiant star of eight rays, surrounded by seven lesser stars--also of eight rays. The female figure in the foreground is entirely naked. Her left knee is on the land and her right foot upon the water. She pours Water of Life from two great ewers, irrigating sea and land. Behind her is rising ground and on the right a shrub or tree, whereon a bird alights. The figure expresses eternal youth and beauty. The star is l'étoile flamboyante, which appears in Masonic symbolism, but has been confused therein. That which the figure communicates to the living scene is the substance of the heavens and the elements. It has been said truly that the mottoes of this card are \"Waters of Life freely\" and \"Gifts of the Spirit.\"\nThe summary of several tawdry explanations says that it is a card of hope. On other planes it has been certified as immortality and interior light. For the majority of prepared minds, the figure will appear as the type of Truth unveiled, glorious in undying beauty, pouring on the waters of the soul some part and measure of her priceless possession. But she is in reality the Great Mother in the Kabalistic Sephira Binah, which is supernal Understanding, who communicates to the Sephiroth that are below in the measure that they can receive her influx.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "18",
+    "title": "The Moon",
+    "arcana": "Major",
+    "filename": "18_Moon.jpg",
+    "keywords": [
+      "Illusion",
+      "Fear",
+      "Subconscious"
+    ],
+    "astro": "Pisces",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Hidden enemies, danger, calumny, darkness, terror, deception, occult forces, error.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Instability, inconstancy, silence, lesser degrees of deception and error.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The distinction between this card and some of the conventional types is that the moon is increasing on what is called the side of mercy, to the right of the observer. It has sixteen chief and sixteen secondary rays. The card represents life of the imagination apart from life of the spirit. The path between the towers is the issue into the unknown. The dog and wolf are the fears of the natural mind in the presence of that place of exit, when there is only reflected light to guide it.\nThe last reference is a key to another form of symbolism. The intellectual light is a reflection and beyond it is the unknown mystery which it cannot shew forth. It illuminates our animal nature, types of which are represented below--the dog, the wolf and that which comes up out of the deeps, the nameless and hideous tendency which is lower than the savage beast. It strives to attain manifestation, symbolized by crawling from the abyss of water to the land, but as a rule it sinks back whence it came. The face of the mind directs a calm gaze upon the unrest below; the dew of thought falls; the message is: Peace, be still; and it may be that there shall come a calm upon the animal nature, while the abyss beneath shall cease from giving up a form.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "19",
+    "title": "The Sun",
+    "arcana": "Major",
+    "filename": "19_Sun.jpg",
+    "keywords": [
+      "Joy",
+      "Success",
+      "Vitality"
+    ],
+    "astro": "Sun",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Material happiness, fortunate marriage, contentment.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "The same in a lesser sense.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The naked child mounted on a white horse and displaying a red standard has been mentioned already as the better symbolism connected with this card. It is the destiny of the Supernatural East and the great and holy light which goes before the endless procession of humanity, coming out from the walled garden of the sensitive life and passing on the journey home. The card signifies, therefore, the transit from the manifest light of this world, represented by the glorious sun of earth, to the light of the world to come, which goes before aspiration and is typified by the heart of a child.\nBut the last allusion is again the key to a different form or aspect of the symbolism. The sun is that of consciousness in the spirit - the direct as the antithesis of the reflected light. The characteristic type of humanity has become a little child therein--a child in the sense of simplicity and innocence in the sense of wisdom. In that simplicity, he bears the seal of Nature and of Art; in that innocence, he signifies the restored world. When the self-knowing spirit has dawned in the consciousness above the natural mind, that mind in its renewal leads forth the animal nature in a state of perfect conformity.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "20",
+    "title": "Judgement",
+    "arcana": "Major",
+    "filename": "20_Judgement.jpg",
+    "keywords": [
+      "Rebirth",
+      "Reckoning",
+      "Awakening"
+    ],
+    "astro": "Pluto",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Judgement represents Rebirth, Reckoning, Awakening.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "When reversed, Judgement indicates challenges.",
+      "zh": ""
+    },
+    "description": {
+      "en": "",
+      "zh": ""
+    }
+  },
+  {
+    "code": "21",
+    "title": "The World",
+    "arcana": "Major",
+    "filename": "21_World.jpg",
+    "keywords": [
+      "Completion",
+      "Achievement",
+      "Fulfillment"
+    ],
+    "astro": "Saturn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Assured success, recompense, voyage, route, emigration, flight, change of place.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Inertia, fixity, stagnation, permanence.",
+      "zh": ""
+    },
+    "description": {
+      "en": "As this final message of the Major Trumps is unchanged--and indeed unchangeable--in respect of its design, it has been partly described already regarding its deeper sense. It represents also the perfection and end of the Cosmos, the secret which is within it, the rapture of the universe when it understands itself in God. It is further the state of the soul in the consciousness of Divine Vision, reflected from the self-knowing spirit. But these meanings are without prejudice to that which I have said concerning it on the material side.\nIt has more than one message on the macrocosmic side and is, for example, the state of the restored world when the law of manifestation shall have been carried to the highest degree of natural perfection. But it is perhaps more especially a story of the past, referring to that day when all was declared to be good, when the morning stars sang together and all the Sons of God shouted for joy. One of the worst explanations concerning it is that the figure symbolizes the Magus when he has reached the highest degree of initiation; another account says that it represents the absolute, which is ridiculous. The figure has been said to stand for Truth, which is, however, more properly allocated to the seventeenth card. Lastly, it has been called the Crown of the Magi.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W01",
+    "title": "Ace of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W01_Ace_of_Wands.jpg",
+    "keywords": [
+      "Creation",
+      "Inspiration",
+      "New venture"
+    ],
+    "astro": "Root of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Creation, invention, enterprise, the powers which result in these; principle, beginning, source; birth, family, origin, and in a sense the virility which is behind them; the starting point of enterprises; according to another account, money, fortune, inheritance.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Fall, decadence, ruin, perdition, to perish also a certain clouded joy.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A hand issuing from a cloud grasps a stout wand or club.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W02",
+    "title": "Two of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W02_Two_of_Wands.jpg",
+    "keywords": [
+      "Planning",
+      "Decisions",
+      "Discovery"
+    ],
+    "astro": "Mars in Aries",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Between the alternative readings there is no marriage possible; on the one hand, riches, fortune, magnificence; on the other, physical suffering, disease, chagrin, sadness, mortification. The design gives one suggestion; here is a lord overlooking his dominion and alternately contemplating a globe; it looks like the malady, the mortification, the sadness of Alexander amidst the grandeur of this world's wealth.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Surprise, wonder, enchantment, emotion, trouble, fear.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A tall man looks from a battlemented roof over sea and shore; he holds a globe in his right hand, while a staff in his left rests on the battlement; another is fixed in a ring. The Rose and Cross and Lily should be noticed on the left side.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W03",
+    "title": "Three of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W03_Three_of_Wands.jpg",
+    "keywords": [
+      "Expansion",
+      "Foresight",
+      "Enterprise"
+    ],
+    "astro": "Sun in Aries",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "He symbolizes established strength, enterprise, effort, trade, commerce, discovery; those are his ships, bearing his merchandise, which are sailing over the sea. The card also signifies able co-operation in business, as if the successful merchant prince were looking from his side towards yours with a view to help you.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "The end of troubles, suspension or cessation of adversity, toil and disappointment.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A calm, stately personage, with his back turned, looking from a cliff's edge at ships passing over the sea. Three staves are planted in the ground, and he leans slightly on one of them.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W04",
+    "title": "Four of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W04_Four_of_Wands.jpg",
+    "keywords": [
+      "Celebration",
+      "Harmony",
+      "Home"
+    ],
+    "astro": "Venus in Aries",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "They are for once almost on the surface--country life, haven of refuge, a species of domestic harvest-home, repose, concord, harmony, prosperity, peace, and the perfected work of these.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "The meaning remains unaltered; it is prosperity, increase, felicity, beauty, embellishment.",
+      "zh": ""
+    },
+    "description": {
+      "en": "From the four great staves planted in the foreground there is a great garland suspended; two female figures uplift nosegays; at their side is a bridge over a moat, leading to an old manorial house.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W05",
+    "title": "Five of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W05_Five_of_Wands.jpg",
+    "keywords": [
+      "Competition",
+      "Conflict",
+      "Struggle"
+    ],
+    "astro": "Saturn in Leo",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Imitation, as, for example, sham fight, but also the strenuous competition and struggle of the search after riches and fortune. In this sense it connects with the battle of life. Hence some attributions say that it is a card of gold, gain, opulence.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Litigation, disputes, trickery, contradiction.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A posse of youths, who are brandishing staves, as if in sport or strife. It is mimic warfare, and hereto correspond the",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W06",
+    "title": "Six of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W06_Six_of_Wands.jpg",
+    "keywords": [
+      "Victory",
+      "Recognition",
+      "Pride"
+    ],
+    "astro": "Jupiter in Leo",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "The card has been so designed that it can cover several significations; on the surface, it is a victor triumphing, but it is also great news, such as might be carried in state by the King's courier; it is expectation crowned with its own desire, the crown of hope, and so forth.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Apprehension, fear, as of a victorious enemy at the gate; treachery, disloyalty, as of gates being opened to the enemy; also indefinite delay.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A laurelled horseman bears one staff adorned with a laurel crown; footmen with staves are at his side.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W07",
+    "title": "Seven of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W07_Seven_of_Wands.jpg",
+    "keywords": [
+      "Defense",
+      "Perseverance",
+      "Challenge"
+    ],
+    "astro": "Mars in Leo",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "It is a card of valour, for, on the surface, six are attacking one, who has, however, the vantage position. On the intellectual plane, it signifies discussion, wordy strife; in business--negotiations, war of trade, barter, competition. It is further a card of success, for the combatant is on the top and his enemies may be unable to reach him.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Perplexity, embarrassments, anxiety. It is also a caution against indecision.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A young man on a craggy eminence brandishing a staff; six other staves are raised towards him from below.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W08",
+    "title": "Eight of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W08_Eight_of_Wands.jpg",
+    "keywords": [
+      "Speed",
+      "Action",
+      "Movement"
+    ],
+    "astro": "Mercury in Sagittarius",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Activity in undertakings, the path of such activity, swiftness, as that of an express messenger; great haste, great hope, speed towards an end which promises assured felicity; generally, that which is on the move; also the arrows of love.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Arrows of jealousy, internal dispute, stingings of conscience, quarrels; and domestic disputes for persons who are married.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The card represents motion through the immovable-a flight of wands through an open country; but they draw to the term of their course. That which they signify is at hand; it may be even on the threshold.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W09",
+    "title": "Nine of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W09_Nine_of_Wands.jpg",
+    "keywords": [
+      "Resilience",
+      "Persistence",
+      "Last stand"
+    ],
+    "astro": "Moon in Sagittarius",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "The card signifies strength in opposition. If attacked, the person will meet an onslaught boldly; and his build shews, that he may prove a formidable antagonist. With this main significance there are all its possible adjuncts--delay, suspension, adjournment.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Obstacles, adversity, calamity.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The figure leans upon his staff and has an expectant look, as if awaiting an enemy. Behind are eight other staves--erect, in orderly disposition, like a palisade.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W10",
+    "title": "Ten of Wands",
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W10_Ten_of_Wands.jpg",
+    "keywords": [
+      "Burden",
+      "Responsibility",
+      "Overwhelm"
+    ],
+    "astro": "Saturn in Sagittarius",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "A card of many significances, and some of the readings cannot be harmonized. I set aside that which connects it with honour and good faith. The chief meaning is oppression simply, but it is also fortune, gain, any kind of success, and then it is the oppression of these things. It is also a card of false-seeming, disguise, perfidy. The place which the figure is approaching may suffer from the rods that he carries. Success is stultified if the Nine of Swords follows, and if it is a question of a lawsuit, there will be certain loss.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Contrarieties, difficulties, intrigues, and their analogies.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A man oppressed by the weight of the ten staves which he is carrying.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W11",
+    "title": "Page of Wands",
+    "arcana": "Court",
+    "suit": "Wands",
+    "filename": "W11_Page_of_Wands.jpg",
+    "keywords": [
+      "Enthusiasm",
+      "Exploration",
+      "Adventure"
+    ],
+    "astro": "Earth of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Dark young man, faithful, a lover, an envoy, a postman. Beside a man, he will bear favourable testimony concerning him. A dangerous rival, if followed by the Page of Cups. Has the chief qualities of his suit. He may signify family intelligence.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Anecdotes, announcements, evil news. Also indecision and the instability which accompanies it.",
+      "zh": ""
+    },
+    "description": {
+      "en": "In a scene similar to the former, a young man stands in the act of proclamation. He is unknown but faithful, and his tidings are strange.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W12",
+    "title": "Knight of Wands",
+    "arcana": "Court",
+    "suit": "Wands",
+    "filename": "W12_Knight_of_Wands.jpg",
+    "keywords": [
+      "Action",
+      "Impulsiveness",
+      "Energy"
+    ],
+    "astro": "Fire of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Departure, absence, flight, emigration. A dark young man, friendly. Change of residence.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Rupture, division, interruption, discord.",
+      "zh": ""
+    },
+    "description": {
+      "en": "He is shewn as if upon a journey, armed with a short wand, and although mailed is not on a warlike errand. He is passing mounds or pyramids. The motion of the horse is a key to the character of its rider, and suggests the precipitate mood, or things connected therewith.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W13",
+    "title": "Queen of Wands",
+    "arcana": "Court",
+    "suit": "Wands",
+    "filename": "W13_Queen_of_Wands.jpg",
+    "keywords": [
+      "Confidence",
+      "Independence",
+      "Determination"
+    ],
+    "astro": "Water of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "A dark woman, countrywoman, friendly, chaste, loving, honourable. If the card beside her signifies a man, she is well disposed towards him; if a woman, she is interested in the Querent. Also, love of money, or a certain success in business.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Good, economical, obliging, serviceable. Signifies also--but in certain positions and in the neighbourhood of other cards tending in such directions--opposition, jealousy, even deceit and infidelity.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The Wands throughout this suit are always in leaf, as it is a suit of life and animation. Emotionally and otherwise, the Queen's personality corresponds to that of the King, but is more magnetic.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "W14",
+    "title": "King of Wands",
+    "arcana": "Court",
+    "suit": "Wands",
+    "filename": "W14_King_of_Wands.jpg",
+    "keywords": [
+      "Leadership",
+      "Vision",
+      "Honor"
+    ],
+    "astro": "Air of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Dark man, friendly, countryman, generally married, honest and conscientious. The card always signifies honesty, and may mean news concerning an unexpected heritage to fall in before very long.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Good, but severe; austere, yet tolerant.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The physical and emotional nature to which this card is attributed is dark, ardent, lithe, animated, impassioned, noble. The King uplifts a flowering wand, and wears, like his three correspondences in the remaining suits, what is called a cap of maintenance beneath his crown. He connects with the symbol of the lion, which is emblazoned on the back of his throne.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C01",
+    "title": "Ace of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C01_Ace_of_Cups.jpg",
+    "keywords": [
+      "Love",
+      "Intuition",
+      "Intimacy"
+    ],
+    "astro": "Root of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "House of the true heart, joy, content, abode, nourishment, abundance, fertility; Holy Table, felicity hereof.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "House of the false heart, mutation, instability, revolution.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The waters are beneath, and thereon are water-lilies; the hand issues from the cloud, holding in its palm the cup, from which four streams are pouring; a dove, bearing in its bill a cross-marked Host, descends to place the Wafer in the Cup; the dew of water is falling on all sides. It is an intimation of that which may lie behind the Lesser Arcana.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C02",
+    "title": "Two of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C02_Two_of_Cups.jpg",
+    "keywords": [
+      "Partnership",
+      "Unity",
+      "Connection"
+    ],
+    "astro": "Venus in Cancer",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Love, passion, friendship, affinity, union, concord, sympathy, the interrelation of the sexes, and--as a suggestion apart from all offices of divination--that desire which is not in Nature, but by which Nature is sanctified.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Lust, cupidity, jealousy, wish, desire, but the card may also give, says W., \"that desire which is not in nature, but by which nature is sanctified.\"",
+      "zh": ""
+    },
+    "description": {
+      "en": "A youth and maiden are pledging one another, and above their cups rises the Caduceus of Hermes, between the great wings of which there appears a lion's head. It is a variant of a sign which is found in a few old examples of this card. Some curious emblematical meanings are attached to it, but they do not concern us in this place.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C03",
+    "title": "Three of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C03_Three_of_Cups.jpg",
+    "keywords": [
+      "Celebration",
+      "Friendship",
+      "Community"
+    ],
+    "astro": "Mercury in Cancer",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "The conclusion of any matter in plenty, perfection and merriment; happy issue, victory, fulfilment, solace, healing,",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Expedition, dispatch, achievement, end. It signifies also the side of excess in physical enjoyment, and the pleasures of the senses.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Maidens in a garden-ground with cups uplifted, as if pledging one another.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C04",
+    "title": "Four of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C04_Four_of_Cups.jpg",
+    "keywords": [
+      "Apathy",
+      "Contemplation",
+      "Reevaluation"
+    ],
+    "astro": "Moon in Cancer",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Weariness, disgust, aversion, imaginary vexations, as if the wine of this world had caused satiety only; another wine, as if a fairy gift, is now offered the wastrel, but he sees no consolation therein. This is also a card of blended pleasure.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Novelty, presage, new instruction, new relations.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A young man is seated under a tree and contemplates three cups set on the grass before him; an arm issuing from a cloud offers him another cup. His expression notwithstanding is one of discontent with his environment.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C05",
+    "title": "Five of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C05_Five_of_Cups.jpg",
+    "keywords": [
+      "Loss",
+      "Regret",
+      "Disappointment"
+    ],
+    "astro": "Mars in Scorpio",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "A dark, cloaked figure, looking sideways at three prone cups two others stand upright behind him; a bridge is in the background, leading to a small keep or holding. Divanatory Meanings: It is a card of loss, but something remains over; three have been taken, but two are left; it is a card of inheritance, patrimony, transmission, but not corresponding to expectations; with some interpreters it is a card of marriage, but not without bitterness or frustration.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "News, alliances, affinity, consanguinity, ancestry, return, false projects.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A dark, cloaked figure, looking sideways at three prone cups two others stand upright behind him; a bridge is in the background, leading to a small keep or holding. Divanatory Meanings: It is a card of loss, but something remains over; three have been taken, but two are left; it is a card of inheritance, patrimony, transmission, but not corresponding to expectations; with some interpreters it is a card of marriage, but not without bitterness or frustration. Reversed: News, alliances, affinity, consanguinity, ancestry, return, false projects",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C06",
+    "title": "Six of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C06_Six_of_Cups.jpg",
+    "keywords": [
+      "Nostalgia",
+      "Innocence",
+      "Reunion"
+    ],
+    "astro": "Sun in Scorpio",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "A card of the past and of memories, looking back, as--for example--on childhood; happiness, enjoyment, but coming rather from the past; things that have vanished. Another reading reverses this, giving new relations, new knowledge, new environment, and then the children are disporting in an unfamiliar precinct.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "The future, renewal, that which will come to pass presently.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Children in an old garden, their cups filled with flowers.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C07",
+    "title": "Seven of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C07_Seven_of_Cups.jpg",
+    "keywords": [
+      "Choices",
+      "Fantasy",
+      "Illusion"
+    ],
+    "astro": "Venus in Scorpio",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Fairy favours, images of reflection, sentiment, imagination, things seen in the glass of contemplation; some attainment in these degrees, but nothing permanent or substantial is suggested.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Desire, will, determination, project.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Strange chalices of vision, but the images are more especially those of the fantastic spirit.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C08",
+    "title": "Eight of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C08_Eight_of_Cups.jpg",
+    "keywords": [
+      "Withdrawal",
+      "Abandonment",
+      "Journey"
+    ],
+    "astro": "Saturn in Pisces",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "The card speaks for itself on the surface, but other readings are entirely antithetical--giving joy, mildness, timidity, honour, modesty. In practice, it is usually found that the card shews the decline of a matter, or that a matter which has been thought to be important is really of slight consequence--either for good or evil.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Great joy, happiness, feasting.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A man of dejected aspect is deserting the cups of his felicity, enterprise, undertaking or previous concern.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C09",
+    "title": "Nine of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C09_Nine_of_Cups.jpg",
+    "keywords": [
+      "Contentment",
+      "Satisfaction",
+      "Wish fulfilled"
+    ],
+    "astro": "Jupiter in Pisces",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Concord, contentment, physical bien-être; also victory, success, advantage; satisfaction for the Querent or person for whom the consultation is made.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Truth, loyalty, liberty; but the readings vary and include mistakes, imperfections, etc.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A goodly personage has feasted to his heart's content, and abundant refreshment of wine is on the arched counter behind him, seeming to indicate that the future is also assured. The picture offers the material side only, but there are other aspects.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C10",
+    "title": "Ten of Cups",
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C10_Ten_of_Cups.jpg",
+    "keywords": [
+      "Harmony",
+      "Family",
+      "Happiness"
+    ],
+    "astro": "Mars in Pisces",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Contentment, repose of the entire heart; the perfection of that state; also perfection of human love and friendship; if with several picture-cards, a person who is taking charge of the Querent's interests; also the town, village or country inhabited by the Querent.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Repose of the false heart, indignation, violence.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Appearance of Cups in a rainbow; it is contemplated in wonder and ecstacy by a man and woman below, evidently husband and wife. His right arm is about her; his left is raised upward; she raises her right arm. The two children dancing near them have not observed the prodigy but are happy after their own manner. There is a home-scene beyond.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C11",
+    "title": "Page of Cups",
+    "arcana": "Court",
+    "suit": "Cups",
+    "filename": "C11_Page_of_Cups.jpg",
+    "keywords": [
+      "Creativity",
+      "Intuition",
+      "Curiosity"
+    ],
+    "astro": "Earth of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Fair young man, one impelled to render service and with whom the Querent will be connected; a studious youth; news, message; application, reflection, meditation; also these things directed to business.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Taste, inclination, attachment, seduction, deception, artifice.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A fair, pleasing, somewhat effeminate page, of studious and intent aspect, contemplates a fish rising from a cup to look at him. It is the pictures of the mind taking form.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C12",
+    "title": "Knight of Cups",
+    "arcana": "Court",
+    "suit": "Cups",
+    "filename": "C12_Knight_of_Cups.jpg",
+    "keywords": [
+      "Romance",
+      "Charm",
+      "Idealism"
+    ],
+    "astro": "Fire of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Arrival, approach--sometimes that of a messenger; advances, proposition, demeanour, invitation, incitement.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Trickery, artifice, subtlety, swindling, duplicity, fraud.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Graceful, but not warlike; riding quietly, wearing a winged helmet, referring to those higher graces of the imagination which sometimes characterize this card. He too is a dreamer, but the images of the side of sense haunt him in his vision.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C13",
+    "title": "Queen of Cups",
+    "arcana": "Court",
+    "suit": "Cups",
+    "filename": "C13_Queen_of_Cups.jpg",
+    "keywords": [
+      "Compassion",
+      "Emotional security",
+      "Intuition"
+    ],
+    "astro": "Water of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Good, fair woman; honest, devoted woman, who will do service to the Querent; loving intelligence, and hence the gift of vision; success, happiness, pleasure; also wisdom, virtue; a perfect spouse and a good mother.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "The accounts vary; good woman; otherwise, distinguished woman but one not to be trusted; perverse woman; vice, dishonour, depravity.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Beautiful, fair, dreamy--as one who sees visions in a cup. This is, however, only one of her aspects; she sees, but she also acts, and her activity feeds her dream.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "C14",
+    "title": "King of Cups",
+    "arcana": "Court",
+    "suit": "Cups",
+    "filename": "C14_King_of_Cups.jpg",
+    "keywords": [
+      "Emotional balance",
+      "Diplomacy",
+      "Wisdom"
+    ],
+    "astro": "Air of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Fair man, man of business, law, or divinity; responsible, disposed to oblige the Querent; also equity, art and science, including those who profess science, law and art; creative intelligence.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Dishonest, double-dealing man; roguery, exaction, injustice, vice, scandal, pillage, considerable loss.",
+      "zh": ""
+    },
+    "description": {
+      "en": "He holds a short sceptre in his left hand and a great cup in his right; his throne is set upon the sea; on one side a ship is riding and on the other a dolphin is leaping. The implicit is that the Sign of the Cup naturally refers to water, which appears in all the court cards.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S01",
+    "title": "Ace of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S01_Ace_of_Swords.jpg",
+    "keywords": [
+      "Breakthrough",
+      "Clarity",
+      "Truth"
+    ],
+    "astro": "Root of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Triumph, the excessive degree in everything, conquest, triumph of force. It is a card of great force, in love as well as in hatred. The crown may carry a much higher significance than comes usually within the sphere of fortune-telling.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "The same, but the results are disastrous; another account says--conception, childbirth, augmentation, multiplicity.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A hand issues from a cloud, grasping as word, the point of which is encircled by a crown.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S02",
+    "title": "Two of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S02_Two_of_Swords.jpg",
+    "keywords": [
+      "Stalemate",
+      "Indecision",
+      "Avoidance"
+    ],
+    "astro": "Moon in Libra",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Conformity and the equipoise which it suggests, courage, friendship, concord in a state of arms; another reading gives tenderness, affection, intimacy. The suggestion of harmony and other favourable readings must be considered in a qualified manner, as Swords generally are not symbolical of beneficent forces in human affairs.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Imposture, falsehood, duplicity, disloyalty.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A hoodwinked female figure balances two swords upon her shoulders.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S03",
+    "title": "Three of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S03_Three_of_Swords.jpg",
+    "keywords": [
+      "Heartbreak",
+      "Sorrow",
+      "Grief"
+    ],
+    "astro": "Saturn in Libra",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Removal, absence, delay, division, rupture, dispersion, and all that the design signifies naturally, being too simple and obvious to call for specific enumeration.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Mental alienation, error, loss, distraction, disorder, confusion.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Three swords piercing a heart; cloud and rain behind.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S04",
+    "title": "Four of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S04_Four_of_Swords.jpg",
+    "keywords": [
+      "Rest",
+      "Recovery",
+      "Meditation"
+    ],
+    "astro": "Jupiter in Libra",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Vigilance, retreat, solitude, hermit's repose, exile, tomb and coffin. It is these last that have suggested the design.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Wise administration, circumspection, economy, avarice, precaution, testament.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The effigy of a knight in the attitude of prayer, at full length upon his tomb.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S05",
+    "title": "Five of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S05_Five_of_Swords.jpg",
+    "keywords": [
+      "Conflict",
+      "Defeat",
+      "Dishonor"
+    ],
+    "astro": "Venus in Aquarius",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Degradation, destruction, revocation, infamy, dishonour, loss, with the variants and analogues of these.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "The same; burial and obsequies.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A disdainful man looks after two retreating and dejected figures. Their swords lie upon the ground. He carries two others on his left shoulder, and a third sword is in his right hand, point to earth. He is the master in possession of the field.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S06",
+    "title": "Six of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S06_Six_of_Swords.jpg",
+    "keywords": [
+      "Transition",
+      "Moving on",
+      "Recovery"
+    ],
+    "astro": "Mercury in Aquarius",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Journey by water, route, way, envoy, commissionary, expedient.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Declaration, confession, publicity; one account says that it is a proposal of love.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A ferryman carrying passengers in his punt to the further shore. The course is smooth, and seeing that the freight is light, it may be noted that the work is not beyond his strength.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S07",
+    "title": "Seven of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S07_Seven_of_Swords.jpg",
+    "keywords": [
+      "Deception",
+      "Strategy",
+      "Betrayal"
+    ],
+    "astro": "Moon in Aquarius",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Design, attempt, wish, hope, confidence; also quarrelling, a plan that may fail, annoyance. The design is uncertain in its import, because the significations are widely at variance with each other.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Good advice, counsel, instruction, slander, babbling.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A man in the act of carrying away five swords rapidly; the two others of the card remain stuck in the ground. A camp is close at hand.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S08",
+    "title": "Eight of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S08_Eight_of_Swords.jpg",
+    "keywords": [
+      "Restriction",
+      "Trapped",
+      "Self-imposed"
+    ],
+    "astro": "Jupiter in Gemini",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Bad news, violent chagrin, crisis, censure, power in trammels, conflict, calumny; also sickness.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Disquiet, difficulty, opposition, accident, treachery; what is unforeseen; fatality.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A woman, bound and hoodwinked, with the swords of the card about her. Yet it is rather a card of temporary durance than of irretrievable bondage.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S09",
+    "title": "Nine of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S09_Nine_of_Swords.jpg",
+    "keywords": [
+      "Anxiety",
+      "Fear",
+      "Nightmares"
+    ],
+    "astro": "Mars in Gemini",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Death, failure, miscarriage, delay, deception, disappointment, despair.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Imprisonment, suspicion, doubt, reasonable fear, shame.",
+      "zh": ""
+    },
+    "description": {
+      "en": "One seated on her couch in lamentation, with the swords over her. She is as one who knows no sorrow which is like unto hers. It is a card of utter desolation.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S10",
+    "title": "Ten of Swords",
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S10_Ten_of_Swords.jpg",
+    "keywords": [
+      "Ruin",
+      "Painful ending",
+      "Hitting bottom"
+    ],
+    "astro": "Sun in Gemini",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Whatsoever is intimated by the design; also pain, affliction, tears, sadness, desolation. It is not especially a card of violent death.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Advantage, profit, success, favour, but none of these are permanent; also power and authority.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A prostrate figure, pierced by all the swords belonging to the card.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S11",
+    "title": "Page of Swords",
+    "arcana": "Court",
+    "suit": "Swords",
+    "filename": "S11_Page_of_Swords.jpg",
+    "keywords": [
+      "Vigilance",
+      "Curiosity",
+      "Truth-seeker"
+    ],
+    "astro": "Earth of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Authority, overseeing, secret service, vigilance, spying, examination, and the qualities thereto belonging.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "More evil side of these qualities; what is unforeseen, unprepared state; sickness is also intimated.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A lithe, active figure holds a sword upright in both hands, while in the act of swift walking. He is passing over rugged land, and about his way the clouds are collocated wildly. He is alert and lithe, looking this way and that, as if an expected enemy might appear at any moment.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S12",
+    "title": "Knight of Swords",
+    "arcana": "Court",
+    "suit": "Swords",
+    "filename": "S12_Knight_of_Swords.jpg",
+    "keywords": [
+      "Direct",
+      "Rushed",
+      "Ambitious"
+    ],
+    "astro": "Air of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Skill, bravery, capacity, defence, address, enmity, wrath, war, destruction, opposition, resistance, ruin. There is therefore a sense in which the card signifies death, but it carries this meaning only in its proximity to other cards of fatality.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Imprudence, incapacity, extravagance.",
+      "zh": ""
+    },
+    "description": {
+      "en": "He is riding in full course, as if scattering his enemies. In the design he is really a prototypical hero of romantic chivalry. He might almost be Galahad, whose sword is swift and sure because he is clean of heart.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S13",
+    "title": "Queen of Swords",
+    "arcana": "Court",
+    "suit": "Swords",
+    "filename": "S13_Queen_of_Swords.jpg",
+    "keywords": [
+      "Sharp wit",
+      "Honesty",
+      "Independent"
+    ],
+    "astro": "Water of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Widowhood, female sadness and embarrassment, absence, sterility, mourning, privation, separation.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Malice, bigotry, artifice, prudery, bale, deceit.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Her right hand raises the weapon vertically and the hilt rests on an arm of her royal chair the left hand is extended, the arm raised her countenance is severe but chastened; it suggests familiarity with sorrow. It does not represent mercy, and, her sword notwithstanding, she is scarcely a symbol of power.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "S14",
+    "title": "King of Swords",
+    "arcana": "Court",
+    "suit": "Swords",
+    "filename": "S14_King_of_Swords.jpg",
+    "keywords": [
+      "Intellect",
+      "Authority",
+      "Fair judgment"
+    ],
+    "astro": "Fire of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Whatsoever arises out of the idea of judgment and all its connexions-power, command, authority, militant intelligence, law, offices of the crown, and so forth.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Cruelty, perversity, barbarity, perfidy, evil intention.",
+      "zh": ""
+    },
+    "description": {
+      "en": "He sits in judgment, holding the unsheathed sign of his suit. He recalls, of course, the conventional Symbol of justice in the Trumps Major, and he may represent this virtue, but he is rather the power of life and death, in virtue of his office.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P01",
+    "title": "Ace of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P01_Ace_of_Pentacles.jpg",
+    "keywords": [
+      "New opportunity",
+      "Prosperity",
+      "Security"
+    ],
+    "astro": "Root of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Perfect contentment, felicity, ecstasy; also speedy intelligence; gold.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "The evil side of wealth, bad intelligence; also great riches. In any case it shews prosperity, comfortable material conditions, but whether these are of advantage to the possessor will depend on whether the card is reversed or not.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A hand--issuing, as usual, from a cloud--holds up a pentacle.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P02",
+    "title": "Two of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P02_Two_of_Pentacles.jpg",
+    "keywords": [
+      "Balance",
+      "Juggling",
+      "Flexibility"
+    ],
+    "astro": "Jupiter in Capricorn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "On the one hand it is represented as a card of gaiety, recreation and its connexions, which is the subject of the design; but it is read also as news and messages in writing, as obstacles, agitation, trouble, embroilment.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Enforced gaiety, simulated enjoyment, literal sense, handwriting, composition, letters of exchange.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A young man, in the act of dancing, has a pentacle in either hand, and they are joined by that endless cord which is like the number 8 reversed.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P03",
+    "title": "Three of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P03_Three_of_Pentacles.jpg",
+    "keywords": [
+      "Teamwork",
+      "Collaboration",
+      "Skill"
+    ],
+    "astro": "Mars in Capricorn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Métier, trade, skilled labour; usually, however, regarded as a card of nobility, aristocracy, renown, glory.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Mediocrity, in work and otherwise, puerility, pettiness, weakness.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A sculptor at his work in a monastery. Compare the design which illustrates the Eight of Pentacles. The apprentice or amateur therein has received his reward and is now at work in earnest.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P04",
+    "title": "Four of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P04_Four_of_Pentacles.jpg",
+    "keywords": [
+      "Security",
+      "Possessiveness",
+      "Control"
+    ],
+    "astro": "Sun in Capricorn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "The surety of possessions, cleaving to that which one has, gift, legacy, inheritance.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Suspense, delay, opposition.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A crowned figure, having a pentacle over his crown, clasps another with hands and arms; two pentacles are under his feet. He holds to that which he has.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P05",
+    "title": "Five of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P05_Five_of_Pentacles.jpg",
+    "keywords": [
+      "Worry",
+      "Poverty",
+      "Isolation"
+    ],
+    "astro": "Mercury in Taurus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "The card foretells material trouble above all, whether in the form illustrated--that is, destitution--or otherwise. For some cartomancists, it is a card of love and lovers-wife, husband, friend, mistress; also concordance, affinities. These alternatives cannot be harmonized.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Disorder, chaos, ruin, discord, profligacy.",
+      "zh": ""
+    },
+    "description": {
+      "en": "Two mendicants in a snow-storm pass a lighted casement.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P06",
+    "title": "Six of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P06_Six_of_Pentacles.jpg",
+    "keywords": [
+      "Giving",
+      "Receiving",
+      "Charity"
+    ],
+    "astro": "Moon in Taurus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Presents, gifts, gratification another account says attention, vigilance now is the accepted time, present prosperity, etc.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Desire, cupidity, envy, jealousy, illusion.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A person in the guise of a merchant weighs money in a pair of scales and distributes it to the needy and distressed. It is a testimony to his own success in life, as well as to his goodness of heart.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P07",
+    "title": "Seven of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P07_Seven_of_Pentacles.jpg",
+    "keywords": [
+      "Patience",
+      "Assessment",
+      "Waiting"
+    ],
+    "astro": "Saturn in Taurus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "These are exceedingly contradictory; in the main, it is a card of money, business, barter; but one reading gives altercation, quarrels--and another innocence, ingenuity, purgation.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Cause for anxiety regarding money which it may be proposed to lend.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A young man, leaning on his staff, looks intently at seven pentacles attached to a clump of greenery on his right; one would say that these were his treasures and that his heart was there.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P08",
+    "title": "Eight of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P08_Eight_of_Pentacles.jpg",
+    "keywords": [
+      "Apprenticeship",
+      "Dedication",
+      "Craftsmanship"
+    ],
+    "astro": "Sun in Virgo",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Work, employment, commission, craftsmanship, skill in craft and business, perhaps in the preparatory stage.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Voided ambition, vanity, cupidity, exaction, usury. It may also signify the possession of skill, in the sense of the ingenious mind turned to cunning and intrigue.",
+      "zh": ""
+    },
+    "description": {
+      "en": "An artist in stone at his work, which he exhibits in the form of trophies.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P09",
+    "title": "Nine of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P09_Nine_of_Pentacles.jpg",
+    "keywords": [
+      "Luxury",
+      "Self-reliance",
+      "Financial independence"
+    ],
+    "astro": "Venus in Virgo",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Prudence, safety, success, accomplishment, certitude, discernment.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Roguery, deception, voided project, bad faith.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A woman, with a bird upon her wrist, stands amidst a great abundance of grapevines in the garden of a manorial house. It is a wide domain, suggesting plenty in all things. Possibly it is her own possession and testifies to material well-being.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P10",
+    "title": "Ten of Pentacles",
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P10_Ten_of_Pentacles.jpg",
+    "keywords": [
+      "Wealth",
+      "Family",
+      "Inheritance"
+    ],
+    "astro": "Mercury in Virgo",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Gain, riches; family matters, archives, extraction, the abode of a family.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Chance, fatality, loss, robbery, games of hazard; sometimes gift, dowry, pension.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A man and woman beneath an archway which gives entrance to a house and domain. They are accompanied by a child, who looks curiously at two dogs accosting an ancient personage seated in the foreground. The child's hand is on one of them.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P11",
+    "title": "Page of Pentacles",
+    "arcana": "Court",
+    "suit": "Pentacles",
+    "filename": "P11_Page_of_Pentacles.jpg",
+    "keywords": [
+      "New career path",
+      "Opportunity",
+      "Study"
+    ],
+    "astro": "Earth of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Application, study, scholarship, reflection another reading says news, messages and the bringer thereof; also rule, management.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Prodigality, dissipation, liberality, luxury; unfavourable news.",
+      "zh": ""
+    },
+    "description": {
+      "en": "A youthful figure, looking intently at the pentacle which hovers over his raised hands. He moves slowly, insensible of that which is about him.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P12",
+    "title": "Knight of Pentacles",
+    "arcana": "Court",
+    "suit": "Pentacles",
+    "filename": "P12_Knight_of_Pentacles.jpg",
+    "keywords": [
+      "Hard work",
+      "Reliable",
+      "Routine"
+    ],
+    "astro": "Air of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Utility, serviceableness, interest, responsibility, rectitude-all on the normal and external plane.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "inertia, idleness, repose of that kind, stagnation; also placidity, discouragement, carelessness.",
+      "zh": ""
+    },
+    "description": {
+      "en": "He rides a slow, enduring, heavy horse, to which his own aspect corresponds. He exhibits his symbol, but does not look therein.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P13",
+    "title": "Queen of Pentacles",
+    "arcana": "Court",
+    "suit": "Pentacles",
+    "filename": "P13_Queen_of_Pentacles.jpg",
+    "keywords": [
+      "Nurturing",
+      "Practical",
+      "Generous"
+    ],
+    "astro": "Water of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Opulence, generosity, magnificence, security, liberty.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Evil, suspicion, suspense, fear, mistrust.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The face suggests that of a dark woman, whose qualities might be summed up in the idea of greatness of soul; she has also the serious cast of intelligence; she contemplates her symbol and may see worlds therein.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "P14",
+    "title": "King of Pentacles",
+    "arcana": "Court",
+    "suit": "Pentacles",
+    "filename": "P14_King_of_Pentacles.jpg",
+    "keywords": [
+      "Success",
+      "Security",
+      "Reliability"
+    ],
+    "astro": "Fire of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Valour, realizing intelligence, business and normal intellectual aptitude, sometimes mathematical gifts and attainments of this kind; success in these paths.",
+      "zh": ""
+    },
+    "reversed_meaning": {
+      "en": "Vice, weakness, ugliness, perversity, corruption, peril.",
+      "zh": ""
+    },
+    "description": {
+      "en": "The figure calls for no special description the face is rather dark, suggesting also courage, but somewhat lethargic in tendency. The bull's head should be noted as a recurrent symbol on the throne. The sign of this suit is represented throughout as engraved or blazoned with the pentagram, typifying the correspondence of the four elements in human nature and that by which they may be governed. In many old Tarot packs this suit stood for current coin, money, deniers. I have not invented the substitution of pentacles and I have no special cause to sustain in respect of the alternative. But the consensus of divinatory meanings is on the side of some change, because the cards do not happen to deal especially with questions of money.",
+      "zh": ""
+    }
+  }
+];
+
+// Spread definitions for MVP
+export const LOCAL_SPREADS = {
+  'single-card': {
+    id: 'single-card',
+    name: { en: 'Single Card Draw', zh: '單張牌' },
+    positions: [
+      { position: 1, label: { en: 'The Heart of the Matter', zh: '問題核心' } }
+    ],
+    card_count: 1
+  },
+  'three-card': {
+    id: 'three-card',
+    name: { en: 'Past, Present, Future', zh: '過去、現在、未來' },
+    positions: [
+      { position: 1, label: { en: 'Past', zh: '過去' } },
+      { position: 2, label: { en: 'Present', zh: '現在' } },
+      { position: 3, label: { en: 'Future', zh: '未來' } }
+    ],
+    card_count: 3
+  }
+};

@@ -1,20 +1,31 @@
 // src/screens/HomeScreen.tsx
 import React from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { CompositeScreenProps } from '@react-navigation/native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { supabaseHelpers } from '../core/api/supabase';
-import type { AppStackParamList } from '../../App';
+import type { AppStackParamList, MainTabParamList } from '../../App';
 import theme from '../shared/theme';
 import MysticalBackground from '../shared/components/ui/MysticalBackground';
 import ThemedText from '../shared/components/ui/ThemedText';
 import ThemedButton from '../shared/components/ui/ThemedButton';
 import ThemedCard from '../shared/components/ui/ThemedCard';
+import { LanguageSelector } from '../shared/components/LanguageSelector';
+import DailyCardDraw from '../shared/components/DailyCardDraw';
+import { useTranslation } from '../i18n';
 
-type Props = StackScreenProps<AppStackParamList, 'Home'>;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, 'Home'>,
+  StackScreenProps<AppStackParamList>
+>;
 
 // This is the main screen after login - mystical divination portal
 export default function HomeScreen({ navigation }: Props) {
   const [loading, setLoading] = React.useState(false);
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   
   const handleSignOut = async () => {
     setLoading(true);
@@ -34,32 +45,46 @@ export default function HomeScreen({ navigation }: Props) {
         contentContainerStyle={styles.scrollContent}
         style={styles.scrollView}
       >
+        {/* Language Selector */}
+        <View style={styles.languageSelectorContainer}>
+          <LanguageSelector />
+        </View>
+
         {/* Welcome Section */}
         <View style={styles.header}>
           <ThemedText variant="h1" style={styles.welcomeEmoji}>
             🔮
           </ThemedText>
-          <ThemedText variant="h1">Welcome Back, Querent.</ThemedText>
+          <ThemedText variant="h1">{t('common.appName')}</ThemedText>
           <View style={styles.subtitleSpacer} />
-          <ThemedText variant="body">Your journey awaits.</ThemedText>
+          <ThemedText variant="body">{t('home.questionPrompt')}</ThemedText>
         </View>
+
+        {/* Daily Card Draw */}
+        <DailyCardDraw />
 
         {/* Divination Systems Card */}
         <ThemedCard variant="elevated" style={styles.systemsCard}>
           <ThemedText variant="h2" style={styles.cardTitle}>
-            Divination Systems
+            {t('home.quickAccess')}
           </ThemedText>
           <View style={styles.buttonContainer}>
             <ThemedButton
-              title="Start Tarot Reading"
-              onPress={() => navigation.navigate('TarotReading')}
+              title={t('home.tarot')}
+              onPress={() => navigation.getParent()?.navigate('TarotReading')}
               variant="primary"
               style={styles.primaryActionButton}
             />
             <View style={styles.buttonSpacer} />
             <ThemedButton
-              title="Reading History"
+              title={t('history.title')}
               onPress={() => navigation.navigate('History')}
+              variant="secondary"
+            />
+            <View style={styles.buttonSpacer} />
+            <ThemedButton
+              title={t('profile.title')}
+              onPress={() => navigation.navigate('Profile')}
               variant="secondary"
             />
           </View>
@@ -71,7 +96,7 @@ export default function HomeScreen({ navigation }: Props) {
             <ActivityIndicator size="small" color={theme.colors.primary.gold} />
           ) : (
             <ThemedButton
-              title="Sign Out"
+              title={t('common.signOut')}
               onPress={handleSignOut}
               variant="ghost"
               style={styles.signOutButton}
@@ -92,8 +117,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: theme.spacing.spacing.lg,
     paddingTop: theme.spacing.spacing.xxl,
-    paddingBottom: theme.spacing.spacing.xl,
+    paddingBottom: 100, // Extra padding for tab bar
     alignItems: 'center',
+  },
+  languageSelectorContainer: {
+    position: 'absolute',
+    top: theme.spacing.spacing.lg,
+    right: theme.spacing.spacing.lg,
+    zIndex: 1000,
   },
   header: {
     alignItems: 'center',

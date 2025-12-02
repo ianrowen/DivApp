@@ -1,0 +1,60 @@
+diff --git a/node_modules/@react-native-community/datetimepicker/android/src/main/java/com/reactcommunity/rndatetimepicker/RNDateTimePickerPackage.java b/node_modules/@react-native-community/datetimepicker/android/src/main/java/com/reactcommunity/rndatetimepicker/RNDateTimePickerPackage.java
+index 417183e..1f8c5ee 100644
+--- a/node_modules/@react-native-community/datetimepicker/android/src/main/java/com/reactcommunity/rndatetimepicker/RNDateTimePickerPackage.java
++++ b/node_modules/@react-native-community/datetimepicker/android/src/main/java/com/reactcommunity/rndatetimepicker/RNDateTimePickerPackage.java
+@@ -20,10 +20,21 @@ public class RNDateTimePickerPackage extends TurboReactPackage {
+       return new DatePickerModule(reactContext);
+     } else if (name.equals(TimePickerModule.NAME)) {
+       return new TimePickerModule(reactContext);
+-    } else if (name.equals(MaterialDatePickerModule.NAME)) {
+-      return new MaterialDatePickerModule(reactContext);
+-    } else if (name.equals(MaterialTimePickerModule.NAME)) {
+-      return new MaterialTimePickerModule(reactContext);
++    } else if (name.equals("RNCMaterialDatePicker")) {
++      // Material picker modules are Kotlin classes - use reflection to avoid compile-time dependency
++      try {
++        Class<?> materialDatePickerClass = Class.forName("com.reactcommunity.rndatetimepicker.MaterialDatePickerModule");
++        return (NativeModule) materialDatePickerClass.getConstructor(ReactApplicationContext.class).newInstance(reactContext);
++      } catch (Exception e) {
++        return null;
++      }
++    } else if (name.equals("RNCMaterialTimePicker")) {
++      try {
++        Class<?> materialTimePickerClass = Class.forName("com.reactcommunity.rndatetimepicker.MaterialTimePickerModule");
++        return (NativeModule) materialTimePickerClass.getConstructor(ReactApplicationContext.class).newInstance(reactContext);
++      } catch (Exception e) {
++        return null;
++      }
+     } else {
+       return null;
+     }
+@@ -56,11 +67,12 @@ public class RNDateTimePickerPackage extends TurboReactPackage {
+           false, // isCxxModule
+           isTurboModule // isTurboModule
+         ));
++      // Material picker modules - use string literals since Kotlin companion object constants aren't accessible at compile time
+       moduleInfos.put(
+-        MaterialDatePickerModule.NAME,
++        "RNCMaterialDatePicker",
+         new ReactModuleInfo(
+-          MaterialDatePickerModule.NAME,
+-          MaterialDatePickerModule.NAME,
++          "RNCMaterialDatePicker",
++          "RNCMaterialDatePicker",
+           false, // canOverrideExistingModule
+           false, // needsEagerInit
+           false, // hasConstants
+@@ -68,10 +80,10 @@ public class RNDateTimePickerPackage extends TurboReactPackage {
+           isTurboModule // isTurboModule
+         ));
+       moduleInfos.put(
+-        MaterialTimePickerModule.NAME,
++        "RNCMaterialTimePicker",
+         new ReactModuleInfo(
+-          MaterialTimePickerModule.NAME,
+-          MaterialTimePickerModule.NAME,
++          "RNCMaterialTimePicker",
++          "RNCMaterialTimePicker",
+           false, // canOverrideExistingModule
+           false, // needsEagerInit
+           false, // hasConstants

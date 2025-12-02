@@ -1,0 +1,2288 @@
+// src/systems/tarot/data/localCardData.ts
+/**
+ * Bilingual Tarot card data for Divin8
+ * 
+ * English: TarotAPI.dev (A.E. Waite's Pictorial Key to the Tarot)
+ * Chinese: AI-translated with canonical names from Taiwan Tarot community
+ * 
+ * Last updated: 2025-11-28
+ */
+
+export interface LocalTarotCard {
+  code: string;
+  title: { en: string; zh: string };
+  arcana: 'Major' | 'Minor' | 'Court';
+  suit?: 'Wands' | 'Cups' | 'Swords' | 'Pentacles';
+  filename: string;
+  keywords: string[];
+  astro: string;
+  element: string;
+  upright_meaning: { en: string; zh: string };
+  reversed_meaning: { en: string; zh: string };
+  description?: { en: string; zh: string };
+}
+
+export const LOCAL_RWS_CARDS: LocalTarotCard[] = [
+  {
+    "code": "00",
+    "title": {
+      "en": "The Fool",
+      "zh": "愚者"
+    },
+    "arcana": "Major",
+    "filename": "00_Fool.jpg",
+    "keywords": [
+      "Innocence",
+      "Beginnings",
+      "Spontaneity"
+    ],
+    "astro": "Uranus",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Folly, mania, extravagance, intoxication, delirium, frenzy, bewrayment.",
+      "zh": "愚昧、狂熱、揮霍、迷醉、狂亂、癲狂、敗露"
+    },
+    "reversed_meaning": {
+      "en": "Negligence, absence, distribution, carelessness, apathy, nullity, vanity.",
+      "zh": "疏忽、缺乏、渙散、粗心、冷漠、虛無、虛妄"
+    },
+    "description": {
+      "en": "With light step, as if earth and its trammels had little power to restrain him, a young man in gorgeous vestments pauses at the brink of a precipice among the great heights of the world; he surveys the blue distance before him-its expanse of sky rather than the prospect below. His act of eager walking is still indicated, though he is stationary at the given moment; his dog is still bounding. The edge which opens on the depth has no terror; it is as if angels were waiting to uphold him, if it came about that he leaped from the height. His countenance is full of intelligence and expectant dream. He has a rose in one hand and in the other a costly wand, from which depends over his right shoulder a wallet curiously embroidered. He is a prince of the other world on his travels through this one-all amidst the morning glory, in the keen air. The sun, which shines behind him, knows whence he came, whither he is going, and how he will return by another path after many days. He is the spirit in search of experience. Many symbols of the Instituted Mysteries are summarized in this card, which reverses, under high warrants, all the confusions that have preceded it.\nIn his Manual of Cartomancy, Grand Orient has a curious suggestion of the office of Mystic Fool, as apart of his process in higher divination; but it might call for more than ordinary gifts to put it into operation. We shall see how the card fares according to the common arts of fortune-telling, and it will be an example, to those who can discern, of the fact, otherwise so evident, that the Trumps Major had no place originally in the arts of psychic gambling, when cards are used as the counters and pretexts. Of the circumstances under which this art arose we know, however, very little. The conventional explanations say that the Fool signifies the flesh, the sensitive life, and by a peculiar satire its subsidiary name was at one time the alchemist, as depicting folly at the most insensate stage.",
+      "zh": "腳步輕盈，彷彿塵世的羈絆與束縛對他毫無限制，一位身著華麗服飾的年輕男子佇立於世界高峰的懸崖峭壁之畔；他凝視眼前湛藍的遠方——那是無垠的天空，而非腳下的景緻。儘管他此刻駐足，其躍躍欲試的姿態卻依然清晰可見；他的忠犬依然活蹦亂跳。眼前深邃的懸崖對他而言毫無懼色；彷彿有天使在等候著，一旦他從高處躍下，便會將他托起。他的臉龐充滿智慧與對未來的憧憬。他一手持著玫瑰，另一手握著一支珍貴的魔杖，一個精緻刺繡的錢包從魔杖上懸掛，垂在他的右肩。他是異世界的王子，正在此世間遊歷，在晨光的輝映中，呼吸著清冽的空氣。照耀在他身後的太陽，知曉他從何而來，將往何處去，以及多日之後他將如何循另一條路徑歸返。他是尋求體驗的靈魂。此牌彙聚了諸多神聖奧秘的象徵，並在至高無上的法則之下，逆轉了一切先前的困惑。\n\n在《占卜手冊》中，「大東方」對於「神祕愚者」的角色有著獨特的見解，將其視為高等占卜過程的一部分；然而要將此付諸實踐，可能需要超凡的天賦。我們將探討此牌在普通常見的占卜之術中呈現的意涵；對於那些具備洞察力的人來說，這將證明一個顯而易見的事實：當紙牌被用作籌碼和藉口時，大阿爾克那牌最初並未用於心靈賭局的藝術之中。然而，對於這項藝術是如何起源的，我們卻知之甚少。傳統的解釋認為，「愚者」象徵著肉體與感官生活，而透過一種奇特的諷刺，它曾有一個副名叫做「鍊金術士」，藉此描繪最為愚昧的境地。"
+    }
+  },
+  {
+    "code": "01",
+    "title": {
+      "en": "The Magician",
+      "zh": "魔術師"
+    },
+    "arcana": "Major",
+    "filename": "01_Magician.jpg",
+    "keywords": [
+      "Power",
+      "Skill",
+      "Concentration"
+    ],
+    "astro": "Mercury",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Skill, diplomacy, address, subtlety; sickness, pain, loss, disaster, snares of enemies; self-confidence, will; the Querent, if male.",
+      "zh": "技巧、圓融、應對得體、細膩；疾病、痛苦、損失、災禍、遭小人陷害；自信、意志力；問卜者（若為男性）。"
+    },
+    "reversed_meaning": {
+      "en": "Physician, Magus, mental disease, disgrace, disquiet.",
+      "zh": "庸醫，詭詐，心靈病苦，恥辱，心神不寧"
+    },
+    "description": {
+      "en": "A youthful figure in the robe of a magician, having the countenance of divine Apollo, with smile of confidence and shining eyes. Above his head is the mysterious sign of the Holy Spirit, the sign of life, like an endless cord, forming the figure 8 in a horizontal position . About his waist is a serpent-cincture, the serpent appearing to devour its own tail. This is familiar to most as a conventional symbol of eternity, but here it indicates more especially the eternity of attainment in the spirit. In the Magician's right hand is a wand raised towards heaven, while the left hand is pointing to the earth. This dual sign is known in very high grades of the Instituted Mysteries; it shews the descent of grace, virtue and light, drawn from things above and derived to things below. The suggestion throughout is therefore the possession and communication of the Powers and Gifts of the Spirit. On the table in front of the Magician are the symbols of the four Tarot suits, signifying the elements of natural life, which lie like counters before the adept, and he adapts them as he wills. Beneath are roses and lilies, the flos campi and lilium convallium, changed into garden flowers, to shew the culture of aspiration. This card signifies the divine motive in man, reflecting God, the will in the liberation of its union with that which is above. It is also the unity of individual being on all planes, and in a very high sense it is thought, in the fixation thereof. With further reference to what I have called the sign of life and its connexion with the number 8, it may be remembered that Christian Gnosticism speaks of rebirth in Christ as a change \"unto the Ogdoad.\" The mystic number is termed Jerusalem above, the Land flowing with Milk and Honey, the Holy Spirit and the Land of the Lord. According to Martinism, 8 is the number of Christ.",
+      "zh": "一位身穿魔法師長袍的年輕人，面容如神聖的阿波羅般，帶著自信的笑容和炯炯有神的雙眼。在他的頭頂上方，是聖靈的奧秘記號，生命的象徵，形如一條無盡的繩索，橫向呈現無限符號 (∞)。他的腰間繫著一條蛇形腰帶，銜尾蛇似在吞噬自己的尾巴。對大多數人而言，這是一個永恆的傳統象徵，但在這裡，它更特別地指出靈性成就的永恆。\n\n魔法師的右手高舉魔杖指向天堂，而左手指向大地。這種雙向手勢在高級秘傳學會的極高層級中廣為人知；它展現了恩典、德行與光明的降臨，源自高天並傳導至凡塵。因此，貫穿始終的寓意便是掌握並傳遞聖靈的力量與恩賜。\n\n魔法師前方的桌上擺放著塔羅牌四種牌組的象徵，代表著自然生命的元素，它們如同籌碼般擺放在這位奧秘行者面前，他能隨心所欲地運用。桌下是玫瑰與百合，已轉化為園藝花卉，象徵著抱負的涵養。這張牌象徵著人類內在的神性動機，反映著神，是意志在與至高者合一時獲得的解放。它也是個體存在於所有層面上的合一，從極高的意義而言，它是思想的凝定。\n\n進一步參考我所稱的生命記號及其與數字8的連結，或許可以回憶起基督教靈知主義將在基督裡的重生稱為一種「進入八重界」的轉變。這個神秘數字被稱為「天上的耶路撒冷」、「流著奶與蜜之地」、「聖靈」以及「主之地」。根據馬丁主義，8是基督的數字。"
+    }
+  },
+  {
+    "code": "02",
+    "title": {
+      "en": "The High Priestess",
+      "zh": "女祭司"
+    },
+    "arcana": "Major",
+    "filename": "02_High_Priestess.jpg",
+    "keywords": [
+      "Intuition",
+      "Mystery",
+      "Subconscious"
+    ],
+    "astro": "Moon",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Secrets, mystery, the future as yet unrevealed; the woman who interests the Querent, if male; the Querent herself, if female; silence, tenacity; mystery, wisdom, science.",
+      "zh": "秘密、奧秘、尚未揭露的未來；若問卜者為男性，則代表他所關注的女性；若問卜者為女性，則代表問卜者本身；沉默、堅毅；奧秘、智慧、學識。"
+    },
+    "reversed_meaning": {
+      "en": "Passion, moral or physical ardour, conceit, surface knowledge.",
+      "zh": "過度激情、道德或肉體的狂熱、自大、膚淺的認知。"
+    },
+    "description": {
+      "en": "She has the lunar crescent at her feet, a horned diadem on her head, with a globe in the middle place, and a large solar cross on her breast. The scroll in her hands is inscribed with the word Tora, signifying the Greater Law, the Secret Law and the second sense of the Word. It is partly covered by her mantle, to shew that some things are implied and some spoken. She is seated between the white and black pillars--J. and B.--of the mystic Temple, and the veil of the Temple is behind her: it is embroidered with palms and pomegranates. The vestments are flowing and gauzy, and the mantle suggests light--a shimmering radiance. She has been called occult Science on the threshold of the Sanctuary of Isis, but she is really the Secret Church, the House which is of God and man. She represents also the Second Marriage of the Prince who is no longer of this world; she is the spiritual Bride and Mother, the daughter of the stars and the Higher Garden of Eden. She is, in fine, the Queen of the borrowed light, but this is the light of all. She is the Moon nourished by the milk of the Supernal Mother.\nIn a manner, she is also the Supernal Mother herself--that is to say, she is the bright reflection. It is in this sense of reflection that her truest and highest name in bolism is Shekinah--the co-habiting glory. According to Kabalism, there is a Shekinah both above and below. In the superior world it is called Binah, the Supernal Understanding which reflects to the emanations that are beneath. In the lower world it is MaIkuth--that world being, for this purpose, understood as a blessed Kingdom that with which it is made blessed being the Indwelling Glory. Mystically speaking, the Shekinah is the Spiritual Bride of the just man, and when he reads the Law she gives the Divine meaning. There are some respects in which this card is the highest and holiest of the Greater Arcana.",
+      "zh": "她腳踏弦月，頭戴雙角冠，冠飾中央嵌著一顆寶珠，胸前佩戴著巨大的太陽十字。她手中所持的書卷刻有「妥拉」（Tora）一詞，象徵著至高法則、奧秘法則以及「聖言」的第二層涵義。書卷一部分被她的斗篷遮蓋，寓意著有些事物是意會的，有些則是言明的。\n\n她坐落於神秘殿堂的黑白雙柱——J. 與 B. 之間，殿堂的帷幕在她身後，上面繡有棕櫚葉和石榴。她的法袍輕柔飄逸，斗篷散發著光芒，閃耀著微光。她曾被稱為伊西斯聖殿門檻上的奧秘科學，但她實質上是秘密教會，一個神與人共存的殿堂。她也象徵著超脫塵世的王子之第二次結合；她是靈性新娘與母親，眾星之女以及更高層次的伊甸園。總之，她是借光之女王，但這光芒卻屬於萬物。她是飲用至高母性之乳而滋養的月亮。\n\n在某種意義上，她也是至高母性本身——換言之，她是光輝的映照。正是在這種映照的意義上，她在象徵學中最真實且崇高的名字是「舍吉拿」（Shekinah）——即「臨在的榮光」。根據卡巴拉（猶太神秘學）的說法，舍吉拿在上層世界和下層世界皆有存在。在上層世界中，她被稱為「比納」（Binah），意指至高理解，將其光輝映照給下方的流溢體。在下層世界中，她則被稱為「馬爾庫特」（Malkuth）——在此意義上，此世界被理解為一個受祝福的王國，而使其蒙受祝福的，正是「臨在的榮光」。從神秘學角度而言，舍吉那是正義之人的靈性新娘，當他研讀律法時，她便賦予其神聖的意義。在某些方面上，這張牌是大阿爾克那中最至高且神聖的。"
+    }
+  },
+  {
+    "code": "03",
+    "title": {
+      "en": "The Empress",
+      "zh": "皇后"
+    },
+    "arcana": "Major",
+    "filename": "03_Empress.jpg",
+    "keywords": [
+      "Fertility",
+      "Nurturing",
+      "Abundance"
+    ],
+    "astro": "Venus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Fruitfulness, action, initiative, length of days; the unknown, clandestine; also difficulty, doubt, ignorance.",
+      "zh": "豐盛、行動、主動、歲月綿長；未知、隱匿之事；亦代表困難、疑惑與蒙昧。"
+    },
+    "reversed_meaning": {
+      "en": "Light, truth, the unravelling of involved matters, public rejoicings; according to another reading, vacillation.",
+      "zh": "光、真相大白、糾葛釐清、舉眾歡騰；亦有解讀為優柔寡斷。"
+    },
+    "description": {
+      "en": "A stately figure, seated, having rich vestments and royal aspect, as of a daughter of heaven and earth. Her diadem is of twelve stars, gathered in a cluster. The symbol of Venus is on the shield which rests near her. A field of corn is ripening in front of her, and beyond there is a fall of water. The sceptre which she bears is surmounted by the globe of this world. She is the inferior Garden of Eden, the Earthly Paradise, all that is symbolized by the visible house of man. She is not Regina coeli, but she is still refugium peccatorum, the fruitful mother of thousands. There are also certain aspects in which she has been correctly described as desire and the wings thereof, as the woman clothed with the sun, as Gloria Mundi and the veil of the Sanctum Sanctorum; but she is not, I may add, the soul that has attained wings, unless all the symbolism is counted up another and unusual way. She is above all things universal fecundity and the outer sense of the Word. This is obvious, because there is no direct message which has been given to man like that which is borne by woman; but she does not herself carry its interpretation.\nIn another order of ideas, the card of the Empress signifies the door or gate by which an entrance is obtained into this life, as into the Garden of Venus; and then the way which leads out therefrom, into that which is beyond, is the secret known to the High Priestess: it is communicated by her to the elect. Most old attributions of this card are completely wrong on the symbolism--as, for example, its identification with the Word, Divine Nature, the Triad, and so forth.",
+      "zh": "一位姿態莊嚴的女性，安然坐著，身著華麗長袍，顯現王者風範，猶如天地孕育之女。她的冠冕由十二顆繁星簇擁而成。金星符號刻在其身旁倚靠的盾牌上。前方一片金黃玉米田，作物正值豐收，遠處有瀑布傾瀉而下。她手持的權杖頂端，飾以世界之球。她是塵世的伊甸園，人間天堂，象徵著人類可見的一切居所與存在。她並非「天堂之后」（Regina Coeli），卻是「罪人庇護所」（Refugium Peccatorum），亦是孕育千萬生命的豐饒之母。在某些詮釋中，她被視為「慾望及其羽翼」、身披烈日之女、「世俗榮耀」（Gloria Mundi）與「至聖所之幔」（Sanctum Sanctorum之幔）；但我必須補充，她並非已然展翅的靈魂，除非所有的象徵意義皆以另一種非比尋常的方式被解讀。她超越萬物，代表著宇宙的豐產與「道」的外顯意義。這點不言而喻，因為沒有任何直接的訊息能像由女性所承載的那樣傳遞給人類；然而她本身並不承載其解釋。\n\n從另一個層面來看，皇后牌象徵著通往此生的大門，如同進入金星之園；而引領人脫離此生，通往彼端的道路，則是女祭司所知曉的秘密：並由她將此秘密傳授給被選中的人。關於這張牌多數的舊有詮釋，在象徵意義上是全然錯誤的——例如將其等同於「道」、神聖本質、三位一體等等。"
+    }
+  },
+  {
+    "code": "04",
+    "title": {
+      "en": "The Emperor",
+      "zh": "皇帝"
+    },
+    "arcana": "Major",
+    "filename": "04_Emperor.jpg",
+    "keywords": [
+      "Authority",
+      "Structure",
+      "Control"
+    ],
+    "astro": "Aries",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Stability, power, protection, realization; a great person; aid, reason, conviction; also authority and will.",
+      "zh": "穩定、力量、保護、實現；偉大之人；幫助、理性、堅定；亦象徵權威與意志。"
+    },
+    "reversed_meaning": {
+      "en": "Benevolence, compassion, credit; also confusion to enemies, obstruction, immaturity.",
+      "zh": "仁慈、慈悲、信譽；亦指敵我不明、諸事受阻、心智未熟。"
+    },
+    "description": {
+      "en": "He has a form of the Crux ansata for his sceptre and a globe in his left hand. He is a crowned monarch--commanding, stately, seated on a throne, the arms of which axe fronted by rams' heads. He is executive and realization, the power of this world, here clothed with the highest of its natural attributes. He is occasionally represented as seated on a cubic stone, which, however, confuses some of the issues. He is the virile power, to which the Empress responds, and in this sense is he who seeks to remove the Veil of Isis; yet she remains virgo intacta.\nIt should be understood that this card and that of the Empress do not precisely represent the condition of married life, though this state is implied. On the surface, as I have indicated, they stand for mundane royalty, uplifted on the seats of the mighty; but above this there is the suggestion of another presence. They signify also--and the male figure especially--the higher kingship, occupying the intellectual throne. Hereof is the lordship of thought rather than of the animal world. Both personalities, after their own manner, are \"full of strange experience,\" but theirs is not consciously the wisdom which draws from a higher world. The Emperor has been described as (a) will in its embodied form, but this is only one of its applications, and (b) as an expression of virtualities contained in the Absolute Being--but this is fantasy.",
+      "zh": "他的權杖呈安卡十字形，左手握著一個地球儀。他是一位戴冠的君王，威嚴莊重地坐於王座之上，王座的扶手前端飾有公羊頭像。他代表執行與實現，是此世的權力，在此披戴著其最高層次的自然屬性。他偶爾被描繪成坐在一塊立方石上，然而，這會混淆部分議題。他是陽剛之力，女皇牌對其有所回應；在此意義上，他正是尋求揭開伊西斯女神之紗的人，然而她依然保持其處子之身。\n\n應當理解，帝王牌與女皇牌並不精確代表婚姻生活，儘管這種狀態有所暗示。如同我所言，從表象來看，他們代表世俗的王權，高居於權勢者的寶座之上；但在此之上，則暗示著另一種更深層次的存在。他們也象徵著——尤其是男性人物——更高層次的王權，佔據著智慧的寶座。這是思想的統治，而非動物世界的統治。這兩個人格，以各自的方式，都「充滿了奇特的經歷」，但他們所擁有的並非意識層面源自更高世界的智慧。帝王牌曾被描述為：(a) 意志的具體化形式，但這僅是其應用之一；以及 (b) 絕對存在中所蘊含潛能的表達——但這只是幻想。"
+    }
+  },
+  {
+    "code": "05",
+    "title": {
+      "en": "The Hierophant",
+      "zh": "教皇"
+    },
+    "arcana": "Major",
+    "filename": "05_Hierophant.jpg",
+    "keywords": [
+      "Tradition",
+      "Guidance",
+      "Education"
+    ],
+    "astro": "Taurus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Marriage, alliance, captivity, servitude; by another account, mercy and goodness; inspiration; the man to whom the Querent has recourse.",
+      "zh": "婚姻、盟約、禁錮、奴役；\n另有一說，則為慈悲與仁善；\n啟示；\n問卜者所仰賴的男性。"
+    },
+    "reversed_meaning": {
+      "en": "Society, good understanding, concord, overkindness, weakness.",
+      "zh": "社會迎合，模糊理解，表面和諧，過度仁慈，軟弱無力"
+    },
+    "description": {
+      "en": "He wears the triple crown and is seated between two pillars, but they are not those of the Temple which is guarded by the High Priestess. In his left hand he holds a sceptre terminating in the triple cross, and with his right hand he gives the well-known ecclesiastical sign which is called that of esotericism, distinguishing between the manifest and concealed part of doctrine. It is noticeable in this connexion that the High Priestess makes no sign. At his feet are the crossed keys, and two priestly ministers in albs kneel before him. He has been usually called the Pope, which is a particular application of the more general office that he symbolizes. He is the ruling power of external religion, as the High Priestess is the prevailing genius of the esoteric, withdrawn power. The proper meanings of this card have suffered woeful admixture from nearly all hands. Grand Orient says truly that the Hierophant is the power of the keys, exoteric orthodox doctrine, and the outer side of the life which leads to the doctrine; but he is certainly not the prince of occult doctrine, as another commentator has suggested.\nHe is rather the summa totius theologiæ, when it has passed into the utmost rigidity of expression; but he symbolizes also all things that are righteous and sacred on the manifest side. As such, he is the channel of grace belonging to the world of institution as distinct from that of Nature, and he is the leader of salvation for the human race at large. He is the order and the head of the recognized hierarchy, which is the reflection of another and greater hierarchic order; but it may so happen that the pontiff forgets the significance of this his symbolic state and acts as if he contained within his proper measures all that his sign signifies or his symbol seeks to shew forth. He is not, as it has been thought, philosophy-except on the theological side; he is not inspiration; and he is not religion, although he is a mode of its expression.",
+      "zh": "他頭戴三重冠，端坐於兩根柱子之間，然而這些柱子並非女祭司所守護的聖殿之柱。他的左手握著一柄頂端為三重十字的權杖，右手則比出著名的教會手勢，此手勢被稱為「奧秘之手勢」，用以區分教義中顯現與隱藏的部分。值得注意的是，在此關聯中，女祭司並未比出任何手勢。他的腳下擺放著兩把交錯的鑰匙，兩位身穿白祭袍的神職人員跪伏於他面前。他通常被稱為「教宗」，這只是他所象徵的更廣泛職位中的一種特殊應用。他是外在宗教的統治力量，正如女祭司是內在、隱藏力量的主導精神。\n\n此牌的真正意義幾乎已被各方嚴重混淆。大東方組織確切地說，教皇是鑰匙的力量、外顯的正統教義，以及引領人們邁向教義的外在生活面向；但他絕非某些評論者所稱的奧秘教義之王子。他寧可說是當神學的表達趨於極致嚴謹與僵化時的「神學大全」；但他同時也象徵著所有顯現層面上正義與神聖的一切。因此，他是屬於體制而非自然世界的恩典管道，也是全人類救贖的引導者。他是公認聖統制的秩序與首領，此聖統制亦是另一個更宏偉聖統制的反映；然而，教皇有時可能會忘卻其象徵性地位的重要性，行為舉止彷彿他自身便已涵蓋了其手勢所代表或其符號所欲展現的一切。他並非如人們所認為的哲學（除非是在神學層面上）；他不是靈感；他也並非宗教本身，儘管他是宗教的一種表達方式。"
+    }
+  },
+  {
+    "code": "06",
+    "title": {
+      "en": "The Lovers",
+      "zh": "戀人"
+    },
+    "arcana": "Major",
+    "filename": "06_Lovers.jpg",
+    "keywords": [
+      "Union",
+      "Choices",
+      "Partnership"
+    ],
+    "astro": "Gemini",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Attraction, love, beauty, trials overcome.",
+      "zh": "吸引、愛、美、跨越考驗"
+    },
+    "reversed_meaning": {
+      "en": "Failure, foolish designs. Another account speaks of marriage frustrated and contrarieties of all kinds.",
+      "zh": "失敗、不明智的規劃。亦有解讀指婚姻受挫，並預示諸般逆境。"
+    },
+    "description": {
+      "en": "The sun shines in the zenith, and beneath is a great winged figure with arms extended, pouring down influences. In the foreground are two human figures, male and female, unveiled before each other, as if Adam and Eve when they first occupied the paradise of the earthly body. Behind the man is the Tree of Life, bearing twelve fruits, and the Tree of the Knowledge of Good and Evil is behind the woman; the serpent is twining round it. The figures suggest youth, virginity, innocence and love before it is contaminated by gross material desire. This is in all simplicity the card of human love, here exhibited as part of the way, the truth and the life. It replaces, by recourse to first principles, the old card of marriage, which I have described previously, and the later follies which depicted man between vice and virtue. In a very high sense, the card is a mystery of the Covenant and Sabbath.\nThe suggestion in respect of the woman is that she signifies that attraction towards the sensitive life which carries within it the idea of the Fall of Man, but she is rather the working of a Secret Law of Providence than a willing and conscious temptress. It is through her imputed lapse that man shall arise ultimately, and only by her can he complete himself. The card is therefore in its way another intimation concerning the great mystery of womanhood. The old meanings fall to pieces of necessity with the old pictures, but even as interpretations of the latter, some of them were of the order of commonplace and others were false in symbolism.",
+      "zh": "太陽高懸天頂，其下是一位展臂的偉大有翼形象，傾瀉著恩澤與影響。前景有兩個人形，一男一女，彼此坦誠相見，彷彿亞當與夏娃初次入住凡間肉體的樂園。男子身後是結有十二種果實的生命之樹，女子身後則是善惡知識樹，蛇正盤繞其上。這些形象象徵著青春、純潔、天真與尚未被粗鄙物質慾望玷污的愛。這張牌，簡單而言，便是人類之愛的牌卡，在此展現為「道、真理與生命」的一部分。它藉由回歸本源原則，取代了之前我曾描述的舊版婚姻牌，以及後來描繪人類徘徊於惡德與美德之間的愚昧景象。從更高層次的意義來看，這張牌是盟約與安息日的奧秘。\n\n關於女性的寓意，她象徵著對感官生命的吸引，其中蘊含著人類墮落的意念，然而她並非一位有意且自覺的誘惑者，而更是神意奧秘法則的運作。正是透過她被歸因的失落，人類終將得以提升，且唯有經由她，人方能完整自己。因此，這張牌也以其獨特方式，預示著偉大的女性奧秘。舊有的牌義隨著舊圖像的淘汰而必然崩解，但即使是作為對舊圖像的詮釋，其中一些也流於平庸，另一些則在象徵上有所謬誤。"
+    }
+  },
+  {
+    "code": "07",
+    "title": {
+      "en": "The Chariot",
+      "zh": "戰車"
+    },
+    "arcana": "Major",
+    "filename": "07_Chariot.jpg",
+    "keywords": [
+      "Victory",
+      "Willpower",
+      "Direction"
+    ],
+    "astro": "Cancer",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Succour, providence also war, triumph, presumption, vengeance, trouble.",
+      "zh": "扶持、天佑；戰爭、勝利、傲慢、復仇、困境。"
+    },
+    "reversed_meaning": {
+      "en": "Riot, quarrel, dispute, litigation, defeat.",
+      "zh": "騷亂、口角、糾紛、訴訟、挫敗"
+    },
+    "description": {
+      "en": "An erect and princely figure carrying a drawn sword and corresponding, broadly speaking, to the traditional description which I have given in the first part. On the shoulders of the victorious hero are supposed to be the Urim and Thummim. He has led captivity captive; he is conquest on all planes--in the mind, in science, in progress, in certain trials of initiation. He has thus replied to the sphinx, and it is on this account that I have accepted the variation of Éliphas Lévi; two sphinxes thus draw his chariot. He is above all things triumph in the mind.\nIt is to be understood for this reason (a) that the question of the sphinx is concerned with a Mystery of Nature and not of the world of Grace, to which the charioteer could offer no answer; (b) that the planes of his conquest are manifest or external and not within himself; (c) that the liberation which he effects may leave himself in the bondage of the logical understanding; (d) that the tests of initiation through which he has passed in triumph are to be understood physically or rationally; and (e) that if he came to the pillars of that Temple between which the High Priestess is seated, he could not open the scroll called Tora, nor if she questioned him could he answer. He is not hereditary royalty and he is not priesthood.",
+      "zh": "此牌描述了一位姿態挺拔、氣宇軒昂的王者形象，手持出鞘之劍，廣義上與我在第一部分所闡述的傳統描述相符。據說，這位凱旋英雄的雙肩上佩戴著烏陵與土明。他已將禁錮化為臣服；他在所有層面上都取得了勝利——無論是心智、科學、進步，還是在某些入門考驗中。他因此回應了斯芬克斯的謎題，正因如此，我接受了伊利亞‧李維的變體說法：兩隻斯芬克斯拉著他的戰車。最重要的是，他代表著心智上的凱旋。\n\n基於以下原因，我們必須理解：\n(a) 斯芬克斯的問題關乎「自然之奧秘」，而非「恩典世界」，而對於後者，這位戰車御者則無法給出任何答案；\n(b) 他的征服層面是顯化或外在的，而非內在的；\n(c) 他所實現的解放，可能會讓他自己仍受限於「邏輯理解」的束縛；\n(d) 他所成功通過的入門考驗，應從肉體或理性層面來理解；\n(e) 如果他來到女祭司所坐的聖殿雙柱之間，他將無法開啟那卷被稱為「妥拉」的卷軸，即使女祭司向他提問，他也無法回答。\n他既非世襲的王權，也非神職人員。"
+    }
+  },
+  {
+    "code": "08",
+    "title": {
+      "en": "Strength",
+      "zh": "力量"
+    },
+    "arcana": "Major",
+    "filename": "08_Strength.jpg",
+    "keywords": [
+      "Courage",
+      "Patience",
+      "Compassion"
+    ],
+    "astro": "Leo",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Strength represents Courage, Patience, Compassion.",
+      "zh": "力量象徵著勇氣、耐心與慈悲。"
+    },
+    "reversed_meaning": {
+      "en": "When reversed, Strength indicates challenges.",
+      "zh": "逆位的力量牌，暗示著挑戰。"
+    },
+    "description": {
+      "en": "A woman, over whose head there broods the same symbol of life which we have seen in the card of the Magician, is closing the jaws of a lion. The only point in which this card differs from the conventional presentations is that the lion is being tamed, not by force, but by the woman's gentle touch. The card signifies, therefore, strength, but strength in its highest form. It is strength of the spirit, not of the body. The woman's calm demeanor and the lion's submission suggest that true strength comes from within, through patience, compassion, and self-mastery. The infinity symbol above her head represents the infinite potential of the human spirit when it is in harmony with the divine will. This is the strength that overcomes all obstacles not by force, but by understanding and love.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "09",
+    "title": {
+      "en": "The Hermit",
+      "zh": "隱者"
+    },
+    "arcana": "Major",
+    "filename": "09_Hermit.jpg",
+    "keywords": [
+      "Introspection",
+      "Solitude",
+      "Guidance"
+    ],
+    "astro": "Virgo",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Prudence, circumspection; also and especially treason, dissimulation, roguery, corruption.",
+      "zh": "謹慎、審慎；然亦尤其可能預示著背叛、虛偽、詭詐與墮落。"
+    },
+    "reversed_meaning": {
+      "en": "Concealment, disguise, policy, fear, unreasoned caution.",
+      "zh": "隱瞞、偽裝、心機、恐懼、瞻前顧後"
+    },
+    "description": {
+      "en": "The variation from the conventional models in this card is only that the lamp is not enveloped partially in the mantle of its bearer, who blends the idea of the Ancient of Days with the Light of the World It is a star which shines in the lantern. I have said that this is a card of attainment, and to extend this conception the figure is seen holding up his beacon on an eminence. Therefore the Hermit is not, as Court de Gebelin explained, a wise man in search of truth and justice; nor is he, as a later explanation proposes, an especial example of experience. His beacon intimates that \"where I am, you also may be.\"\nIt is further a card which is understood quite incorrectly when it is connected with the idea of occult isolation, as the protection of personal magnetism against admixture. This is one of the frivolous renderings which we owe to Éliphas Lévi. It has been adopted by the French Order of Martinism and some of us have heard a great deal of the Silent and Unknown Philosophy enveloped by his mantle from the knowledge of the profane. In true Martinism, the significance of the term Philosophe inconnu was of another order. It did not refer to the intended concealment of the Instituted Mysteries, much less of their substitutes, but--like the card itself--to the truth that the Divine Mysteries secure their own protection from those who are unprepared.",
+      "zh": "這張牌與傳統圖像的差異，僅在於持燈者的斗篷並未部分遮蔽那盞燈，他融合了「亘古常在者」與「世界之光」的理念。燈籠中閃耀的是一顆星辰。我曾指出，這是一張象徵「領悟」的牌卡，為闡明此概念，牌中人物被描繪為在高處舉起他的信標。因此，隱者並非如庫爾·德·傑伯林所詮釋的，是一位尋求真理與正義的智者；也非如後世解釋所主張的，是經驗的特殊典範。他的信標暗示著：「我所處之境，你亦可抵達。」\n\n再者，若將此牌與「隱秘隔離」（即以保護個人磁場免於混雜）的觀念連結，那便是完全的誤讀。這種輕浮的解讀，乃是源於伊利法斯·李維。法國馬丁主義團體曾採納此說法，而我們當中有些人也曾聽聞不少關於「沉默而未知哲學」的論述，據稱此哲學受到其斗篷掩護，不為凡夫俗子所知。然而在真正的馬丁主義中，「無名哲學家」（Philosophe inconnu）一詞的意義，則屬於另一層次。它並非指刻意隱藏那些「既定奧秘」（Instituted Mysteries），更遑論其替代品；而是——如同牌本身所揭示的——神聖奧秘會自行保護自身，免於那些尚未準備好的人們觸及。"
+    }
+  },
+  {
+    "code": "10",
+    "title": {
+      "en": "Wheel of Fortune",
+      "zh": "命運之輪"
+    },
+    "arcana": "Major",
+    "filename": "10_Wheel_of_Fortune.jpg",
+    "keywords": [
+      "Change",
+      "Cycles",
+      "Destiny"
+    ],
+    "astro": "Jupiter",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Destiny, fortune, success, elevation, luck, felicity.",
+      "zh": "命運、福澤、成功、昇華、吉運、福樂"
+    },
+    "reversed_meaning": {
+      "en": "Increase, abundance, superfluity.",
+      "zh": "增長、豐盛、氾濫"
+    },
+    "description": {
+      "en": "In this symbol I have again followed the reconstruction of Éliphas Lévi, who has furnished several variants. It is legitimate--as I have intimated--to use Egyptian symbolism when this serves our purpose, provided that no theory of origin is implied therein. I have, however, presented Typhon in his serpent form. The symbolism is, of course, not exclusively Egyptian, as the four Living Creatures of Ezekiel occupy the angles of the card, and the wheel itself follows other indications of Lévi in respect of Ezekiel's vision, as illustrative of the particular Tarot Key. With the French occultist, and in the design itself, the symbolic picture stands for the perpetual motion of a fluidic universe and for the flux of human life. The Sphinx is the equilibrium therein. The transliteration of Taro as Rota is inscribed on the wheel, counterchanged with the letters of the Divine Name--to shew that Providence is imphed through all. But this is the Divine intention within, and the similar intention without is exemplified by the four Living Creatures. Sometimes the sphinx is represented couchant on a pedestal above, which defrauds the symbolism by stultifying the essential idea of stability amidst movement.\nBehind the general notion expressed in the symbol there lies the denial of chance and the fatality which is implied therein. It may be added that, from the days of Lévi onward, the occult explanations of this card are--even for occultism itself--of a singularly fatuous kind. It has been said to mean principle, fecundity, virile honour, ruling authority, etc. The findings of common fortune-telling are better than this on their own plane.",
+      "zh": "在此符號中，我再次遵循了伊利法斯．李維的重構，他提供了數種變體。正如我先前所提示的，當埃及象徵體系有助於我們的目的時，採用它是恰當的，但前提是不暗示任何關於其起源的理論。然而，我將提豐呈現為他的蛇形。當然，其象徵意義不僅限於埃及，因為以西結書中的四活物佔據了牌卡的四個角落，而輪子本身也遵循了李維針對以西結異象的其他指示，以闡明此特定塔羅主牌的意義。\n\n根據這位法國奧祕學家，並且在設計本身上，這個象徵性的圖像代表著流動不息的宇宙的永恆運行，以及生命世事的流轉。斯芬克斯是其中的平衡點。塔羅被轉寫為 Rota，銘刻在輪子上，與神聖之名的字母交錯其間，旨在揭示神意貫穿萬事萬物。但這是內在的神聖旨意，而外在的相同旨意則由四活物所體現。有些版本中，斯芬克斯被描繪成安臥於上方的基座之上，這損害了其象徵意義，因為它削弱了「動中求靜」的核心理念。\n\n在此符號所蘊含的普遍概念背後，隱藏著對偶然性的否定，以及其中暗示的宿命論。值得一提的是，自李維時代以降，這張牌的奧祕詮釋，即使對奧祕學本身而言，也顯得異常荒謬。有人說它代表著根本原則、豐饒、陽剛榮譽、執政權威等等。在它們各自的層面上，一般占卜的結果都比這些說法要好。"
+    }
+  },
+  {
+    "code": "11",
+    "title": {
+      "en": "Justice",
+      "zh": "正義"
+    },
+    "arcana": "Major",
+    "filename": "11_Justice.jpg",
+    "keywords": [
+      "Fairness",
+      "Law",
+      "Truth"
+    ],
+    "astro": "Libra",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Equity, rightness, probity, executive; triumph of the deserving side in law.",
+      "zh": "公平、正義、廉正、果決；法理昭彰，應得者凱旋。"
+    },
+    "reversed_meaning": {
+      "en": "Law in all its departments, legal complications, bigotry, bias, excessive severity.",
+      "zh": "律法各向之困境、法律糾葛、偏執、偏見、過度嚴苛。"
+    },
+    "description": {
+      "en": "As this card follows the traditional symbolism and carries above all its obvious meanings, there is little to say regarding it outside the few considerations collected in the first part, to which the reader is referred.\nIt will be seen, however, that the figure is seated between pillars, like the High Priestess, and on this account it seems desirable to indicate that the moral principle which deals unto every man according to his works--while, of course, it is in strict analogy with higher things;--differs in its essence from the spiritual justice which is involved in the idea of election. The latter belongs to a mysterious order of Providence, in virtue of which it is possible for certain men to conceive the idea of dedication to the highest things. The operation of this is like the breathing of the Spirit where it wills, and we have no canon of criticism or ground of explanation concerning it. It is analogous to the possession of the fairy gifts and the high gifts and the gracious gifts of the poet: we have them or have not, and their presence is as much a mystery as their absence. The law of Justice is not however involved by either alternative. In conclusion, the pillars of Justice open into one world and the pillars of the High Priestess into another.",
+      "zh": "鑒於此牌遵循傳統象徵，且其主要涵義不言而喻，故除了讀者可參閱前文所述之若干考量外，關於此牌並無太多額外論述的必要。然而，我們將會發現，牌中人物如同女祭司般端坐於兩根柱子之間。因此，有必要闡明：那依循個人作為而施行的道德原則——儘管它在更高層次上具有嚴格的類比性——其本質與「揀選」概念所蘊含的靈性公義截然不同。後者歸於一種奧秘的攝理秩序，藉此，某些人方能領會獻身於至高理念的可能。其運作如同聖靈隨己意吹拂一般，我們對此沒有任何批判的準則或解釋的基礎。此類情況猶如詩人所擁有之仙靈賜予、崇高天賦及優雅才華：我們或得或無，而其存在與否，皆同樣奧秘難解。然而，公義法則卻不涉於此二者。總之，公義之柱通往一個世界，而女祭司之柱則通往另一個世界。"
+    }
+  },
+  {
+    "code": "12",
+    "title": {
+      "en": "The Hanged Man",
+      "zh": "倒吊人"
+    },
+    "arcana": "Major",
+    "filename": "12_Hanged_Man.jpg",
+    "keywords": [
+      "Sacrifice",
+      "New perspective",
+      "Release"
+    ],
+    "astro": "Neptune",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Wisdom, circumspection, discernment, trials, sacrifice, intuition, divination, prophecy.",
+      "zh": "智慧、審慎、洞察、考驗、犧牲、直覺、占卜、預言"
+    },
+    "reversed_meaning": {
+      "en": "Selfishness, the crowd, body politic.",
+      "zh": "自私、群眾、政治體"
+    },
+    "description": {
+      "en": "The gallows from which he is suspended forms a Tau cross, while the figure--from the position of the legs--forms a fylfot cross. There is a nimbus about the head of the seeming martyr. It should be noted (1) that the tree of sacrifice is living wood, with leaves thereon; (2) that the face expresses deep entrancement, not suffering; (3) that the figure, as a whole, suggests life in suspension, but life and not death. It is a card of profound significance, but all the significance is veiled. One of his editors suggests that Éliphas Lévi did not know the meaning, which is unquestionable nor did the editor himself. It has been called falsely a card of martyrdom, a card a of prudence, a card of the Great Work, a card of duty; but we may exhaust all published interpretations and find only vanity. I will say very simply on my own part that it expresses the relation, in one of its aspects, between the Divine and the Universe.\nHe who can understand that the story of his higher nature is imbedded in this symbolism will receive intimations concerning a great awakening that is possible, and will know that after the sacred Mystery of Death there is a glorious Mystery of Resurrection.",
+      "zh": "他被懸掛的絞架形成一個Τ形十字架，而整個人物——從腿部的姿勢來看——則形成一個卍字形十字。這位看似殉道者的頭部環繞著光環。值得注意的是：(1) 獻祭的樹是活木，枝葉繁茂；(2) 其面部表情展現的是深層的入神，而非痛苦；(3) 整體而言，這人物暗示著「懸而未決的生命」，是生命而非死亡。這是一張涵義深邃的牌，然其所有涵義皆被隱匿。他的一位編輯曾暗示，伊利發斯·列維並不知其真正涵義，這點無可置疑，那位編輯本人亦是如此。它曾被錯誤地稱為殉道牌、審慎牌、偉大工作牌、職責牌；然而，我們閱盡所有已發表的詮釋，卻只會發現其空虛。我個人將非常簡單地說，它在某一層面上表達了神性與宇宙之間的關係。\n凡能理解其更高自我（或「神性本質」）的故事寓於此象徵符號之中者，將會接收到關於一次偉大覺醒的可能性之啟示，並將知曉，在神聖的死亡奧秘之後，存在著一個榮耀的復活奧秘。"
+    }
+  },
+  {
+    "code": "13",
+    "title": {
+      "en": "Death",
+      "zh": "死神"
+    },
+    "arcana": "Major",
+    "filename": "13_Death.jpg",
+    "keywords": [
+      "Endings",
+      "Transformation",
+      "Transition"
+    ],
+    "astro": "Scorpio",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "End, mortality, destruction, corruption also, for a man, the loss of a benefactor for a woman, many contrarieties; for a maid, failure of marriage projects.",
+      "zh": "終結、死亡、毀滅、腐敗。對於男性，暗示著貴人殞落或失去庇佑；對於女性，則諸事不順，多有拂逆；對於未婚女子，更預示著婚事難成，姻緣受阻。"
+    },
+    "reversed_meaning": {
+      "en": "Inertia, sleep, lethargy, petrifaction, somnambulism; hope destroyed.",
+      "zh": "停滯、沉睡、萎靡、石化、夢遊；希望破滅。"
+    },
+    "description": {
+      "en": "The veil or mask of life is perpetuated in change, transformation and passage from lower to higher, and this is more fitly represented in the rectified Tarot by one of the apocalyptic visions than by the crude notion of the reaping skeleton. Behind it lies the whole world of ascent in the spirit. The mysterious horseman moves slowly, bearing a black banner emblazoned with the Mystic Rose, which signifies life. Between two pillars on the verge of the horizon there shines the sun of immortality. The horseman carries no visible weapon, but king and child and maiden fall before him, while a prelate with clasped hands awaits his end.\nThere should be no need to point out that the suggestion of death which I have made in connection with the previous card is, of course, to be understood mystically, but this is not the case in the present instance. The natural transit of man to the next stage of his being either is or may be one form of his progress, but the exotic and almost unknown entrance, while still in this life, into the state of mystical death is a change in the form of consciousness and the passage into a state to which ordinary death is neither the path nor gate. The existing occult explanations of the 13th card are, on the whole, better than usual, rebirth, creation, destination, renewal, and the rest.",
+      "zh": "生命的面紗或面具，在變化、轉化與從低層次邁向高層次的歷程中不斷延續；相較於死神骷髏的粗陋概念，這種意象在經修正的塔羅牌中，更適切地透過末世異象之一來呈現。在其背後，蘊藏著靈性昇華的整個世界。神秘的騎士緩緩前行，舉著一面繡有神祕玫瑰的黑旗，那玫瑰象徵著生命。在地平線邊緣的兩根柱子之間，永生之日閃耀著。騎士並未攜帶任何可見的武器，但國王、孩童和少女卻在他面前倒下，而一位雙手合十的教士則等待著他的終結。\n\n無需指出，我在描述前一張牌時提及的死亡暗示，當然應從神祕學角度理解，但在當前這張牌的解讀中則非如此。人類自然過渡到其存在的下一階段，要麼就是，要麼可能是一種進步的形式；然而，那種在仍活著時，奇特且幾乎不為人知的進入神祕死亡的狀態，卻是意識形式的轉變，以及進入一個普通死亡既非其途徑亦非其門徑的境界。現有對於第十三張牌的奧秘解釋，整體而言比平常更為出色，諸如重生、創造、命運、更新等等。"
+    }
+  },
+  {
+    "code": "14",
+    "title": {
+      "en": "Temperance",
+      "zh": "節制"
+    },
+    "arcana": "Major",
+    "filename": "14_Temperance.jpg",
+    "keywords": [
+      "Balance",
+      "Moderation",
+      "Purpose"
+    ],
+    "astro": "Sagittarius",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Economy, moderation, frugality, management, accommodation.",
+      "zh": "經濟、節制、節儉、管理、調和"
+    },
+    "reversed_meaning": {
+      "en": "Things connected with churches, religions, sects, the priesthood, sometimes even the priest who will marry the Querent; also disunion, unfortunate combinations, competing interests.",
+      "zh": "與教會、宗教、宗派及聖職相關聯的事物。有時，它甚至可能指向將為問卜者證婚的神職人員。此牌逆位時，亦象徵著不和、不幸的結合以及利益衝突。"
+    },
+    "description": {
+      "en": "A winged angel, with the sign of the sun upon his forehead and on his breast the square and triangle of the septenary. I speak of him in the masculine sense, but the figure is neither male nor female. It is held to be pouring the essences of life from chalice to chalice. It has one foot upon the earth and one upon waters, thus illustrating the nature of the essences. A direct path goes up to certain heights on the verge of the horizon, and above there is a great light, through which a crown is seen vaguely. Hereof is some part of the Secret of Eternal Life, as it is possible to man in his incarnation. All the conventional emblems are renounced herein.\nSo also are the conventional meanings, which refer to changes in the seasons, perpetual movement of life and even the combination of ideas. It is, moreover, untrue to say that the figure symbolizes the genius of the sun, though it is the analogy of solar light, realized in the third part of our human triplicity. It is called Temperance fantastically, because, when the rule of it obtains in our consciousness, it tempers, combines and harmonises the psychic and material natures. Under that rule we know in our rational part something of whence we came and whither we are going.",
+      "zh": "一位帶翼天使，額上飾有太陽符號，胸口則有七元的方與三角。儘管我用男性稱謂指稱此形體，但它本身既非男性亦非女性。據信它正將生命的精華從一個聖杯傾注到另一個聖杯。它一腳踏在陸地，一腳踏在水上，藉此闡釋這些精華的本質。一條徑直的小徑通往地平線邊緣的某處高點，其上方有巨大的光芒，透過那光芒，一頂王冠隱約可見。這其中蘊含著一部分的永生之秘，那是人類在其此生輪迴中可能達成的。所有傳統的象徵符號都在此被摒棄了。\n\n傳統的解釋亦然，它們指的是季節的變換、生命的永恆流動，甚至是思想的結合。再者，聲稱此形體象徵著太陽的靈性是不實的，儘管它是太陽之光的類比，且在我們人類三元性中的第三部分得以實現。它被玄妙地稱為「節制」，因為當其法則在我們的意識中得以實踐時，它能調和、融合並協調靈性與物質性。在那法則之下，我們的理性得以知曉我們從何而來，又將去往何方。"
+    }
+  },
+  {
+    "code": "15",
+    "title": {
+      "en": "The Devil",
+      "zh": "惡魔"
+    },
+    "arcana": "Major",
+    "filename": "15_Devil.jpg",
+    "keywords": [
+      "Bondage",
+      "Addiction",
+      "Materialism"
+    ],
+    "astro": "Capricorn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Ravage, violence, vehemence, extraordinary efforts, force, fatality; that which is predestined but is not for this reason evil.",
+      "zh": "蹂躪、暴力、猛烈、超乎尋常的努力、強大的力量、宿命；一切命中註定，卻不因此而為惡。"
+    },
+    "reversed_meaning": {
+      "en": "Evil fatality, weakness, pettiness, blindness.",
+      "zh": "邪惡劫數、軟弱、心胸狹窄、盲目"
+    },
+    "description": {
+      "en": "The design is an accommodation, mean or harmony, between several motives mentioned in the first part. The Horned Goat of Mendes, with wings like those of a bat, is standing on an altar. At the pit of the stomach there is the sign of Mercury. The right hand is upraised and extended, being the reverse of that benediction which is given by the Hierophant in the fifth card. In the left hand there is a great flaming torch, inverted towards the earth. A reversed pentagram is on the forehead. There is a ring in front of the altar, from which two chains are carried to the necks of two figures, male and female. These are analogous with those of the fifth card, as if Adam and Eve after the Fall. Hereof is the chain and fatality of the material life.\nThe figures are tailed, to signify the animal nature, but there is human intelligence in the faces, and he who is exalted above them is not to be their master for ever. Even now, he is also a bondsman, sustained by the evil that is in him and blind to the liberty of service. With more than his usual derision for the arts which he pretended to respect and interpret as a master therein, Éliphas Lévi affirms that the Baphometic figure is occult science and magic. Another commentator says that in the Divine world it signifies predestination, but there is no correspondence in that world with the things which below are of the brute. What it does signify is the Dweller on the Threshold without the Mystical Garden when those are driven forth therefrom who have eaten the forbidden fruit.",
+      "zh": "此設計乃是為協調、折衷或融合前文提及的多種動機。長有蝙蝠般雙翼的曼德斯山羊，矗立於一座祭壇之上。其腹部中央繪有水星符號。右手高舉伸出，與第五張牌「教宗」所施予的祝福恰好相反。左手握著一支巨大的燃燒火炬，火炬倒轉指向大地。額頭上印有倒置的五芒星。祭壇前方設有一圓環，兩條鎖鏈自其延伸而出，分別繫於一男一女兩個人物的頸部。這兩人與第五張牌的人物相互呼應，彷彿是墮落後的亞當與夏娃。這象徵著物質生命的束縛與宿命。\n\n這些人物皆有尾巴，象徵其動物本能，然而臉上卻流露出人類的智慧；而凌駕於他們之上的存在，亦無法永遠成為他們的主宰。即使此刻，他自身亦是一名受束縛者，被其內在的邪惡所支撐，並對「服務的自由」視而不見。埃利法斯·列維（Éliphas Lévi）對其假裝尊重並以大師身份詮釋的藝術，一向懷有異於尋常的嘲諷，在此處他更斷言，巴風特（Baphomet）的形象即為神祕學與魔法。另有評論者指出，在神聖世界中，它象徵著宿命，然而在那個世界裡，它與下方那些屬於野蠻的事物並無對應關係。它真正象徵的，是當那些食用了禁果之人被逐出後，身處神祕花園之外的「門檻守護者」。"
+    }
+  },
+  {
+    "code": "16",
+    "title": {
+      "en": "The Tower",
+      "zh": "高塔"
+    },
+    "arcana": "Major",
+    "filename": "16_Tower.jpg",
+    "keywords": [
+      "Upheaval",
+      "Sudden change",
+      "Revelation"
+    ],
+    "astro": "Mars",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Misery, distress, indigence, adversity, calamity, disgrace, deception, ruin. It is a card in particular of unforeseen catastrophe.",
+      "zh": "悲慘、困頓、貧乏、逆境、劫難、蒙羞、欺瞞、毀滅。此牌尤其預示著一場意料之外的浩劫。"
+    },
+    "reversed_meaning": {
+      "en": "According to one account, the same in a lesser degree also oppression, imprisonment, tyranny.",
+      "zh": "據一種說法，在較輕微的程度上，也可能顯現為壓迫、囚禁與暴政。"
+    },
+    "description": {
+      "en": "Occult explanations attached to this card are meagre and mostly disconcerting. It is idle to indicate that it depicts min in all its aspects, because it bears this evidence on the surface. It is said further that it contains the first allusion to a material building, but I do not conceive that the Tower is more or less material than the pillars which we have met with in three previous cases. I see nothing to warrant Papus in supposing that it is literally the fall of Adam, but there is more in favour of his alternative--that it signifies the materialization of the spiritual word. The bibliographer Christian imagines that it is the downfall of the mind, seeking to penetrate the mystery of God. I agree rather with Grand Orient that it is the ruin of the House of We, when evil has prevailed therein, and above all that it is the rending of a House of Doctrine. I understand that the reference is, however, to a House of Falsehood. It illustrates also in the most comprehensive way the old truth that \"except the Lord build the house, they labour in vain that build it.\"\nThere is a sense in which the catastrophe is a reflection from the previous card, but not on the side of the symbolism which I have tried to indicate therein. It is more correctly a question of analogy; one is concerned with the fall into the material and animal state, while the other signifies destruction on the intellectual side. The Tower has been spoken of as the chastisement of pride and the intellect overwhelmed in the attempt to penetrate the Mystery of God; but in neither case do these explanations account for the two persons who are the living sufferers. The one is the literal word made void and the other its false interpretation. In yet a deeper sense, it may signify also the end of a dispensation, but there is no possibility here for the consideration of this involved question.",
+      "zh": "關於這張牌的奧義解讀稀少且多數令人不安。無須贅述此牌描繪了人類的方方面面，因為這點已然昭然若揭。據說，此牌首次影射了物質建築，然吾不認為高塔的物質性，會與我們在前三張牌中遇到的柱子有何不同。我未見任何依據可證實帕普斯(Papus)所說，此牌實指亞當的墮落；反倒其另一種說法——象徵著靈性言詞的物質化——更具說服力。書目學家克里斯蒂安(Christian)則設想，這是企圖洞悉神之奧秘的心智的墮落。我較為認同大東方(Grand Orient)的觀點，認為這是當邪惡盛行其間時，吾人殿堂的傾頹，而最重要的是，它代表著教義殿堂的崩毀。然我理解，此處所指乃為虛偽之殿。它也以最全面的方式闡釋了那句古老真理：「若非主所建造，建造者勞力必將徒然。」\n\n在某種意義上，這場災難是前一張牌的映照，但並非從我試圖闡明的前一張牌的象徵層面。更確切地說，這是一個類比的問題；一者關乎墮入物質與動物性狀態，而另一者則象徵著心智層面上的毀滅。高塔曾被視為傲慢的懲罰，以及心智在企圖洞悉神之奧秘時的潰敗；但這兩種解釋皆未能說明，牌中那兩位活生生的受苦者所代表的意義。其中一者是文字本義的虛空化，另一者則是對其錯誤的詮釋。若以更深層的意義而言，它亦可象徵一個時代的終結，然在此處，我們無法深入探討此一複雜議題。"
+    }
+  },
+  {
+    "code": "17",
+    "title": {
+      "en": "The Star",
+      "zh": "星星"
+    },
+    "arcana": "Major",
+    "filename": "17_Star.jpg",
+    "keywords": [
+      "Hope",
+      "Faith",
+      "Renewal"
+    ],
+    "astro": "Aquarius",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Loss, theft, privation, abandonment; another reading says-hope and bright prospects,",
+      "zh": "失去、竊盜、匱乏、遺棄；另一種解讀則認為是希望與光明前景。"
+    },
+    "reversed_meaning": {
+      "en": "Arrogance, haughtiness, impotence.",
+      "zh": "傲慢、自大、力不從心"
+    },
+    "description": {
+      "en": "A great, radiant star of eight rays, surrounded by seven lesser stars--also of eight rays. The female figure in the foreground is entirely naked. Her left knee is on the land and her right foot upon the water. She pours Water of Life from two great ewers, irrigating sea and land. Behind her is rising ground and on the right a shrub or tree, whereon a bird alights. The figure expresses eternal youth and beauty. The star is l'étoile flamboyante, which appears in Masonic symbolism, but has been confused therein. That which the figure communicates to the living scene is the substance of the heavens and the elements. It has been said truly that the mottoes of this card are \"Waters of Life freely\" and \"Gifts of the Spirit.\"\nThe summary of several tawdry explanations says that it is a card of hope. On other planes it has been certified as immortality and interior light. For the majority of prepared minds, the figure will appear as the type of Truth unveiled, glorious in undying beauty, pouring on the waters of the soul some part and measure of her priceless possession. But she is in reality the Great Mother in the Kabalistic Sephira Binah, which is supernal Understanding, who communicates to the Sephiroth that are below in the measure that they can receive her influx.",
+      "zh": "一顆巨大、光芒八射的星辰，周圍環繞著七顆同樣八芒的小星。前景中的女性人物全身赤裸。她左膝跪於陸地，右足輕踏水面。她手持兩只巨壺，傾瀉著生命之水，滋潤著海洋與大地。在她身後是隆起的丘陵，右側有一棵灌木或樹木，其上棲息著一隻鳥。這位人物象徵著永恆的青春與美貌。\n\n這顆星辰即是「烈焰之星」（l'étoile flamboyante），它雖出現於共濟會的象徵符號中，但其意涵在其中卻有所混淆。這人物向這生機盎然的景象所傳遞的，正是天界與元素之本質。確實有此一說，此牌的箴言是「生命活水，自在無礙」與「靈性恩賜」。\n\n綜合一些膚淺的解釋，它被視為一張希望之牌。然而，在更高的維度中，它被證實為不朽與內在光明。對於那些心靈有所準備的人而言，這人物將顯現為真理被揭示的典範，以其不朽之美而光輝耀眼，將她無價珍寶的某些部分與程度，傾注於靈魂之水。然而，她實則為卡巴拉生命之樹中質點「比納」（Binah）——亦即「至高理解」（Supernal Understanding）——的「偉大之母」。她將其影響，依其所能承載的程度，傳達給下方其他質點。"
+    }
+  },
+  {
+    "code": "18",
+    "title": {
+      "en": "The Moon",
+      "zh": "月亮"
+    },
+    "arcana": "Major",
+    "filename": "18_Moon.jpg",
+    "keywords": [
+      "Illusion",
+      "Fear",
+      "Subconscious"
+    ],
+    "astro": "Pisces",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Hidden enemies, danger, calumny, darkness, terror, deception, occult forces, error.",
+      "zh": "潛藏的敵人、危險、讒言、黑暗、恐怖、欺瞞、闇黑力量、迷誤。"
+    },
+    "reversed_meaning": {
+      "en": "Instability, inconstancy, silence, lesser degrees of deception and error.",
+      "zh": "動盪、變化無常、緘默、些微的欺瞞與錯謬。"
+    },
+    "description": {
+      "en": "The distinction between this card and some of the conventional types is that the moon is increasing on what is called the side of mercy, to the right of the observer. It has sixteen chief and sixteen secondary rays. The card represents life of the imagination apart from life of the spirit. The path between the towers is the issue into the unknown. The dog and wolf are the fears of the natural mind in the presence of that place of exit, when there is only reflected light to guide it.\nThe last reference is a key to another form of symbolism. The intellectual light is a reflection and beyond it is the unknown mystery which it cannot shew forth. It illuminates our animal nature, types of which are represented below--the dog, the wolf and that which comes up out of the deeps, the nameless and hideous tendency which is lower than the savage beast. It strives to attain manifestation, symbolized by crawling from the abyss of water to the land, but as a rule it sinks back whence it came. The face of the mind directs a calm gaze upon the unrest below; the dew of thought falls; the message is: Peace, be still; and it may be that there shall come a calm upon the animal nature, while the abyss beneath shall cease from giving up a form.",
+      "zh": "這張牌與一些傳統牌型不同之處在於，月亮在觀者右側，位於所謂的「慈悲之側」處漸盈。它擁有十六道主光及十六道副光。此牌象徵著脫離「靈性生命」的「想像生命」。雙塔之間的道路，是通往未知的出口。狗與狼代表著本能心智在那個出口前所感到的恐懼，此時僅有反射的光線可供引導。\n\n這最後一項指涉，是理解另一種象徵意義的關鍵。智性之光是一種反射，在其之外，是它無法昭示的未知奧秘。它照亮了我們的動物本性，其類型如下所示——狗、狼，以及從深淵中浮現的、比野蠻野獸更低下的、無名而醜陋的傾向。它奮力尋求顯化，以從水之深淵爬向陸地為象徵，但通常它又會沉回原處。心智之顏將平靜的目光投向下方的不安之處；思想的露珠灑落；其訊息是：「平靜，止息」。或許動物本性將因此歸於平靜，而其下的深淵也將不再浮現任何形體。"
+    }
+  },
+  {
+    "code": "19",
+    "title": {
+      "en": "The Sun",
+      "zh": "太陽"
+    },
+    "arcana": "Major",
+    "filename": "19_Sun.jpg",
+    "keywords": [
+      "Joy",
+      "Success",
+      "Vitality"
+    ],
+    "astro": "Sun",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Material happiness, fortunate marriage, contentment.",
+      "zh": "物質富足，美滿婚姻，知足常樂"
+    },
+    "reversed_meaning": {
+      "en": "The same in a lesser sense.",
+      "zh": "其核心意涵不變，然其力量有所減弱。"
+    },
+    "description": {
+      "en": "The naked child mounted on a white horse and displaying a red standard has been mentioned already as the better symbolism connected with this card. It is the destiny of the Supernatural East and the great and holy light which goes before the endless procession of humanity, coming out from the walled garden of the sensitive life and passing on the journey home. The card signifies, therefore, the transit from the manifest light of this world, represented by the glorious sun of earth, to the light of the world to come, which goes before aspiration and is typified by the heart of a child.\nBut the last allusion is again the key to a different form or aspect of the symbolism. The sun is that of consciousness in the spirit - the direct as the antithesis of the reflected light. The characteristic type of humanity has become a little child therein--a child in the sense of simplicity and innocence in the sense of wisdom. In that simplicity, he bears the seal of Nature and of Art; in that innocence, he signifies the restored world. When the self-knowing spirit has dawned in the consciousness above the natural mind, that mind in its renewal leads forth the animal nature in a state of perfect conformity.",
+      "zh": "裸身孩童騎乘白馬、揮舞紅色旗幟，前述已提及其為此牌更佳的象徵意義。這是神祕東方之宿命，亦是引領人類無盡隊伍的偉大聖光，它從感知生命的圍籬花園中走出，踏上歸家之旅。\n\n因此，此牌象徵著從此世顯現之光（以大地榮光之日為代表），過渡到引領願望並以赤子之心為典型的來世之光。\n\n然而，這最後的意象，再次揭示了此象徵意義的另一種形式或面向。這太陽，是靈性中的意識之光——是直接之光，而非反射之光。在此之中，人類的典型已轉變為赤子——一種在智慧中蘊含樸實與純真的孩童狀態。於此樸實裡，他身負自然與藝術的印記；於此純真裡，他象徵著重生的世界。當自識之靈在超越自然心智的意識中覺醒時，那心智在獲得更新後，將引領動物本性臻於完美和諧。"
+    }
+  },
+  {
+    "code": "20",
+    "title": {
+      "en": "Judgement",
+      "zh": "審判"
+    },
+    "arcana": "Major",
+    "filename": "20_Judgement.jpg",
+    "keywords": [
+      "Rebirth",
+      "Reckoning",
+      "Awakening"
+    ],
+    "astro": "Pluto",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Judgement represents Rebirth, Reckoning, Awakening.",
+      "zh": "審判 代表 重生、因果清算、覺醒。"
+    },
+    "reversed_meaning": {
+      "en": "When reversed, Judgement indicates challenges.",
+      "zh": "逆位時，審判牌預示著考驗。"
+    },
+    "description": {
+      "en": "I have said that this symbol is essentially that of the resurrection and the last judgment. The angel is Gabriel, who is also the angel of the annunciation. The trumpet which he blows is the Last Trump, and the dead are rising from their graves. The card represents the judgment of the world, the final reckoning, and the call to a higher life. The figures rising from their graves represent the awakening of consciousness, the recognition of past actions, and the opportunity for absolution and renewal. This is the moment of truth, when all that has been hidden is revealed, and the soul is called to account for its deeds. It is a card of transformation, of rebirth, and of the realization that every action has consequences, but also that every soul has the opportunity for redemption and a new beginning.",
+      "zh": ""
+    }
+  },
+  {
+    "code": "21",
+    "title": {
+      "en": "The World",
+      "zh": "世界"
+    },
+    "arcana": "Major",
+    "filename": "21_World.jpg",
+    "keywords": [
+      "Completion",
+      "Achievement",
+      "Fulfillment"
+    ],
+    "astro": "Saturn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Assured success, recompense, voyage, route, emigration, flight, change of place.",
+      "zh": "必然成功，應得回報，旅程，途徑，移民，遷徙，居所變動。"
+    },
+    "reversed_meaning": {
+      "en": "Inertia, fixity, stagnation, permanence.",
+      "zh": "膠著、僵固、停滯、一成不變"
+    },
+    "description": {
+      "en": "As this final message of the Major Trumps is unchanged--and indeed unchangeable--in respect of its design, it has been partly described already regarding its deeper sense. It represents also the perfection and end of the Cosmos, the secret which is within it, the rapture of the universe when it understands itself in God. It is further the state of the soul in the consciousness of Divine Vision, reflected from the self-knowing spirit. But these meanings are without prejudice to that which I have said concerning it on the material side.\nIt has more than one message on the macrocosmic side and is, for example, the state of the restored world when the law of manifestation shall have been carried to the highest degree of natural perfection. But it is perhaps more especially a story of the past, referring to that day when all was declared to be good, when the morning stars sang together and all the Sons of God shouted for joy. One of the worst explanations concerning it is that the figure symbolizes the Magus when he has reached the highest degree of initiation; another account says that it represents the absolute, which is ridiculous. The figure has been said to stand for Truth, which is, however, more properly allocated to the seventeenth card. Lastly, it has been called the Crown of the Magi.",
+      "zh": "由於偉大奧秘牌（Major Trumps）這最終的訊息，其設計不曾改變，且確實無法改變，因此關於它更深層的意義已有所描述。它也代表著宇宙的圓滿與終結，其中蘊藏的奧秘，以及宇宙在神性中領悟自身時所感受到的狂喜。它更是靈魂處於神聖視界意識的狀態，由自覺的精神所映照。然而，這些意義並不影響我先前就其物質層面所作的論述。\n\n在宏觀宇宙層面，它蘊含著不止一種訊息，例如，它代表著當顯化法則被推至自然完美的最高境界時，恢復之世界的狀態。但它或許更特別地是一個關於過去的敘述，指的是萬物被宣告為美好的那一日，晨星齊聲歌唱，上帝的眾子歡呼雀躍之時。關於它最糟糕的解釋之一是，圖中的人物象徵著魔法師（Magus）達到最高層次啟蒙時的狀態；另一種說法則稱它代表「絕對」（absolute），這顯得荒謬可笑。該圖據說代表真理，然而，真理更適切地歸屬於第十七張牌。最後，它被稱為「賢者之冠」。"
+    }
+  },
+  {
+    "code": "W01",
+    "title": {
+      "en": "Ace of Wands",
+      "zh": "權杖王牌"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W01_Ace_of_Wands.jpg",
+    "keywords": [
+      "Creation",
+      "Inspiration",
+      "New venture"
+    ],
+    "astro": "Root of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Creation, invention, enterprise, the powers which result in these; principle, beginning, source; birth, family, origin, and in a sense the virility which is behind them; the starting point of enterprises; according to another account, money, fortune, inheritance.",
+      "zh": "創生、發明、事業，以及促成其發生的原動力；原則、初始、本源；誕生、家族、緣起，以及蘊藏於其中的勃勃生機；萬事萬物的肇始之處。在某些詮釋中，此牌亦指涉金錢、財富與傳承。"
+    },
+    "reversed_meaning": {
+      "en": "Fall, decadence, ruin, perdition, to perish also a certain clouded joy.",
+      "zh": "衰頹、沉淪、滅亡，亦有某種蒙塵的喜悅。"
+    },
+    "description": {
+      "en": "A hand issuing from a cloud grasps a stout wand or club.",
+      "zh": "一隻手自雲端伸出，握持著一根粗壯的權杖或棍棒。"
+    }
+  },
+  {
+    "code": "W02",
+    "title": {
+      "en": "Two of Wands",
+      "zh": "權杖二"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W02_Two_of_Wands.jpg",
+    "keywords": [
+      "Planning",
+      "Decisions",
+      "Discovery"
+    ],
+    "astro": "Mars in Aries",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Between the alternative readings there is no marriage possible; on the one hand, riches, fortune, magnificence; on the other, physical suffering, disease, chagrin, sadness, mortification. The design gives one suggestion; here is a lord overlooking his dominion and alternately contemplating a globe; it looks like the malady, the mortification, the sadness of Alexander amidst the grandeur of this world's wealth.",
+      "zh": "這兩種截然不同的解讀之間，是無法並存的；一方面是財富、好運與輝煌；另一方面則是肉體上的痛苦、疾病、懊惱、悲傷與苦惱。牌面設計給出了一個啟示：牌中一位領主俯瞰著他的領地，時而沉思著一個地球儀；這彷彿是亞歷山大大帝，即使身處世俗的萬般榮華富貴之中，卻仍深感病痛、苦惱與悲傷。"
+    },
+    "reversed_meaning": {
+      "en": "Surprise, wonder, enchantment, emotion, trouble, fear.",
+      "zh": "震驚、驚奇、魅惑、情緒、困擾、恐懼"
+    },
+    "description": {
+      "en": "A tall man looks from a battlemented roof over sea and shore; he holds a globe in his right hand, while a staff in his left rests on the battlement; another is fixed in a ring. The Rose and Cross and Lily should be noticed on the left side.",
+      "zh": "一位高大男子從雉堞之上俯瞰海與海岸；他右手握持一顆寶珠，而左手的權杖則倚靠在雉堞上；另一根權杖則固定在一個圓環中。在左側，可見玫瑰十字以及百合花。"
+    }
+  },
+  {
+    "code": "W03",
+    "title": {
+      "en": "Three of Wands",
+      "zh": "權杖三"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W03_Three_of_Wands.jpg",
+    "keywords": [
+      "Expansion",
+      "Foresight",
+      "Enterprise"
+    ],
+    "astro": "Sun in Aries",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "He symbolizes established strength, enterprise, effort, trade, commerce, discovery; those are his ships, bearing his merchandise, which are sailing over the sea. The card also signifies able co-operation in business, as if the successful merchant prince were looking from his side towards yours with a view to help you.",
+      "zh": "他象徵著穩固的實力、創業精神、努力、貿易、商業與探索；那些是他的船隻，載運著他的貨物，正航行於海上。此牌亦預示著卓有成效的商業合作，彷彿那位成功的商業巨擘，正從他的角度望向你，旨在助你一臂之力。"
+    },
+    "reversed_meaning": {
+      "en": "The end of troubles, suspension or cessation of adversity, toil and disappointment.",
+      "zh": "終結困頓，逆境緩解或止息，勞苦與失望亦將消散。"
+    },
+    "description": {
+      "en": "A calm, stately personage, with his back turned, looking from a cliff's edge at ships passing over the sea. Three staves are planted in the ground, and he leans slightly on one of them.",
+      "zh": "一個沉靜莊重的身影，背對著，從懸崖邊緣眺望海面上航行的船隻。地上插著三根權杖，他輕輕倚靠著其中一根。"
+    }
+  },
+  {
+    "code": "W04",
+    "title": {
+      "en": "Four of Wands",
+      "zh": "權杖四"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W04_Four_of_Wands.jpg",
+    "keywords": [
+      "Celebration",
+      "Harmony",
+      "Home"
+    ],
+    "astro": "Venus in Aries",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "They are for once almost on the surface--country life, haven of refuge, a species of domestic harvest-home, repose, concord, harmony, prosperity, peace, and the perfected work of these.",
+      "zh": "這些意涵如今已然浮現於表面，觸手可及——田園生活、安身之所、居家豐收的圓滿、靜謐休憩、和睦和諧、豐盛富足、平和安寧，以及這一切最終臻至的完美境地。"
+    },
+    "reversed_meaning": {
+      "en": "The meaning remains unaltered; it is prosperity, increase, felicity, beauty, embellishment.",
+      "zh": "意義不變；其為豐盛、增益、吉祥、美、妝點。"
+    },
+    "description": {
+      "en": "From the four great staves planted in the foreground there is a great garland suspended; two female figures uplift nosegays; at their side is a bridge over a moat, leading to an old manorial house.",
+      "zh": "前景中，四根宏偉的權杖巍然矗立，其上懸掛著一條巨大的花環；兩位女性人物手捧花束，高高舉起；她們身旁，一座橋樑橫跨護城河，引領至一棟古老的莊園宅邸。"
+    }
+  },
+  {
+    "code": "W05",
+    "title": {
+      "en": "Five of Wands",
+      "zh": "權杖五"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W05_Five_of_Wands.jpg",
+    "keywords": [
+      "Competition",
+      "Conflict",
+      "Struggle"
+    ],
+    "astro": "Saturn in Leo",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Imitation, as, for example, sham fight, but also the strenuous competition and struggle of the search after riches and fortune. In this sense it connects with the battle of life. Hence some attributions say that it is a card of gold, gain, opulence.",
+      "zh": "假象，例如一場虛假的戰役，但也代表追求財富與機運時，所經歷的激烈競爭與艱苦掙扎。就此而言，它與人生的戰役緊密相連。因此，有些詮釋將其歸為象徵黃金、獲利與豐饒之牌。"
+    },
+    "reversed_meaning": {
+      "en": "Litigation, disputes, trickery, contradiction.",
+      "zh": "訴訟、糾紛、欺騙、矛盾"
+    },
+    "description": {
+      "en": "A posse of youths, who are brandishing staves, as if in sport or strife. It is mimic warfare, and hereto correspond the",
+      "zh": "一群少年正揮舞著權杖，彷彿在嬉戲或爭鬥。這是一場模擬的戰鬥，而與此情境相應的，便是"
+    }
+  },
+  {
+    "code": "W06",
+    "title": {
+      "en": "Six of Wands",
+      "zh": "權杖六"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W06_Six_of_Wands.jpg",
+    "keywords": [
+      "Victory",
+      "Recognition",
+      "Pride"
+    ],
+    "astro": "Jupiter in Leo",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "The card has been so designed that it can cover several significations; on the surface, it is a victor triumphing, but it is also great news, such as might be carried in state by the King's courier; it is expectation crowned with its own desire, the crown of hope, and so forth.",
+      "zh": "這張牌的設計巧妙，涵蓋了多重意涵；表面上，它呈現的是一位凱旋的勝利者，然而它同時也預示著絕佳的喜訊，猶如由國王信使隆重傳遞的重大消息；它是期盼終獲滿足的加冕，是希望的冠冕，以及諸般美好的寓意。"
+    },
+    "reversed_meaning": {
+      "en": "Apprehension, fear, as of a victorious enemy at the gate; treachery, disloyalty, as of gates being opened to the enemy; also indefinite delay.",
+      "zh": "此牌逆位象徵深層的恐懼與不安，如同勝利之敵兵臨城下，危在旦夕；亦暗示可能面臨內部背叛與不忠之危，如同城門洞開，引狼入室；此外，亦預示著事態將無限期延宕，遲遲難以推進。"
+    },
+    "description": {
+      "en": "A laurelled horseman bears one staff adorned with a laurel crown; footmen with staves are at his side.",
+      "zh": "頭戴月桂冠的騎士，手持一根飾以月桂冠的權杖；數名手持權杖的隨從，隨侍在側。"
+    }
+  },
+  {
+    "code": "W07",
+    "title": {
+      "en": "Seven of Wands",
+      "zh": "權杖七"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W07_Seven_of_Wands.jpg",
+    "keywords": [
+      "Defense",
+      "Perseverance",
+      "Challenge"
+    ],
+    "astro": "Mars in Leo",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "It is a card of valour, for, on the surface, six are attacking one, who has, however, the vantage position. On the intellectual plane, it signifies discussion, wordy strife; in business--negotiations, war of trade, barter, competition. It is further a card of success, for the combatant is on the top and his enemies may be unable to reach him.",
+      "zh": "這是一張代表勇氣的牌卡，因為從表面上看，有六人正在攻擊一人，然而這一人卻佔據著有利的位置。在智性層面，它象徵著討論與言詞交鋒；在商業上，則代表著談判、貿易戰、以物易物及競爭。它更是一張象徵成功的牌卡，因為戰鬥者居高臨下，敵人可能難以企及。"
+    },
+    "reversed_meaning": {
+      "en": "Perplexity, embarrassments, anxiety. It is also a caution against indecision.",
+      "zh": "迷惘、窘迫與焦慮。此亦告誡勿優柔寡斷。"
+    },
+    "description": {
+      "en": "A young man on a craggy eminence brandishing a staff; six other staves are raised towards him from below.",
+      "zh": "一位青年立於險峻高崗上，揮舞著一根權杖；另有六根權杖從下方朝他舉起。"
+    }
+  },
+  {
+    "code": "W08",
+    "title": {
+      "en": "Eight of Wands",
+      "zh": "權杖八"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W08_Eight_of_Wands.jpg",
+    "keywords": [
+      "Speed",
+      "Action",
+      "Movement"
+    ],
+    "astro": "Mercury in Sagittarius",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Activity in undertakings, the path of such activity, swiftness, as that of an express messenger; great haste, great hope, speed towards an end which promises assured felicity; generally, that which is on the move; also the arrows of love.",
+      "zh": "事業與行動上展現活躍與進展，其發展路徑清晰而迅捷，速度如信差般飛速。此時充滿著巨大的急切與希望，快速邁向一個應許確切喜樂的終點。總體而言，這象徵著一切正在行進、開展中的事物；亦代表著愛情的箭矢。"
+    },
+    "reversed_meaning": {
+      "en": "Arrows of jealousy, internal dispute, stingings of conscience, quarrels; and domestic disputes for persons who are married.",
+      "zh": "嫉妒之箭，內心衝突，良心譴責，爭執不斷；已婚者則需面對家庭失和。"
+    },
+    "description": {
+      "en": "The card represents motion through the immovable-a flight of wands through an open country; but they draw to the term of their course. That which they signify is at hand; it may be even on the threshold.",
+      "zh": "此牌象徵著在不動中流轉——猶如權杖飛馳於無垠的原野；然其航程已屆終點。所預示之事近在咫尺；或許，更已跨越門檻。"
+    }
+  },
+  {
+    "code": "W09",
+    "title": {
+      "en": "Nine of Wands",
+      "zh": "權杖九"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W09_Nine_of_Wands.jpg",
+    "keywords": [
+      "Resilience",
+      "Persistence",
+      "Last stand"
+    ],
+    "astro": "Moon in Sagittarius",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "The card signifies strength in opposition. If attacked, the person will meet an onslaught boldly; and his build shews, that he may prove a formidable antagonist. With this main significance there are all its possible adjuncts--delay, suspension, adjournment.",
+      "zh": "此牌揭示了在逆境中潛藏的強大力量與堅韌。當事人若遭衝擊，將以無畏之姿勇敢迎戰；其內在特質亦彰顯出其為一不容小覷的強勁對手。伴隨此核心意涵，亦可能衍伸出諸如：延遲、暫停、延緩等相關意象。"
+    },
+    "reversed_meaning": {
+      "en": "Obstacles, adversity, calamity.",
+      "zh": "阻礙、逆境、劫難"
+    },
+    "description": {
+      "en": "The figure leans upon his staff and has an expectant look, as if awaiting an enemy. Behind are eight other staves--erect, in orderly disposition, like a palisade.",
+      "zh": "牌中人物倚杖而立，神情專注中帶著期盼，彷彿正等候著敵人。身後另有八根權杖，筆直矗立，排列有序，宛如一道屏障。"
+    }
+  },
+  {
+    "code": "W10",
+    "title": {
+      "en": "Ten of Wands",
+      "zh": "權杖十"
+    },
+    "arcana": "Minor",
+    "suit": "Wands",
+    "filename": "W10_Ten_of_Wands.jpg",
+    "keywords": [
+      "Burden",
+      "Responsibility",
+      "Overwhelm"
+    ],
+    "astro": "Saturn in Sagittarius",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "A card of many significances, and some of the readings cannot be harmonized. I set aside that which connects it with honour and good faith. The chief meaning is oppression simply, but it is also fortune, gain, any kind of success, and then it is the oppression of these things. It is also a card of false-seeming, disguise, perfidy. The place which the figure is approaching may suffer from the rods that he carries. Success is stultified if the Nine of Swords follows, and if it is a question of a lawsuit, there will be certain loss.",
+      "zh": "這是一張意涵深廣的牌，然而其部分解讀難以完全協調。我將其中與榮譽和誠信相關的牌義暫且擱置。其主要意義為單純的壓迫，但它同時也代表著財富、獲益以及各種成功，隨後卻又象徵著這些事物的受壓制。此牌亦象徵著虛假、偽裝與背信。牌中人物所前往之地，可能將因他所攜帶的權杖而遭受苦難。若隨後出現寶劍九，則一切成功將受阻；如遇訴訟，則必將敗訴。"
+    },
+    "reversed_meaning": {
+      "en": "Contrarieties, difficulties, intrigues, and their analogies.",
+      "zh": "事與願違、諸般困境、陰謀詭計，以及類似情境。"
+    },
+    "description": {
+      "en": "A man oppressed by the weight of the ten staves which he is carrying.",
+      "zh": "一名男子，正背負著十根沉重的權杖，顯得不堪重負。"
+    }
+  },
+  {
+    "code": "W11",
+    "title": {
+      "en": "Page of Wands",
+      "zh": "權杖侍者"
+    },
+    "arcana": "Court",
+    "suit": "Wands",
+    "filename": "W11_Page_of_Wands.jpg",
+    "keywords": [
+      "Enthusiasm",
+      "Exploration",
+      "Adventure"
+    ],
+    "astro": "Earth of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Dark young man, faithful, a lover, an envoy, a postman. Beside a man, he will bear favourable testimony concerning him. A dangerous rival, if followed by the Page of Cups. Has the chief qualities of his suit. He may signify family intelligence.",
+      "zh": "一位深色髮膚的年輕男子，忠誠、熱情的情人，使者或郵差。若此牌與其他男性牌面同時出現，他將對其做出有利的見證。若牌陣中緊鄰聖杯侍者牌（Page of Cups），則可能代表一位危險的勁敵。他具備其所屬牌組的核心特質。他也可能預示著與家庭相關的訊息。"
+    },
+    "reversed_meaning": {
+      "en": "Anecdotes, announcements, evil news. Also indecision and the instability which accompanies it.",
+      "zh": "流言蜚語、不祥預兆與惡訊。亦表優柔寡斷，以及隨之而來的動盪不安。"
+    },
+    "description": {
+      "en": "In a scene similar to the former, a young man stands in the act of proclamation. He is unknown but faithful, and his tidings are strange.",
+      "zh": "與前幅牌卡畫面相仿，一名年輕男子佇立宣告。他籍籍無名，卻心懷忠信，其傳訊非比尋常。"
+    }
+  },
+  {
+    "code": "W12",
+    "title": {
+      "en": "Knight of Wands",
+      "zh": "權杖騎士"
+    },
+    "arcana": "Court",
+    "suit": "Wands",
+    "filename": "W12_Knight_of_Wands.jpg",
+    "keywords": [
+      "Action",
+      "Impulsiveness",
+      "Energy"
+    ],
+    "astro": "Fire of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Departure, absence, flight, emigration. A dark young man, friendly. Change of residence.",
+      "zh": "離去、缺席、遁走、移民。\n一位友善的深色髮膚年輕男子。\n住所的變動。"
+    },
+    "reversed_meaning": {
+      "en": "Rupture, division, interruption, discord.",
+      "zh": "斷裂、分裂、中斷、紛爭"
+    },
+    "description": {
+      "en": "He is shewn as if upon a journey, armed with a short wand, and although mailed is not on a warlike errand. He is passing mounds or pyramids. The motion of the horse is a key to the character of its rider, and suggests the precipitate mood, or things connected therewith.",
+      "zh": "畫面中的他，彷彿正踏上旅程，手握短杖，雖身著鎧甲，卻非為戰事。他正越過丘陵或金字塔。馬匹的姿態，是解讀其騎者性格的關鍵，並暗示著其倉促冒進的心境，或與此相關的種種。"
+    }
+  },
+  {
+    "code": "W13",
+    "title": {
+      "en": "Queen of Wands",
+      "zh": "權杖皇后"
+    },
+    "arcana": "Court",
+    "suit": "Wands",
+    "filename": "W13_Queen_of_Wands.jpg",
+    "keywords": [
+      "Confidence",
+      "Independence",
+      "Determination"
+    ],
+    "astro": "Water of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "A dark woman, countrywoman, friendly, chaste, loving, honourable. If the card beside her signifies a man, she is well disposed towards him; if a woman, she is interested in the Querent. Also, love of money, or a certain success in business.",
+      "zh": "一位深色女子，來自鄉間，友善、貞潔、充滿愛心且受人尊敬。若是鄰牌代表男性，她對他懷有好感；若是女性，則對問卜者感興趣。亦表示愛財，或在事業上取得一定的成功。"
+    },
+    "reversed_meaning": {
+      "en": "Good, economical, obliging, serviceable. Signifies also--but in certain positions and in the neighbourhood of other cards tending in such directions--opposition, jealousy, even deceit and infidelity.",
+      "zh": "良善、務實、樂於配合、體貼周到。然而，當此牌出現在特定牌陣位置，或其周圍的牌有此類傾向時，亦可能指出對立、嫉妒，甚至欺騙與不忠。"
+    },
+    "description": {
+      "en": "The Wands throughout this suit are always in leaf, as it is a suit of life and animation. Emotionally and otherwise, the Queen's personality corresponds to that of the King, but is more magnetic.",
+      "zh": "權杖牌組的權杖，其杖身總是生意盎然、綠葉不凋，象徵著生命與躍動。權杖皇后的性格，無論在情感或其他層面，皆與權杖國王相符，但她更富磁性魅力。"
+    }
+  },
+  {
+    "code": "W14",
+    "title": {
+      "en": "King of Wands",
+      "zh": "權杖國王"
+    },
+    "arcana": "Court",
+    "suit": "Wands",
+    "filename": "W14_King_of_Wands.jpg",
+    "keywords": [
+      "Leadership",
+      "Vision",
+      "Honor"
+    ],
+    "astro": "Air of Fire",
+    "element": "Fire",
+    "upright_meaning": {
+      "en": "Dark man, friendly, countryman, generally married, honest and conscientious. The card always signifies honesty, and may mean news concerning an unexpected heritage to fall in before very long.",
+      "zh": "代表深色髮膚、友善和藹、樸實敦厚，通常已婚且誠實正直、認真負責的男士。此牌恆常代表著正直與誠實，並可能預示著一筆意外遺產將在不久後降臨。"
+    },
+    "reversed_meaning": {
+      "en": "Good, but severe; austere, yet tolerant.",
+      "zh": "良善卻嚴苛；嚴謹而寬容。"
+    },
+    "description": {
+      "en": "The physical and emotional nature to which this card is attributed is dark, ardent, lithe, animated, impassioned, noble. The King uplifts a flowering wand, and wears, like his three correspondences in the remaining suits, what is called a cap of maintenance beneath his crown. He connects with the symbol of the lion, which is emblazoned on the back of his throne.",
+      "zh": "此牌所象徵的身心特質，呈現深邃、熱烈、輕盈、活潑、激情且尊貴的風采。國王高舉一根綻放著花朵的權杖，與其他三組牌中的國王牌相同，其皇冠下佩戴著所謂的「維護之帽」。他與獅子圖騰緊密相連，此圖騰紋飾在他的寶座背面。"
+    }
+  },
+  {
+    "code": "C01",
+    "title": {
+      "en": "Ace of Cups",
+      "zh": "聖杯王牌"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C01_Ace_of_Cups.jpg",
+    "keywords": [
+      "Love",
+      "Intuition",
+      "Intimacy"
+    ],
+    "astro": "Root of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "House of the true heart, joy, content, abode, nourishment, abundance, fertility; Holy Table, felicity hereof.",
+      "zh": "內在真我殿堂：喜悅、滿足、歸處、滋養、豐盛、生機；神聖祭壇，及其所帶來的至福。"
+    },
+    "reversed_meaning": {
+      "en": "House of the false heart, mutation, instability, revolution.",
+      "zh": "虛偽之本，變異，動盪，革命。"
+    },
+    "description": {
+      "en": "The waters are beneath, and thereon are water-lilies; the hand issues from the cloud, holding in its palm the cup, from which four streams are pouring; a dove, bearing in its bill a cross-marked Host, descends to place the Wafer in the Cup; the dew of water is falling on all sides. It is an intimation of that which may lie behind the Lesser Arcana.",
+      "zh": "底部是水，水面上點綴著睡蓮。雲中伸出一隻手，掌心托著聖杯，杯中傾瀉出四道水流。一隻鴿子口銜十字聖餐餅，降臨將其置於聖杯之內。點點水露於四周紛紛落下。這暗示著小阿爾克那背後可能蘊含的深層意涵。"
+    }
+  },
+  {
+    "code": "C02",
+    "title": {
+      "en": "Two of Cups",
+      "zh": "聖杯二"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C02_Two_of_Cups.jpg",
+    "keywords": [
+      "Partnership",
+      "Unity",
+      "Connection"
+    ],
+    "astro": "Venus in Cancer",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Love, passion, friendship, affinity, union, concord, sympathy, the interrelation of the sexes, and--as a suggestion apart from all offices of divination--that desire which is not in Nature, but by which Nature is sanctified.",
+      "zh": "愛、熱情、友誼、緣分、結合、和諧、情感共鳴、兩性關係；\n此外，撇開占卜的預示作用，它亦指涉那種不屬於自然本性，卻能使自然得以聖化的渴望。"
+    },
+    "reversed_meaning": {
+      "en": "Lust, cupidity, jealousy, wish, desire, but the card may also give, says W., \"that desire which is not in nature, but by which nature is sanctified.\"",
+      "zh": "淫慾、貪婪、嫉妒、願望、慾望；但此牌亦可能指出，據W.所言，那種「超越本性，卻能使本性得以聖化」的慾望。"
+    },
+    "description": {
+      "en": "A youth and maiden are pledging one another, and above their cups rises the Caduceus of Hermes, between the great wings of which there appears a lion's head. It is a variant of a sign which is found in a few old examples of this card. Some curious emblematical meanings are attached to it, but they do not concern us in this place.",
+      "zh": "青年男女相互舉杯盟誓，在兩人酒杯上方，赫密士的雙蛇杖赫然升起，其巨翼之間浮現出一顆獅子頭。這是此牌少數古老版本中，所能見到的一種符號變體。其中蘊含著一些奇特的象徵意義，但在此處我們暫不探究。"
+    }
+  },
+  {
+    "code": "C03",
+    "title": {
+      "en": "Three of Cups",
+      "zh": "聖杯三"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C03_Three_of_Cups.jpg",
+    "keywords": [
+      "Celebration",
+      "Friendship",
+      "Community"
+    ],
+    "astro": "Mercury in Cancer",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "The conclusion of any matter in plenty, perfection and merriment; happy issue, victory, fulfilment, solace, healing,",
+      "zh": "一切事物的豐盛、圓滿與喜樂的終結；如意順遂的結果、勝利、心願達成、撫慰與療癒。"
+    },
+    "reversed_meaning": {
+      "en": "Expedition, dispatch, achievement, end. It signifies also the side of excess in physical enjoyment, and the pleasures of the senses.",
+      "zh": "啟程、差遣、功成、圓滿。更指涉過度沉湎於肉體之樂，以及耽溺於感官歡愉。"
+    },
+    "description": {
+      "en": "Maidens in a garden-ground with cups uplifted, as if pledging one another.",
+      "zh": "花園裡的少女們高舉聖杯，宛若互許承諾。"
+    }
+  },
+  {
+    "code": "C04",
+    "title": {
+      "en": "Four of Cups",
+      "zh": "聖杯四"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C04_Four_of_Cups.jpg",
+    "keywords": [
+      "Apathy",
+      "Contemplation",
+      "Reevaluation"
+    ],
+    "astro": "Moon in Cancer",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Weariness, disgust, aversion, imaginary vexations, as if the wine of this world had caused satiety only; another wine, as if a fairy gift, is now offered the wastrel, but he sees no consolation therein. This is also a card of blended pleasure.",
+      "zh": "疲憊、厭惡、反感，以及虛妄的煩惱，彷彿紅塵俗樂，最終只徒留饜足之感。如今，一份宛如仙人贈禮的佳釀呈於此人眼前，然其卻於其中尋不著絲毫慰藉。此牌亦象徵著悲喜交織的歡愉。"
+    },
+    "reversed_meaning": {
+      "en": "Novelty, presage, new instruction, new relations.",
+      "zh": "嶄新，預示，新的啟示，新的關係。"
+    },
+    "description": {
+      "en": "A young man is seated under a tree and contemplates three cups set on the grass before him; an arm issuing from a cloud offers him another cup. His expression notwithstanding is one of discontent with his environment.",
+      "zh": "一位青年男子靜坐於樹下，凝視著面前草地上擺放的三只聖杯；此時，雲端伸出一隻手，向他遞上第四個聖杯。然而，他臉上的神情卻流露出對現狀的不滿。"
+    }
+  },
+  {
+    "code": "C05",
+    "title": {
+      "en": "Five of Cups",
+      "zh": "聖杯五"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C05_Five_of_Cups.jpg",
+    "keywords": [
+      "Loss",
+      "Regret",
+      "Disappointment"
+    ],
+    "astro": "Mars in Scorpio",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "A dark, cloaked figure, looking sideways at three prone cups two others stand upright behind him; a bridge is in the background, leading to a small keep or holding. Divanatory Meanings: It is a card of loss, but something remains over; three have been taken, but two are left; it is a card of inheritance, patrimony, transmission, but not corresponding to expectations; with some interpreters it is a card of marriage, but not without bitterness or frustration.",
+      "zh": "一個身披黑斗篷的人物，側身凝望著三只傾倒的聖杯，身後仍有兩只聖杯保持直立；遠景處有座橋樑，通往一座小型堡壘或居所。\n\n牌義：這是一張代表「失去」的牌，然有所失卻有所留存；儘管三者已然逝去，仍有兩者存續。它也象徵著「遺產」、「家產」與「傳承」，但其結果卻往往不如預期。部分詮釋者認為此牌亦指婚姻，然而其中不無苦澀或沮喪。"
+    },
+    "reversed_meaning": {
+      "en": "News, alliances, affinity, consanguinity, ancestry, return, false projects.",
+      "zh": "消息、結盟、緣分、血緣、血統、回歸、虛妄之計。"
+    },
+    "description": {
+      "en": "A dark, cloaked figure, looking sideways at three prone cups two others stand upright behind him; a bridge is in the background, leading to a small keep or holding. Divanatory Meanings: It is a card of loss, but something remains over; three have been taken, but two are left; it is a card of inheritance, patrimony, transmission, but not corresponding to expectations; with some interpreters it is a card of marriage, but not without bitterness or frustration. Reversed: News, alliances, affinity, consanguinity, ancestry, return, false projects",
+      "zh": "一個身披黑色斗篷的人物，側視著三個傾倒在地的聖杯，另有兩個聖杯則在他身後直立。背景是一座橋樑，通往一座小型的堡壘或據點。\n\n牌義：這是一張象徵失落的牌，但並非全然失去，仍有餘留；三個已逝去，兩個尚存。它代表著繼承、祖傳與傳承，然而結果卻往往與預期不符。對於某些解牌師而言，此牌也預示婚姻，但這段結合卻不乏苦澀或挫折。\n\n逆位：消息、結盟、親近、血緣關係、祖先、回歸、虛妄的計畫。"
+    }
+  },
+  {
+    "code": "C06",
+    "title": {
+      "en": "Six of Cups",
+      "zh": "聖杯六"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C06_Six_of_Cups.jpg",
+    "keywords": [
+      "Nostalgia",
+      "Innocence",
+      "Reunion"
+    ],
+    "astro": "Sun in Scorpio",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "A card of the past and of memories, looking back, as--for example--on childhood; happiness, enjoyment, but coming rather from the past; things that have vanished. Another reading reverses this, giving new relations, new knowledge, new environment, and then the children are disporting in an unfamiliar precinct.",
+      "zh": "這是一張代表過去與回憶的牌，回顧過往，例如童年時期。牌面呈現幸福、歡樂，但這些感受多半來自於過去，或指向那些已消逝無蹤的美好事物。然而，此牌的另一種解讀則逆轉此意，預示著新的人際關係、新的知識與新的環境。此時，牌中的孩子們正在一處陌生領域中盡情嬉戲。"
+    },
+    "reversed_meaning": {
+      "en": "The future, renewal, that which will come to pass presently.",
+      "zh": "未來、新生、即將顯化之事。"
+    },
+    "description": {
+      "en": "Children in an old garden, their cups filled with flowers.",
+      "zh": "孩童漫步於古園，其聖杯中盈滿鮮花。"
+    }
+  },
+  {
+    "code": "C07",
+    "title": {
+      "en": "Seven of Cups",
+      "zh": "聖杯七"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C07_Seven_of_Cups.jpg",
+    "keywords": [
+      "Choices",
+      "Fantasy",
+      "Illusion"
+    ],
+    "astro": "Venus in Scorpio",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Fairy favours, images of reflection, sentiment, imagination, things seen in the glass of contemplation; some attainment in these degrees, but nothing permanent or substantial is suggested.",
+      "zh": "仙子的眷顧、映照的意象、情思、想像，以及沉思之鏡中所見；於此等面向或有所領會，然所獲皆非恆久實體。"
+    },
+    "reversed_meaning": {
+      "en": "Desire, will, determination, project.",
+      "zh": "慾望、意志、決心、事業"
+    },
+    "description": {
+      "en": "Strange chalices of vision, but the images are more especially those of the fantastic spirit.",
+      "zh": "異象奇杯，然其意象，尤為奇幻之靈的體現。"
+    }
+  },
+  {
+    "code": "C08",
+    "title": {
+      "en": "Eight of Cups",
+      "zh": "聖杯八"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C08_Eight_of_Cups.jpg",
+    "keywords": [
+      "Withdrawal",
+      "Abandonment",
+      "Journey"
+    ],
+    "astro": "Saturn in Pisces",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "The card speaks for itself on the surface, but other readings are entirely antithetical--giving joy, mildness, timidity, honour, modesty. In practice, it is usually found that the card shews the decline of a matter, or that a matter which has been thought to be important is really of slight consequence--either for good or evil.",
+      "zh": "這張牌的表面意義直觀易懂，然而也有截然相反的詮釋，例如它可能代表喜悅、溫和、羞怯、榮譽與謙遜。但在實際解讀中，這張牌通常顯示某事物的衰落，或是原以為舉足輕重之事，實則影響甚微，無論其本質是好是壞。"
+    },
+    "reversed_meaning": {
+      "en": "Great joy, happiness, feasting.",
+      "zh": "極致的歡愉、豐盛的饗宴。"
+    },
+    "description": {
+      "en": "A man of dejected aspect is deserting the cups of his felicity, enterprise, undertaking or previous concern.",
+      "zh": "一個神情沮喪的男人，正背離著象徵其幸福、事業、抱負或過往所牽掛的聖杯。"
+    }
+  },
+  {
+    "code": "C09",
+    "title": {
+      "en": "Nine of Cups",
+      "zh": "聖杯九"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C09_Nine_of_Cups.jpg",
+    "keywords": [
+      "Contentment",
+      "Satisfaction",
+      "Wish fulfilled"
+    ],
+    "astro": "Jupiter in Pisces",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Concord, contentment, physical bien-être; also victory, success, advantage; satisfaction for the Querent or person for whom the consultation is made.",
+      "zh": "和諧、知足、身心安康；亦象徵著勝利、成功，並能佔盡優勢；問卜者或相關當事人將因此獲得圓滿的喜悅與滿足。"
+    },
+    "reversed_meaning": {
+      "en": "Truth, loyalty, liberty; but the readings vary and include mistakes, imperfections, etc.",
+      "zh": "真理、忠誠、自由；然其牌義闡釋多有歧異，亦可能帶有偏差、缺憾等。"
+    },
+    "description": {
+      "en": "A goodly personage has feasted to his heart's content, and abundant refreshment of wine is on the arched counter behind him, seeming to indicate that the future is also assured. The picture offers the material side only, but there are other aspects.",
+      "zh": "一位尊貴之人已盡情享用宴席，其身後拱形案檯上，豐饒美酒滿溢，似乎暗示著未來亦將無憂無慮。此牌面僅顯現物質面向，然尚有其他面向。"
+    }
+  },
+  {
+    "code": "C10",
+    "title": {
+      "en": "Ten of Cups",
+      "zh": "聖杯十"
+    },
+    "arcana": "Minor",
+    "suit": "Cups",
+    "filename": "C10_Ten_of_Cups.jpg",
+    "keywords": [
+      "Harmony",
+      "Family",
+      "Happiness"
+    ],
+    "astro": "Mars in Pisces",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Contentment, repose of the entire heart; the perfection of that state; also perfection of human love and friendship; if with several picture-cards, a person who is taking charge of the Querent's interests; also the town, village or country inhabited by the Querent.",
+      "zh": "心靈的滿足，全然的安歇。此種境地的圓滿無瑕。亦或指人際間愛與友誼的臻至圓滿。若與數張人物牌同時出現，則象徵一位為問卜者照護利益或掌管其事務之人。亦可代表問卜者所居住的城鎮、村落或國家。"
+    },
+    "reversed_meaning": {
+      "en": "Repose of the false heart, indignation, violence.",
+      "zh": "虛偽的平靜、憤慨、暴力"
+    },
+    "description": {
+      "en": "Appearance of Cups in a rainbow; it is contemplated in wonder and ecstacy by a man and woman below, evidently husband and wife. His right arm is about her; his left is raised upward; she raises her right arm. The two children dancing near them have not observed the prodigy but are happy after their own manner. There is a home-scene beyond.",
+      "zh": "彩虹之中顯現聖杯；下方的一對男女，顯然是夫妻，正充滿驚奇與狂喜地仰望著它。男子右臂環抱著妻子，左臂向上高舉；女子則舉起右臂。兩名在他們身旁歡舞的孩童，尚未察覺此異象，卻仍舊沉浸在自身的喜悅之中。背景遠方則是一片居家景致。"
+    }
+  },
+  {
+    "code": "C11",
+    "title": {
+      "en": "Page of Cups",
+      "zh": "聖杯侍者"
+    },
+    "arcana": "Court",
+    "suit": "Cups",
+    "filename": "C11_Page_of_Cups.jpg",
+    "keywords": [
+      "Creativity",
+      "Intuition",
+      "Curiosity"
+    ],
+    "astro": "Earth of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Fair young man, one impelled to render service and with whom the Querent will be connected; a studious youth; news, message; application, reflection, meditation; also these things directed to business.",
+      "zh": "一位外表清秀、樂於助人，並將與問卜者建立連結的年輕男性；一位好學的青年；消息、訊息；應用、反思、冥想；這些含義亦可指向商業事務。"
+    },
+    "reversed_meaning": {
+      "en": "Taste, inclination, attachment, seduction, deception, artifice.",
+      "zh": "慾念、偏向、執著、誘惑、欺瞞、虛假"
+    },
+    "description": {
+      "en": "A fair, pleasing, somewhat effeminate page, of studious and intent aspect, contemplates a fish rising from a cup to look at him. It is the pictures of the mind taking form.",
+      "zh": "一位俊秀陰柔的侍者，神情專注，好學深思，凝視著從杯中躍出、正向他望來的魚。這是心靈意象的具體化現。"
+    }
+  },
+  {
+    "code": "C12",
+    "title": {
+      "en": "Knight of Cups",
+      "zh": "聖杯騎士"
+    },
+    "arcana": "Court",
+    "suit": "Cups",
+    "filename": "C12_Knight_of_Cups.jpg",
+    "keywords": [
+      "Romance",
+      "Charm",
+      "Idealism"
+    ],
+    "astro": "Fire of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Arrival, approach--sometimes that of a messenger; advances, proposition, demeanour, invitation, incitement.",
+      "zh": "降臨、趨近，有時乃信使之現身；進展、提議、舉止、邀請、激發。"
+    },
+    "reversed_meaning": {
+      "en": "Trickery, artifice, subtlety, swindling, duplicity, fraud.",
+      "zh": "詭計、巧詐、陰險、詐欺、欺騙、虛偽"
+    },
+    "description": {
+      "en": "Graceful, but not warlike; riding quietly, wearing a winged helmet, referring to those higher graces of the imagination which sometimes characterize this card. He too is a dreamer, but the images of the side of sense haunt him in his vision.",
+      "zh": "優雅，卻不好戰；他寧靜地騎乘，頭戴有翼頭盔，這象徵著此牌有時所展現的想像力之崇高雅緻。他同樣是一位夢想家，然而感官層面的影像卻在他的願景中縈繞不散。"
+    }
+  },
+  {
+    "code": "C13",
+    "title": {
+      "en": "Queen of Cups",
+      "zh": "聖杯皇后"
+    },
+    "arcana": "Court",
+    "suit": "Cups",
+    "filename": "C13_Queen_of_Cups.jpg",
+    "keywords": [
+      "Compassion",
+      "Emotional security",
+      "Intuition"
+    ],
+    "astro": "Water of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Good, fair woman; honest, devoted woman, who will do service to the Querent; loving intelligence, and hence the gift of vision; success, happiness, pleasure; also wisdom, virtue; a perfect spouse and a good mother.",
+      "zh": "一位善良、品德端正的女性；一位誠實、忠貞，且樂於為問卜者提供助益的女性。她擁有仁愛的智慧，因此具備靈視之天賦。象徵成功、幸福、愉悅；亦兼具智慧與美德。她是一位完美的配偶及一位好母親。"
+    },
+    "reversed_meaning": {
+      "en": "The accounts vary; good woman; otherwise, distinguished woman but one not to be trusted; perverse woman; vice, dishonour, depravity.",
+      "zh": "諸說紛紜；看似賢淑之女，實則不然；或為顯赫之輩，然不可信；乖張悖逆之女；罪惡、不名譽、墮落。"
+    },
+    "description": {
+      "en": "Beautiful, fair, dreamy--as one who sees visions in a cup. This is, however, only one of her aspects; she sees, but she also acts, and her activity feeds her dream.",
+      "zh": "美麗、溫婉、夢幻，宛若杯中窺見異象者。然而這卻僅是她的一個面向；她觀照入微，亦果斷行動，而她的行動滋養著她的夢想。"
+    }
+  },
+  {
+    "code": "C14",
+    "title": {
+      "en": "King of Cups",
+      "zh": "聖杯國王"
+    },
+    "arcana": "Court",
+    "suit": "Cups",
+    "filename": "C14_King_of_Cups.jpg",
+    "keywords": [
+      "Emotional balance",
+      "Diplomacy",
+      "Wisdom"
+    ],
+    "astro": "Air of Water",
+    "element": "Water",
+    "upright_meaning": {
+      "en": "Fair man, man of business, law, or divinity; responsible, disposed to oblige the Querent; also equity, art and science, including those who profess science, law and art; creative intelligence.",
+      "zh": "公正之人，或代表從事商業、法律或神職工作者；負責任，樂於幫助問卜者；亦象徵公平正義、藝術與科學，尤指在這些領域的專業人士；充滿創造力的智慧。"
+    },
+    "reversed_meaning": {
+      "en": "Dishonest, double-dealing man; roguery, exaction, injustice, vice, scandal, pillage, considerable loss.",
+      "zh": "兩面三刀之輩；詭詐、勒索、不義、惡德、醜聞、掠奪，以及慘重損失。"
+    },
+    "description": {
+      "en": "He holds a short sceptre in his left hand and a great cup in his right; his throne is set upon the sea; on one side a ship is riding and on the other a dolphin is leaping. The implicit is that the Sign of the Cup naturally refers to water, which appears in all the court cards.",
+      "zh": "他左手持一柄短權杖，右手握一大聖杯；他的寶座座落於海上；一側有船隻航行，另一側有海豚躍動。其寓意是，聖杯自然地象徵水元素，此元素也顯現於所有宮廷牌中。"
+    }
+  },
+  {
+    "code": "S01",
+    "title": {
+      "en": "Ace of Swords",
+      "zh": "寶劍王牌"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S01_Ace_of_Swords.jpg",
+    "keywords": [
+      "Breakthrough",
+      "Clarity",
+      "Truth"
+    ],
+    "astro": "Root of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Triumph, the excessive degree in everything, conquest, triumph of force. It is a card of great force, in love as well as in hatred. The crown may carry a much higher significance than comes usually within the sphere of fortune-telling.",
+      "zh": "凱旋、凡事過度、征服、力量的勝利。這是一張力量極其強大的牌，無論在愛恨兩方面皆展現出其巨大力量。牌面所繪的冠冕，其意義可能遠超出一般占卜所能探究的範疇。"
+    },
+    "reversed_meaning": {
+      "en": "The same, but the results are disastrous; another account says--conception, childbirth, augmentation, multiplicity.",
+      "zh": "表面相似，然結果卻是災難性的；另有一說：懷胎、分娩、增長、繁衍。"
+    },
+    "description": {
+      "en": "A hand issues from a cloud, grasping as word, the point of which is encircled by a crown.",
+      "zh": "從雲中浮現一隻手，握持著一根權杖，其尖端被皇冠所環繞。"
+    }
+  },
+  {
+    "code": "S02",
+    "title": {
+      "en": "Two of Swords",
+      "zh": "寶劍二"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S02_Two_of_Swords.jpg",
+    "keywords": [
+      "Stalemate",
+      "Indecision",
+      "Avoidance"
+    ],
+    "astro": "Moon in Libra",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Conformity and the equipoise which it suggests, courage, friendship, concord in a state of arms; another reading gives tenderness, affection, intimacy. The suggestion of harmony and other favourable readings must be considered in a qualified manner, as Swords generally are not symbolical of beneficent forces in human affairs.",
+      "zh": "順應與其所暗示的平衡、勇氣、友誼，以及在劍拔弩張的情勢下仍能保持的和睦。另一層解讀則指出：溫柔、情感、親密。然而，此牌所暗示的和諧及其他正面解讀，皆必須有所保留地看待，因為寶劍牌組在人類事務中，通常不象徵著吉祥的力量。"
+    },
+    "reversed_meaning": {
+      "en": "Imposture, falsehood, duplicity, disloyalty.",
+      "zh": "偽裝、虛假、欺瞞、背叛"
+    },
+    "description": {
+      "en": "A hoodwinked female figure balances two swords upon her shoulders.",
+      "zh": "蒙眼女子肩上平衡著雙劍。"
+    }
+  },
+  {
+    "code": "S03",
+    "title": {
+      "en": "Three of Swords",
+      "zh": "寶劍三"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S03_Three_of_Swords.jpg",
+    "keywords": [
+      "Heartbreak",
+      "Sorrow",
+      "Grief"
+    ],
+    "astro": "Saturn in Libra",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Removal, absence, delay, division, rupture, dispersion, and all that the design signifies naturally, being too simple and obvious to call for specific enumeration.",
+      "zh": "移除、消失、延遲、分裂、破裂、離散，以及所有牌面圖案自然蘊含的寓意，由於其意涵過於簡明、昭然若揭，故無需詳加列舉。"
+    },
+    "reversed_meaning": {
+      "en": "Mental alienation, error, loss, distraction, disorder, confusion.",
+      "zh": "精神疏離、錯誤、喪失、心神渙散、混亂、迷惘"
+    },
+    "description": {
+      "en": "Three swords piercing a heart; cloud and rain behind.",
+      "zh": "三柄劍刃穿透心臟；身後烏雲密佈、驟雨將至。"
+    }
+  },
+  {
+    "code": "S04",
+    "title": {
+      "en": "Four of Swords",
+      "zh": "寶劍四"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S04_Four_of_Swords.jpg",
+    "keywords": [
+      "Rest",
+      "Recovery",
+      "Meditation"
+    ],
+    "astro": "Jupiter in Libra",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Vigilance, retreat, solitude, hermit's repose, exile, tomb and coffin. It is these last that have suggested the design.",
+      "zh": "警惕、隱退、獨處、隱士的靜修、流放、墓穴、棺木。此牌的設計靈感，正是源於這些最終的意象。"
+    },
+    "reversed_meaning": {
+      "en": "Wise administration, circumspection, economy, avarice, precaution, testament.",
+      "zh": "賢明的管理、審慎、節儉、貪婪、防範、遺囑。"
+    },
+    "description": {
+      "en": "The effigy of a knight in the attitude of prayer, at full length upon his tomb.",
+      "zh": "一座騎士雕像，以祈禱姿態，全身橫臥於其長眠之墓上。"
+    }
+  },
+  {
+    "code": "S05",
+    "title": {
+      "en": "Five of Swords",
+      "zh": "寶劍五"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S05_Five_of_Swords.jpg",
+    "keywords": [
+      "Conflict",
+      "Defeat",
+      "Dishonor"
+    ],
+    "astro": "Venus in Aquarius",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Degradation, destruction, revocation, infamy, dishonour, loss, with the variants and analogues of these.",
+      "zh": "墮落、毀滅、廢除、惡名、恥辱、喪失，及其所有變體與類比之意涵。"
+    },
+    "reversed_meaning": {
+      "en": "The same; burial and obsequies.",
+      "zh": "本質不變；喪葬與終結。"
+    },
+    "description": {
+      "en": "A disdainful man looks after two retreating and dejected figures. Their swords lie upon the ground. He carries two others on his left shoulder, and a third sword is in his right hand, point to earth. He is the master in possession of the field.",
+      "zh": "一名輕蔑的男子，目送著兩名敗退而沮喪的身影。他們的劍棄置於地。他左肩揹負著另外兩把劍，右手則握著第三把，劍尖朝地。他是這片場域的絕對主宰。"
+    }
+  },
+  {
+    "code": "S06",
+    "title": {
+      "en": "Six of Swords",
+      "zh": "寶劍六"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S06_Six_of_Swords.jpg",
+    "keywords": [
+      "Transition",
+      "Moving on",
+      "Recovery"
+    ],
+    "astro": "Mercury in Aquarius",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Journey by water, route, way, envoy, commissionary, expedient.",
+      "zh": "航程、道路、途徑、使者、權變之策。"
+    },
+    "reversed_meaning": {
+      "en": "Declaration, confession, publicity; one account says that it is a proposal of love.",
+      "zh": "宣告、告白、公開；另有一說，為愛的提議。"
+    },
+    "description": {
+      "en": "A ferryman carrying passengers in his punt to the further shore. The course is smooth, and seeing that the freight is light, it may be noted that the work is not beyond his strength.",
+      "zh": "一位擺渡人，乘著他的平底船，載送旅客駛向彼岸。航程平順，鑑於載重輕盈，可知此番工作對他而言游刃有餘。"
+    }
+  },
+  {
+    "code": "S07",
+    "title": {
+      "en": "Seven of Swords",
+      "zh": "寶劍七"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S07_Seven_of_Swords.jpg",
+    "keywords": [
+      "Deception",
+      "Strategy",
+      "Betrayal"
+    ],
+    "astro": "Moon in Aquarius",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Design, attempt, wish, hope, confidence; also quarrelling, a plan that may fail, annoyance. The design is uncertain in its import, because the significations are widely at variance with each other.",
+      "zh": "意圖、企劃、心願、期盼、信心；亦可能指向爭執、計畫受挫、或困擾煩惱。此牌所指涉的意圖或規劃，其深層意義模糊難辨，因其象徵的徵兆或結果，常是眾說紛紜，相互矛盾。"
+    },
+    "reversed_meaning": {
+      "en": "Good advice, counsel, instruction, slander, babbling.",
+      "zh": "忠告、教誨、讒言、胡言亂語"
+    },
+    "description": {
+      "en": "A man in the act of carrying away five swords rapidly; the two others of the card remain stuck in the ground. A camp is close at hand.",
+      "zh": "一名男子正快速地帶走五把劍；而圖中另外兩把劍則仍牢牢地插在地上。一處營地近在咫尺。"
+    }
+  },
+  {
+    "code": "S08",
+    "title": {
+      "en": "Eight of Swords",
+      "zh": "寶劍八"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S08_Eight_of_Swords.jpg",
+    "keywords": [
+      "Restriction",
+      "Trapped",
+      "Self-imposed"
+    ],
+    "astro": "Jupiter in Gemini",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Bad news, violent chagrin, crisis, censure, power in trammels, conflict, calumny; also sickness.",
+      "zh": "凶訊，忿恨，危機，譴責，權力受縛，衝突，誹謗；亦有病痛。"
+    },
+    "reversed_meaning": {
+      "en": "Disquiet, difficulty, opposition, accident, treachery; what is unforeseen; fatality.",
+      "zh": "不安、困頓、對立、意外、背叛；始料未及的變故；宿命的劫數。"
+    },
+    "description": {
+      "en": "A woman, bound and hoodwinked, with the swords of the card about her. Yet it is rather a card of temporary durance than of irretrievable bondage.",
+      "zh": "一名女子被綑綁且蒙蔽雙眼，身旁圍繞著牌面上的劍。然而，它所象徵的，是暫時的禁錮，而非難以掙脫的羈絆。"
+    }
+  },
+  {
+    "code": "S09",
+    "title": {
+      "en": "Nine of Swords",
+      "zh": "寶劍九"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S09_Nine_of_Swords.jpg",
+    "keywords": [
+      "Anxiety",
+      "Fear",
+      "Nightmares"
+    ],
+    "astro": "Mars in Gemini",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Death, failure, miscarriage, delay, deception, disappointment, despair.",
+      "zh": "死亡、失敗、夭折、延宕、欺瞞、失望、絕望"
+    },
+    "reversed_meaning": {
+      "en": "Imprisonment, suspicion, doubt, reasonable fear, shame.",
+      "zh": "禁錮、疑心、懷疑、應有的畏懼、羞恥"
+    },
+    "description": {
+      "en": "One seated on her couch in lamentation, with the swords over her. She is as one who knows no sorrow which is like unto hers. It is a card of utter desolation.",
+      "zh": "一人坐於臥榻，悲慟不已，數把利劍懸於其上。其悲慟之深重，世間無出其右。此牌象徵著極致的絕望與荒蕪。"
+    }
+  },
+  {
+    "code": "S10",
+    "title": {
+      "en": "Ten of Swords",
+      "zh": "寶劍十"
+    },
+    "arcana": "Minor",
+    "suit": "Swords",
+    "filename": "S10_Ten_of_Swords.jpg",
+    "keywords": [
+      "Ruin",
+      "Painful ending",
+      "Hitting bottom"
+    ],
+    "astro": "Sun in Gemini",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Whatsoever is intimated by the design; also pain, affliction, tears, sadness, desolation. It is not especially a card of violent death.",
+      "zh": "此牌圖案所揭示的一切意涵；亦代表著痛苦、苦難、淚水、悲傷、淒涼。它並非特別預示著暴斃。"
+    },
+    "reversed_meaning": {
+      "en": "Advantage, profit, success, favour, but none of these are permanent; also power and authority.",
+      "zh": "優勢、獲利、成功、恩寵；然此皆非永恆；亦象徵權力與權威。"
+    },
+    "description": {
+      "en": "A prostrate figure, pierced by all the swords belonging to the card.",
+      "zh": "一個伏地的身影，被牌面上的所有劍刺穿。"
+    }
+  },
+  {
+    "code": "S11",
+    "title": {
+      "en": "Page of Swords",
+      "zh": "寶劍侍者"
+    },
+    "arcana": "Court",
+    "suit": "Swords",
+    "filename": "S11_Page_of_Swords.jpg",
+    "keywords": [
+      "Vigilance",
+      "Curiosity",
+      "Truth-seeker"
+    ],
+    "astro": "Earth of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Authority, overseeing, secret service, vigilance, spying, examination, and the qualities thereto belonging.",
+      "zh": "權威、監察、秘密行動、警覺、刺探、審查，及其延伸出的種種特質。"
+    },
+    "reversed_meaning": {
+      "en": "More evil side of these qualities; what is unforeseen, unprepared state; sickness is also intimated.",
+      "zh": "這些特質的陰暗面；預示著始料未及、措手不及的境遇；亦暗示疾病。"
+    },
+    "description": {
+      "en": "A lithe, active figure holds a sword upright in both hands, while in the act of swift walking. He is passing over rugged land, and about his way the clouds are collocated wildly. He is alert and lithe, looking this way and that, as if an expected enemy might appear at any moment.",
+      "zh": "矯健敏捷的身影，雙手緊握著一柄直立之劍，正快速邁步前行。他正穿越崎嶇之地，周身雲霧狂亂變幻。他警覺矯健，不時環顧四周，彷彿預期的敵人隨時可能現身。"
+    }
+  },
+  {
+    "code": "S12",
+    "title": {
+      "en": "Knight of Swords",
+      "zh": "寶劍騎士"
+    },
+    "arcana": "Court",
+    "suit": "Swords",
+    "filename": "S12_Knight_of_Swords.jpg",
+    "keywords": [
+      "Direct",
+      "Rushed",
+      "Ambitious"
+    ],
+    "astro": "Air of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Skill, bravery, capacity, defence, address, enmity, wrath, war, destruction, opposition, resistance, ruin. There is therefore a sense in which the card signifies death, but it carries this meaning only in its proximity to other cards of fatality.",
+      "zh": "技巧、勇氣、能力、防衛、機敏、敵意、憤怒、戰爭、毀滅、對立、抵抗、崩潰。因此，在某種程度上，這張牌也可能象徵著死亡，但它只有在與其他預示致命或厄運的牌相鄰時，才具備此意義。"
+    },
+    "reversed_meaning": {
+      "en": "Imprudence, incapacity, extravagance.",
+      "zh": "輕率、無能、揮霍"
+    },
+    "description": {
+      "en": "He is riding in full course, as if scattering his enemies. In the design he is really a prototypical hero of romantic chivalry. He might almost be Galahad, whose sword is swift and sure because he is clean of heart.",
+      "zh": "他策馬疾馳，彷彿正在驅散眼前的敵人。在牌面設計中，他確實是一位浪漫騎士精神的典型英雄。他幾乎就是加拉哈德，他的劍之所以迅捷而精準，是因為他心地純潔。"
+    }
+  },
+  {
+    "code": "S13",
+    "title": {
+      "en": "Queen of Swords",
+      "zh": "寶劍皇后"
+    },
+    "arcana": "Court",
+    "suit": "Swords",
+    "filename": "S13_Queen_of_Swords.jpg",
+    "keywords": [
+      "Sharp wit",
+      "Honesty",
+      "Independent"
+    ],
+    "astro": "Water of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Widowhood, female sadness and embarrassment, absence, sterility, mourning, privation, separation.",
+      "zh": "寡居、閨怨與困窘、疏離、貧瘠、哀悼、匱乏、分離"
+    },
+    "reversed_meaning": {
+      "en": "Malice, bigotry, artifice, prudery, bale, deceit.",
+      "zh": "惡毒、偏執、虛偽、矯飾、禍心、欺瞞"
+    },
+    "description": {
+      "en": "Her right hand raises the weapon vertically and the hilt rests on an arm of her royal chair the left hand is extended, the arm raised her countenance is severe but chastened; it suggests familiarity with sorrow. It does not represent mercy, and, her sword notwithstanding, she is scarcely a symbol of power.",
+      "zh": "她的右手垂直舉劍，劍柄抵在御座扶手上。左手伸展，臂膀抬起。她的神情嚴峻，卻飽經磨練；這暗示著她深諳悲痛。她不代表慈悲，儘管手持寶劍，卻幾乎稱不上是權力的象徵。"
+    }
+  },
+  {
+    "code": "S14",
+    "title": {
+      "en": "King of Swords",
+      "zh": "寶劍國王"
+    },
+    "arcana": "Court",
+    "suit": "Swords",
+    "filename": "S14_King_of_Swords.jpg",
+    "keywords": [
+      "Intellect",
+      "Authority",
+      "Fair judgment"
+    ],
+    "astro": "Fire of Air",
+    "element": "Air",
+    "upright_meaning": {
+      "en": "Whatsoever arises out of the idea of judgment and all its connexions-power, command, authority, militant intelligence, law, offices of the crown, and so forth.",
+      "zh": "凡所有源於判斷、洞察之意念及其所延伸的一切，諸如權力、指揮、權威、剛毅果斷的才智、律法、王權官職，諸如此類。"
+    },
+    "reversed_meaning": {
+      "en": "Cruelty, perversity, barbarity, perfidy, evil intention.",
+      "zh": "殘忍、乖戾、殘暴、背信棄義、心懷惡念"
+    },
+    "description": {
+      "en": "He sits in judgment, holding the unsheathed sign of his suit. He recalls, of course, the conventional Symbol of justice in the Trumps Major, and he may represent this virtue, but he is rather the power of life and death, in virtue of his office.",
+      "zh": "他端坐於審判席上，手持其牌組的象徵——那把出鞘的寶劍。他自然令人聯想到大牌中的「正義」牌，或許也代表著這項美德。但他更實質地代表著，因其職權而掌握的生殺大權。"
+    }
+  },
+  {
+    "code": "P01",
+    "title": {
+      "en": "Ace of Pentacles",
+      "zh": "錢幣王牌"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P01_Ace_of_Pentacles.jpg",
+    "keywords": [
+      "New opportunity",
+      "Prosperity",
+      "Security"
+    ],
+    "astro": "Root of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Perfect contentment, felicity, ecstasy; also speedy intelligence; gold.",
+      "zh": "圓滿的滿足、幸福與狂喜；亦象徵敏銳的智慧；黃金。"
+    },
+    "reversed_meaning": {
+      "en": "The evil side of wealth, bad intelligence; also great riches. In any case it shews prosperity, comfortable material conditions, but whether these are of advantage to the possessor will depend on whether the card is reversed or not.",
+      "zh": "財富的陰暗面、不智的決策，但同時也可能代表著巨額財富。無論如何，此牌皆顯示著繁榮與舒適的物質條件，然則這些對於擁有者是福是禍，則端看此牌是正位還是逆位而定。"
+    },
+    "description": {
+      "en": "A hand--issuing, as usual, from a cloud--holds up a pentacle.",
+      "zh": "一隻手，一如往常地從雲中伸出，托舉著一枚錢幣。"
+    }
+  },
+  {
+    "code": "P02",
+    "title": {
+      "en": "Two of Pentacles",
+      "zh": "錢幣二"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P02_Two_of_Pentacles.jpg",
+    "keywords": [
+      "Balance",
+      "Juggling",
+      "Flexibility"
+    ],
+    "astro": "Jupiter in Capricorn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "On the one hand it is represented as a card of gaiety, recreation and its connexions, which is the subject of the design; but it is read also as news and messages in writing, as obstacles, agitation, trouble, embroilment.",
+      "zh": "此牌一方面象徵著歡愉、休閒及其延伸，這也是牌面所呈現的主旨；但另一方面，它也被解讀為書面訊息與函件、障礙、內心不安、煩惱和糾葛。"
+    },
+    "reversed_meaning": {
+      "en": "Enforced gaiety, simulated enjoyment, literal sense, handwriting, composition, letters of exchange.",
+      "zh": "強顏歡笑、虛假的歡愉、拘泥於字面、書寫、文章創作、商業匯票"
+    },
+    "description": {
+      "en": "A young man, in the act of dancing, has a pentacle in either hand, and they are joined by that endless cord which is like the number 8 reversed.",
+      "zh": "一個翩翩起舞的青年，雙手各執一枚錢幣，兩枚錢幣由一條無盡之繩相連，這條繩索的形狀猶如橫置的數字「8」。"
+    }
+  },
+  {
+    "code": "P03",
+    "title": {
+      "en": "Three of Pentacles",
+      "zh": "錢幣三"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P03_Three_of_Pentacles.jpg",
+    "keywords": [
+      "Teamwork",
+      "Collaboration",
+      "Skill"
+    ],
+    "astro": "Mars in Capricorn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Métier, trade, skilled labour; usually, however, regarded as a card of nobility, aristocracy, renown, glory.",
+      "zh": "專業、技藝與精湛工藝；然而，它通常被視為一張代表著尊貴、顯赫、聲望與榮耀的牌。"
+    },
+    "reversed_meaning": {
+      "en": "Mediocrity, in work and otherwise, puerility, pettiness, weakness.",
+      "zh": "各方面的平庸，幼稚，狹隘，軟弱。"
+    },
+    "description": {
+      "en": "A sculptor at his work in a monastery. Compare the design which illustrates the Eight of Pentacles. The apprentice or amateur therein has received his reward and is now at work in earnest.",
+      "zh": "一位雕刻師在修道院中專注工作。可以與錢幣八的牌面意象相對照。其中所描繪的學徒或初學者已獲得獎勵，現在正專心致志地投入工作。"
+    }
+  },
+  {
+    "code": "P04",
+    "title": {
+      "en": "Four of Pentacles",
+      "zh": "錢幣四"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P04_Four_of_Pentacles.jpg",
+    "keywords": [
+      "Security",
+      "Possessiveness",
+      "Control"
+    ],
+    "astro": "Sun in Capricorn",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "The surety of possessions, cleaving to that which one has, gift, legacy, inheritance.",
+      "zh": "物質上的穩固保障，珍視並固守現有資產，饋贈，遺產。"
+    },
+    "reversed_meaning": {
+      "en": "Suspense, delay, opposition.",
+      "zh": "懸念、延宕、阻礙"
+    },
+    "description": {
+      "en": "A crowned figure, having a pentacle over his crown, clasps another with hands and arms; two pentacles are under his feet. He holds to that which he has.",
+      "zh": "一位戴冠人物，其王冠上方鑲有一枚錢幣，手中則緊握著另一枚錢幣；另有兩枚錢幣置於其腳下。他堅守著自己所擁有的一切。"
+    }
+  },
+  {
+    "code": "P05",
+    "title": {
+      "en": "Five of Pentacles",
+      "zh": "錢幣五"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P05_Five_of_Pentacles.jpg",
+    "keywords": [
+      "Worry",
+      "Poverty",
+      "Isolation"
+    ],
+    "astro": "Mercury in Taurus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "The card foretells material trouble above all, whether in the form illustrated--that is, destitution--or otherwise. For some cartomancists, it is a card of love and lovers-wife, husband, friend, mistress; also concordance, affinities. These alternatives cannot be harmonized.",
+      "zh": "這張牌主要預示著物質困厄，無論其顯現為牌面所示的赤貧，抑或其他形式。對於某些牌義師而言，它是一張關於愛與戀人的牌——包含妻子、丈夫、朋友、情人；亦代表著契合與親和力。然而，這些牌義解釋無法調和。"
+    },
+    "reversed_meaning": {
+      "en": "Disorder, chaos, ruin, discord, profligacy.",
+      "zh": "紛亂、混沌、傾頹、失和、奢靡"
+    },
+    "description": {
+      "en": "Two mendicants in a snow-storm pass a lighted casement.",
+      "zh": "兩名行者在暴風雪中經過一扇透出光亮的窗。"
+    }
+  },
+  {
+    "code": "P06",
+    "title": {
+      "en": "Six of Pentacles",
+      "zh": "錢幣六"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P06_Six_of_Pentacles.jpg",
+    "keywords": [
+      "Giving",
+      "Receiving",
+      "Charity"
+    ],
+    "astro": "Moon in Taurus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Presents, gifts, gratification another account says attention, vigilance now is the accepted time, present prosperity, etc.",
+      "zh": "象徵禮物、餽贈與圓滿的滿足。亦有解讀為需保持專注與警覺。此時正是時機成熟之刻，預示著當前的豐盛與富饒。"
+    },
+    "reversed_meaning": {
+      "en": "Desire, cupidity, envy, jealousy, illusion.",
+      "zh": "慾念、貪婪、嫉妒、猜忌、虛妄"
+    },
+    "description": {
+      "en": "A person in the guise of a merchant weighs money in a pair of scales and distributes it to the needy and distressed. It is a testimony to his own success in life, as well as to his goodness of heart.",
+      "zh": "一位以商人姿態出現的人物，正手持天平秤量著金錢，並將其施予那些貧困與受苦之人。這不僅見證了他個人在人生中的成功與豐盛，更彰顯了他內心的良善與慈悲。"
+    }
+  },
+  {
+    "code": "P07",
+    "title": {
+      "en": "Seven of Pentacles",
+      "zh": "錢幣七"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P07_Seven_of_Pentacles.jpg",
+    "keywords": [
+      "Patience",
+      "Assessment",
+      "Waiting"
+    ],
+    "astro": "Saturn in Taurus",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "These are exceedingly contradictory; in the main, it is a card of money, business, barter; but one reading gives altercation, quarrels--and another innocence, ingenuity, purgation.",
+      "zh": "此牌牌義極其矛盾；主要而言，它代表金錢、商業、與物物交換；然而，有種解讀認為是爭執、紛爭——而另一種則指向純真、巧思、與淨化。"
+    },
+    "reversed_meaning": {
+      "en": "Cause for anxiety regarding money which it may be proposed to lend.",
+      "zh": "因一筆可能被提議出借的款項，引發了金錢方面的焦慮。"
+    },
+    "description": {
+      "en": "A young man, leaning on his staff, looks intently at seven pentacles attached to a clump of greenery on his right; one would say that these were his treasures and that his heart was there.",
+      "zh": "一位青年倚杖而立，凝視著右側一片綠叢上所綴的七枚錢幣。簡直可謂，這便是他的珍寶，而其心神亦繫於此。"
+    }
+  },
+  {
+    "code": "P08",
+    "title": {
+      "en": "Eight of Pentacles",
+      "zh": "錢幣八"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P08_Eight_of_Pentacles.jpg",
+    "keywords": [
+      "Apprenticeship",
+      "Dedication",
+      "Craftsmanship"
+    ],
+    "astro": "Sun in Virgo",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Work, employment, commission, craftsmanship, skill in craft and business, perhaps in the preparatory stage.",
+      "zh": "工作、就業、委託事務；精湛的工藝技術與商業才華。這一切或許正值醞釀或準備的初期。"
+    },
+    "reversed_meaning": {
+      "en": "Voided ambition, vanity, cupidity, exaction, usury. It may also signify the possession of skill, in the sense of the ingenious mind turned to cunning and intrigue.",
+      "zh": "抱負落空、虛榮心作祟、貪婪苛索、巧取豪奪。亦可能象徵才華橫溢，但這份聰明才智卻被轉用於狡詐與陰謀。"
+    },
+    "description": {
+      "en": "An artist in stone at his work, which he exhibits in the form of trophies.",
+      "zh": "一位雕琢石材的藝術家，傾注心力於其作品，並將之展現為榮耀的獎盃。"
+    }
+  },
+  {
+    "code": "P09",
+    "title": {
+      "en": "Nine of Pentacles",
+      "zh": "錢幣九"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P09_Nine_of_Pentacles.jpg",
+    "keywords": [
+      "Luxury",
+      "Self-reliance",
+      "Financial independence"
+    ],
+    "astro": "Venus in Virgo",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Prudence, safety, success, accomplishment, certitude, discernment.",
+      "zh": "謹慎、安全、成功、成就、篤定、洞察力。"
+    },
+    "reversed_meaning": {
+      "en": "Roguery, deception, voided project, bad faith.",
+      "zh": "詭詐、蒙蔽、計畫無疾而終、不懷好意"
+    },
+    "description": {
+      "en": "A woman, with a bird upon her wrist, stands amidst a great abundance of grapevines in the garden of a manorial house. It is a wide domain, suggesting plenty in all things. Possibly it is her own possession and testifies to material well-being.",
+      "zh": "一名女子，手腕上棲息著一隻鳥，身處於一座莊園宅邸花園中豐盛的葡萄藤之間。這是一片廣袤的領域，暗示著萬事萬物的豐盛。或許這片廣袤的產業是她個人所有，象徵著物質上的豐足與安逸。"
+    }
+  },
+  {
+    "code": "P10",
+    "title": {
+      "en": "Ten of Pentacles",
+      "zh": "錢幣十"
+    },
+    "arcana": "Minor",
+    "suit": "Pentacles",
+    "filename": "P10_Ten_of_Pentacles.jpg",
+    "keywords": [
+      "Wealth",
+      "Family",
+      "Inheritance"
+    ],
+    "astro": "Mercury in Virgo",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Gain, riches; family matters, archives, extraction, the abode of a family.",
+      "zh": "收穫、財富；家庭事務、檔案、汲取、家宅。"
+    },
+    "reversed_meaning": {
+      "en": "Chance, fatality, loss, robbery, games of hazard; sometimes gift, dowry, pension.",
+      "zh": "機運不濟、宿命劫難、財物損失、被奪盜竊、高風險投機；有時亦指禮物、嫁妝、退休金等財務上的隱憂或變數。"
+    },
+    "description": {
+      "en": "A man and woman beneath an archway which gives entrance to a house and domain. They are accompanied by a child, who looks curiously at two dogs accosting an ancient personage seated in the foreground. The child's hand is on one of them.",
+      "zh": "一對男女佇立於一座通往家園與領域的拱門之下。他們身旁伴隨著一名孩童，孩童好奇地注視著前景中一位安坐的古老人物，兩隻狗正趨近於他，似在訴說或探詢。孩童的手輕撫其中一隻狗。"
+    }
+  },
+  {
+    "code": "P11",
+    "title": {
+      "en": "Page of Pentacles",
+      "zh": "錢幣侍者"
+    },
+    "arcana": "Court",
+    "suit": "Pentacles",
+    "filename": "P11_Page_of_Pentacles.jpg",
+    "keywords": [
+      "New career path",
+      "Opportunity",
+      "Study"
+    ],
+    "astro": "Earth of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Application, study, scholarship, reflection another reading says news, messages and the bringer thereof; also rule, management.",
+      "zh": "勤勉、鑽研、學識、沈思。另有詮釋為消息、訊息及其傳遞者；亦指統籌、管理。"
+    },
+    "reversed_meaning": {
+      "en": "Prodigality, dissipation, liberality, luxury; unfavourable news.",
+      "zh": "揮霍、浪費、放縱、奢靡；凶訊。"
+    },
+    "description": {
+      "en": "A youthful figure, looking intently at the pentacle which hovers over his raised hands. He moves slowly, insensible of that which is about him.",
+      "zh": "一位青年身姿，凝神注視著懸浮於其高舉雙手之上的金幣。其步伐緩慢，對身周一切毫無所覺。"
+    }
+  },
+  {
+    "code": "P12",
+    "title": {
+      "en": "Knight of Pentacles",
+      "zh": "錢幣騎士"
+    },
+    "arcana": "Court",
+    "suit": "Pentacles",
+    "filename": "P12_Knight_of_Pentacles.jpg",
+    "keywords": [
+      "Hard work",
+      "Reliable",
+      "Routine"
+    ],
+    "astro": "Air of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Utility, serviceableness, interest, responsibility, rectitude-all on the normal and external plane.",
+      "zh": "務實、樂於效勞、專注、負責、正直——其特質皆顯現於尋常外在之層面。"
+    },
+    "reversed_meaning": {
+      "en": "inertia, idleness, repose of that kind, stagnation; also placidity, discouragement, carelessness.",
+      "zh": "惰性、怠惰、不思進取、停滯不前；亦指過於安逸、沮喪、漫不經心。"
+    },
+    "description": {
+      "en": "He rides a slow, enduring, heavy horse, to which his own aspect corresponds. He exhibits his symbol, but does not look therein.",
+      "zh": "他騎乘著一匹緩慢、沉穩而厚實的駿馬，其自身氣宇亦與之相應。他展示著手中的象徵，卻從未凝視其中。"
+    }
+  },
+  {
+    "code": "P13",
+    "title": {
+      "en": "Queen of Pentacles",
+      "zh": "錢幣皇后"
+    },
+    "arcana": "Court",
+    "suit": "Pentacles",
+    "filename": "P13_Queen_of_Pentacles.jpg",
+    "keywords": [
+      "Nurturing",
+      "Practical",
+      "Generous"
+    ],
+    "astro": "Water of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Opulence, generosity, magnificence, security, liberty.",
+      "zh": "豐盛、慷慨、尊貴、安穩、自由"
+    },
+    "reversed_meaning": {
+      "en": "Evil, suspicion, suspense, fear, mistrust.",
+      "zh": "墮落、猜疑、懸心、恐懼、不信任"
+    },
+    "description": {
+      "en": "The face suggests that of a dark woman, whose qualities might be summed up in the idea of greatness of soul; she has also the serious cast of intelligence; she contemplates her symbol and may see worlds therein.",
+      "zh": "她的面容是一位深色髮膚的女性，其特質可歸結為靈魂的偉大；她同時擁有沉穩深邃的智慧；她凝視著自己的象徵符號，或許能從中洞見萬千世界。"
+    }
+  },
+  {
+    "code": "P14",
+    "title": {
+      "en": "King of Pentacles",
+      "zh": "錢幣國王"
+    },
+    "arcana": "Court",
+    "suit": "Pentacles",
+    "filename": "P14_King_of_Pentacles.jpg",
+    "keywords": [
+      "Success",
+      "Security",
+      "Reliability"
+    ],
+    "astro": "Fire of Earth",
+    "element": "Earth",
+    "upright_meaning": {
+      "en": "Valour, realizing intelligence, business and normal intellectual aptitude, sometimes mathematical gifts and attainments of this kind; success in these paths.",
+      "zh": "堅毅與穩重，將智慧付諸實踐，具備營商才幹與一般才智，偶爾亦展現數學天賦及相關造詣；在這些領域中獲得成功。"
+    },
+    "reversed_meaning": {
+      "en": "Vice, weakness, ugliness, perversity, corruption, peril.",
+      "zh": "敗德、軟弱、醜惡、墮落、腐敗、險境。"
+    },
+    "description": {
+      "en": "The figure calls for no special description the face is rather dark, suggesting also courage, but somewhat lethargic in tendency. The bull's head should be noted as a recurrent symbol on the throne. The sign of this suit is represented throughout as engraved or blazoned with the pentagram, typifying the correspondence of the four elements in human nature and that by which they may be governed. In many old Tarot packs this suit stood for current coin, money, deniers. I have not invented the substitution of pentacles and I have no special cause to sustain in respect of the alternative. But the consensus of divinatory meanings is on the side of some change, because the cards do not happen to deal especially with questions of money.",
+      "zh": "這人物形象本身無需多言；其面容略顯黝黑，暗示著勇氣，卻也略帶遲滯之傾向。其寶座上反覆出現的牛頭符號值得特別留意。此牌組的符號，始終以雕刻或徽飾的五芒星呈現，象徵著人類本質中四大元素的對應關係，以及它們如何被駕馭。在許多古老的塔羅牌組中，此牌組代表著流通的錢幣、金錢或德尼爾。我並非獨創以「錢幣」一詞（Pentacles）取代傳統稱謂者，對於此替代稱謂亦無特別堅持的理由。然而，占卜牌義的共識傾向於進行一些改變，因為這些牌義並非專門處理金錢問題。"
+    }
+  }
+];
+
+// Spread definitions for MVP
+export const LOCAL_SPREADS = {
+  'single-card': {
+    id: 'single-card',
+    name: { en: 'Single Card Draw', zh: '單張牌' },
+    positions: [
+      { position: 1, label: { en: 'The Heart of the Matter', zh: '問題核心' } }
+    ],
+    card_count: 1
+  },
+  'three-card': {
+    id: 'three-card',
+    name: { en: 'Past, Present, Future', zh: '過去、現在、未來' },
+    positions: [
+      { position: 1, label: { en: 'Past', zh: '過去' } },
+      { position: 2, label: { en: 'Present', zh: '現在' } },
+      { position: 3, label: { en: 'Future', zh: '未來' } }
+    ],
+    card_count: 3
+  }
+};

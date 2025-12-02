@@ -95,3 +95,9 @@ UPDATE public.users
 SET subscription_tier = 'expert';
 ```
 
+
+
+
+
+
+

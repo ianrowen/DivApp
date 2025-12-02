@@ -1,5 +1,5 @@
 // src/features/auth/screens/LoginScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -16,16 +16,50 @@ import MysticalBackground from '../../../shared/components/ui/MysticalBackground
 import ThemedText from '../../../shared/components/ui/ThemedText';
 import ThemedButton from '../../../shared/components/ui/ThemedButton';
 import ThemedCard from '../../../shared/components/ui/ThemedCard';
+import { useTranslation } from '../../../i18n';
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isAppleAvailable, setIsAppleAvailable] = useState(false);
+
+  // Reset loading state when auth state changes (user signs in or error occurs)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Check if Apple Sign In is available (iOS only)
+  useEffect(() => {
+    const checkAppleAvailability = async () => {
+      if (Platform.OS === 'ios') {
+        try {
+          // Dynamically import expo-apple-authentication only on iOS
+          const AppleAuthentication = await import('expo-apple-authentication');
+          const available = await AppleAuthentication.isAvailableAsync();
+          setIsAppleAvailable(available);
+        } catch (error) {
+          console.log('Apple Sign In not available:', error);
+          setIsAppleAvailable(false);
+        }
+      }
+    };
+    checkAppleAvailability();
+  }, []);
 
   async function handleEmailAuth() {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+      Alert.alert(t('common.error'), t('auth.pleaseEnterEmailPassword'));
       return;
     }
 
@@ -44,9 +78,9 @@ export default function LoginScreen() {
         if (error) throw error;
 
         Alert.alert(
-          'Success!',
-          'Check your email for verification link',
-          [{ text: 'OK' }]
+          t('auth.success'),
+          t('auth.checkEmail'),
+          [{ text: t('common.ok') }]
         );
       } else {
         // Sign in
@@ -60,7 +94,7 @@ export default function LoginScreen() {
         console.log('✅ Signed in:', data.user?.email);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('common.error'), error.message);
       console.error('Auth error:', error);
     } finally {
       setLoading(false);
@@ -70,15 +104,32 @@ export default function LoginScreen() {
   async function handleGoogleSignIn() {
     setLoading(true);
     try {
-      const session = await supabaseHelpers.signInWithGoogle();
-      if (session?.user?.email) {
-        console.log('✅ Google sign in:', session.user.email);
-      }
+      console.log('🔵 Starting Google sign in...');
+      await supabaseHelpers.signInWithGoogle();
+      console.log('🔵 Browser opened, waiting for OAuth callback...');
+      // Don't set loading to false here - keep it true while waiting for OAuth callback
+      // The loading state will be reset when auth state changes or on error
     } catch (error: any) {
-      Alert.alert('Error', error.message);
-      console.error('Google sign in error:', error);
-    } finally {
       setLoading(false);
+      console.error('❌ Google sign in error:', error);
+      Alert.alert(t('common.error'), error?.message || 'Failed to start Google sign in');
+    }
+  }
+
+  async function handleAppleSignIn() {
+    setLoading(true);
+    try {
+      console.log('🍎 Starting Apple sign in...');
+      await supabaseHelpers.signInWithApple();
+      console.log('🍎 Apple sign in successful');
+      // Loading will be reset when auth state changes
+    } catch (error: any) {
+      setLoading(false);
+      console.error('❌ Apple sign in error:', error);
+      // Don't show alert for user cancellation
+      if (error?.message !== 'Sign in cancelled') {
+        Alert.alert(t('common.error'), error?.message || t('auth.appleSignInFailed'));
+      }
     }
   }
 
@@ -97,10 +148,10 @@ export default function LoginScreen() {
             <ThemedText variant="h1" style={styles.logo}>
               🔮
             </ThemedText>
-            <ThemedText variant="h1">Divin8</ThemedText>
+            <ThemedText variant="h1">{t('common.appName')}</ThemedText>
             <View style={styles.subtitleSpacer} />
             <ThemedText variant="body">
-              {isSignUp ? 'Create your account' : 'Welcome back'}
+              {isSignUp ? t('auth.createAccount') : t('auth.welcomeBack')}
             </ThemedText>
           </View>
 
@@ -109,7 +160,7 @@ export default function LoginScreen() {
             <View style={styles.form}>
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder={t('auth.email')}
                 placeholderTextColor={theme.colors.text.tertiary}
                 value={email}
                 onChangeText={setEmail}
@@ -120,7 +171,7 @@ export default function LoginScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t('auth.password')}
                 placeholderTextColor={theme.colors.text.tertiary}
                 value={password}
                 onChangeText={setPassword}
@@ -129,7 +180,7 @@ export default function LoginScreen() {
               />
 
               <ThemedButton
-                title={loading ? '...' : isSignUp ? 'Sign Up' : 'Sign In'}
+                title={loading ? '...' : isSignUp ? t('auth.signUp') : t('auth.signIn')}
                 onPress={handleEmailAuth}
                 variant="primary"
                 disabled={loading}
@@ -139,8 +190,8 @@ export default function LoginScreen() {
               <ThemedButton
                 title={
                   isSignUp
-                    ? 'Already have an account? Sign In'
-                    : "Don't have an account? Sign Up"
+                    ? t('auth.alreadyHaveAccount')
+                    : t('auth.dontHaveAccount')
                 }
                 onPress={() => setIsSignUp(!isSignUp)}
                 variant="ghost"
@@ -154,20 +205,32 @@ export default function LoginScreen() {
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <ThemedText variant="caption" style={styles.dividerText}>
-              OR
+              {t('common.or')}
             </ThemedText>
             <View style={styles.dividerLine} />
           </View>
 
           {/* Google Sign In Button */}
           <ThemedButton
-            title="Continue with Google"
+            title={t('auth.continueWithGoogle')}
             onPress={handleGoogleSignIn}
             variant="secondary"
             disabled={loading}
             style={styles.googleButton}
             textStyle={styles.googleButtonText}
           />
+
+          {/* Apple Sign In Button - iOS only */}
+          {isAppleAvailable && (
+            <ThemedButton
+              title={t('auth.continueWithApple')}
+              onPress={handleAppleSignIn}
+              variant="secondary"
+              disabled={loading}
+              style={styles.appleButton}
+              textStyle={styles.appleButtonText}
+            />
+          )}
 
           {/* Test Button - Remove after deep linking works */}
           {__DEV__ && (
@@ -265,6 +328,12 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.spacing.md,
   },
   googleButtonText: {
+    color: theme.colors.primary.gold,
+  },
+  appleButton: {
+    marginBottom: theme.spacing.spacing.md,
+  },
+  appleButtonText: {
     color: theme.colors.primary.gold,
   },
   testButton: {

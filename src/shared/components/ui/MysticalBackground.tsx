@@ -2,20 +2,18 @@
 /**
  * MysticalBackground Component
  * 
- * A gradient background wrapper component that creates a mystical atmosphere
- * using velvet gradients. Provides consistent background styling throughout
- * the application.
+ * A background wrapper component that creates a mystical atmosphere
+ * using pure React Native View components (no native modules).
+ * Provides consistent background styling throughout the application.
  * 
- * Supports two variants: default (dramatic mystical gradient) and subtle
- * (less dramatic gradient for content-heavy screens).
+ * Supports two variants: default (dramatic mystical glow) and subtle
+ * (solid black for content-heavy screens).
  * 
  * @module MysticalBackground
  */
 
 import React from 'react';
 import { View, ViewProps, StyleSheet, ViewStyle } from 'react-native';
-// TODO: Fix LinearGradient native module issue
-// import { LinearGradient } from 'expo-linear-gradient';
 import theme from '../../theme';
 
 /**
@@ -28,12 +26,12 @@ export type BackgroundVariant = 'default' | 'subtle';
  */
 export interface MysticalBackgroundProps extends Omit<ViewProps, 'style'> {
   /**
-   * Content to render over the gradient background
+   * Content to render over the background
    */
   children: React.ReactNode;
   
   /**
-   * Background gradient variant
+   * Background variant
    * Defaults to 'default' if not specified
    */
   variant?: BackgroundVariant;
@@ -47,9 +45,9 @@ export interface MysticalBackgroundProps extends Omit<ViewProps, 'style'> {
 /**
  * MysticalBackground Component
  * 
- * A gradient background wrapper that creates a mystical atmosphere using
- * velvet gradients. The default variant uses a dramatic black → velvetGlow → black
- * gradient, while the subtle variant uses a softer black → darkGray gradient.
+ * A background wrapper that creates a mystical atmosphere using pure React Native
+ * View components. The default variant uses a black background with a centered
+ * crimson glow overlay, while the subtle variant uses a solid black background.
  * 
  * @example
  * ```tsx
@@ -70,50 +68,47 @@ const MysticalBackground: React.FC<MysticalBackgroundProps> = ({
   style,
   ...viewProps
 }) => {
-  // Get gradient colors based on variant
-  const getGradientColors = (): string[] => {
-    switch (variant) {
-      case 'default':
-        // Mystical velvet gradient: black → velvetGlow → black
-        return [
-          theme.colors.neutrals.black,
-          theme.colors.mystical.velvetGlow,
-          theme.colors.neutrals.black,
-        ];
-      
-      case 'subtle':
-        // Subtle gradient: black → darkGray
-        return [
-          theme.colors.neutrals.black,
-          theme.colors.neutrals.darkGray,
-        ];
-      
-      default:
-        return [
-          theme.colors.neutrals.black,
-          theme.colors.mystical.velvetGlow,
-          theme.colors.neutrals.black,
-        ];
-    }
-  };
-
-  // TODO: Fix LinearGradient native module issue
-  // Temporarily using plain View with black background to avoid ViewManager crash
-  // const gradientColors = getGradientColors();
-
   return (
     <View
-      style={[styles.container, { backgroundColor: theme.colors.neutrals.black }, style]}
+      style={[styles.baseLayer, style]}
       {...viewProps}
     >
-      {children}
+      {/* Radial glow overlay for default variant */}
+      {variant === 'default' && (
+        <View style={styles.glowOverlay} />
+      )}
+      
+      {/* Content layer */}
+      <View style={styles.contentLayer}>
+        {children}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  // Base layer: solid black background
+  baseLayer: {
     flex: 1,
+    backgroundColor: theme.colors.neutrals.black,
+    position: 'relative',
+    overflow: 'hidden', // Clip the glow overlay to container bounds
+  },
+  // Radial glow overlay: soft crimson glow radiating from center
+  glowOverlay: {
+    position: 'absolute',
+    top: '-25%', // Position so center is at 50% (150% / 2 = 75%, so -25% positions center at 50%)
+    left: '-25%',
+    width: '150%',
+    height: '150%',
+    backgroundColor: theme.colors.primary.crimson,
+    opacity: 0.2,
+    borderRadius: 9999, // Circular shape for radial effect
+  },
+  // Content layer: children rendered on top
+  contentLayer: {
+    flex: 1,
+    zIndex: 1, // Ensure content is above the glow overlay
   },
 });
 

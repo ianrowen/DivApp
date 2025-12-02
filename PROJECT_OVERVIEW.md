@@ -52,7 +52,7 @@
    - Store preferences in user settings
 
 5. **Performance requirements:**
-   - Must run smoothly on mid-range Android devices
+   - Must run smoothly on mid-range Android elopices
    - No frame drops during animation
    - Lazy load animation resources
 
@@ -152,7 +152,7 @@
 ### AI
 - **Production (users):** Google Gemini 2.0 Flash (~$0.0004/reading)
 - **Abstracted:** AIProvider class (can switch to Claude/GPT without code changes)
-- **Development (me):** Claude Sonnet 4.5 + Gemini 2.0 Flash
+- **perpment (me):** Claude Sonnet 4.5 + Gemini 2.0 Flash
 
 ### Payments
 - RevenueCat (subscription management)
@@ -407,4 +407,10 @@ divin8-app/
 - Performance is critical - must run smoothly on mid-range Android devices
 - Keep bundle size minimal
 - TypeScript strict mode required
+
+
+
+
+
+
 

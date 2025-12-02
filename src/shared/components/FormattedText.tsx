@@ -16,6 +16,10 @@ interface FormattedTextProps {
 export default function FormattedText({ text, style }: FormattedTextProps) {
   if (!text) return null;
 
+  // Normalize paragraph breaks: replace 2+ consecutive line breaks with single line break
+  // This ensures paragraphs are separated by only one line break
+  const normalizedText = text.replace(/\n{2,}/g, '\n');
+
   // Simple markdown parser
   const parseMarkdown = (input: string): React.ReactNode[] => {
     const parts: React.ReactNode[] = [];
@@ -88,19 +92,21 @@ export default function FormattedText({ text, style }: FormattedTextProps) {
     return parts.length > 0 ? parts : [<Text key="plain" style={style}>{input}</Text>];
   };
 
-  // Split by paragraphs (double line breaks)
-  const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
+  // Split by line breaks to create paragraphs, but preserve intentional single line breaks
+  // Only split on line breaks that appear to be paragraph separators (followed by non-whitespace or at end)
+  const paragraphs = normalizedText.split(/\n/).filter(p => p.trim());
 
   if (paragraphs.length === 0) {
-    return <Text style={style}>{text}</Text>;
+    return <Text style={style}>{normalizedText}</Text>;
   }
 
+  // Render paragraphs with single line break between them
   return (
     <>
       {paragraphs.map((paragraph, index) => (
         <React.Fragment key={`para-${index}`}>
           <Text style={style}>{parseMarkdown(paragraph.trim())}</Text>
-          {index < paragraphs.length - 1 && <Text>{'\n\n'}</Text>}
+          {index < paragraphs.length - 1 && <Text>{'\n'}</Text>}
         </React.Fragment>
       ))}
     </>

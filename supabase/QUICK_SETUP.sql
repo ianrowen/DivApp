@@ -80,3 +80,9 @@ ORDER BY created_at DESC;
 
 -- You should see your user(s) with subscription_tier = 'expert'
 
+
+
+
+
+
+
