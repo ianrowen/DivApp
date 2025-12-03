@@ -34,42 +34,15 @@ const LANGUAGES: LanguageOption[] = [
 
 export function LanguageSelector() {
   const { locale, setLocale: setLocaleFromHook } = useTranslation();
-  const [currentLocale, setCurrentLocale] = React.useState<SupportedLocale>(locale);
-
-  // Load saved language preference on mount
-  useEffect(() => {
-    loadLanguage();
-  }, []);
-
-  const loadLanguage = async () => {
-    try {
-      const saved = await AsyncStorage.getItem('user_language');
-      if (saved && (saved === 'en' || saved === 'zh-TW')) {
-        const savedLocale = saved as SupportedLocale;
-        i18n.locale = savedLocale;
-        setCurrentLocale(savedLocale);
-        // Also update the hook's locale state
-        await setLocaleFromHook(savedLocale);
-      } else {
-        // Use current locale from i18n
-        const current = getLocale();
-        setCurrentLocale(current);
-      }
-    } catch (error) {
-      console.error('Failed to load language preference:', error);
-      // Fallback to current locale
-      const current = getLocale();
-      setCurrentLocale(current);
-    }
-  };
+  // Use hook's locale directly - no need for separate state
+  const currentLocale = locale;
 
   const changeLanguage = async (lang: SupportedLocale) => {
+    // Immediately update language - no save button needed
+    // This saves to AsyncStorage automatically and updates all translations instantly
     try {
-      // Use the exported setLocale function which handles AsyncStorage and i18n.locale
-      await setLocale(lang);
-      setCurrentLocale(lang);
-      // Also update through hook to trigger re-renders in other components
       await setLocaleFromHook(lang);
+      // Language change is immediate - all components using useTranslation will re-render
     } catch (error) {
       console.error('Failed to change language:', error);
     }

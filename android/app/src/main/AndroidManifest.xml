@@ -24,12 +24,12 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="com.divin8.app"/>
+        <data android:scheme="divin8"/>
       </intent-filter>
       <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>
         <data android:scheme="https" android:host="auth.expo.io" android:pathPrefix="/@irowen/divin8-app"/>
-        <data android:scheme="com.divin8.app" android:host="supabase-auth"/>
+        <data android:scheme="divin8" android:host="supabase-auth"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
       </intent-filter>

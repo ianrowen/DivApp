@@ -1,6 +1,7 @@
 // src/shared/components/DailyCardDraw.tsx
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { LOCAL_RWS_CARDS } from '../../systems/tarot/data/localCardData';
 import { getLocalizedCard } from '../../systems/tarot/utils/cardHelpers';
 import theme from '../theme';
@@ -72,6 +73,8 @@ export default function DailyCardDraw() {
 
   const handleFlip = () => {
     if (isAnimating) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     setIsAnimating(true);
     setIsFlipped(!isFlipped);
@@ -249,4 +252,5 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
+
 

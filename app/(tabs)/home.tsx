@@ -1,27 +1,18 @@
-// src/screens/HomeScreen.tsx
+// app/(tabs)/home.tsx
 import React from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { CompositeScreenProps } from '@react-navigation/native';
-import type { StackScreenProps } from '@react-navigation/stack';
-import { supabaseHelpers } from '../core/api/supabase';
-import type { AppStackParamList, MainTabParamList } from '../../App';
-import theme from '../shared/theme';
-import MysticalBackground from '../shared/components/ui/MysticalBackground';
-import ThemedText from '../shared/components/ui/ThemedText';
-import ThemedButton from '../shared/components/ui/ThemedButton';
-import ThemedCard from '../shared/components/ui/ThemedCard';
-import DailyCardDraw from '../shared/components/DailyCardDraw';
-import { useTranslation } from '../i18n';
+import { router } from 'expo-router';
+import { supabaseHelpers } from '../../src/core/api/supabase';
+import theme from '../../src/shared/theme';
+import MysticalBackground from '../../src/shared/components/ui/MysticalBackground';
+import ThemedText from '../../src/shared/components/ui/ThemedText';
+import ThemedButton from '../../src/shared/components/ui/ThemedButton';
+import ThemedCard from '../../src/shared/components/ui/ThemedCard';
+import DailyCardDraw from '../../src/shared/components/DailyCardDraw';
+import { useTranslation } from '../../src/i18n';
 
-type Props = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, 'Home'>,
-  StackScreenProps<AppStackParamList>
->;
-
-// This is the main screen after login - mystical divination portal
-export default function HomeScreen({ navigation }: Props) {
+export default function HomeScreen() {
   const [loading, setLoading] = React.useState(false);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -30,7 +21,7 @@ export default function HomeScreen({ navigation }: Props) {
     setLoading(true);
     try {
       await supabaseHelpers.signOut();
-      // App.tsx will detect the session change and navigate to LoginScreen
+      router.replace('/(auth)/login');
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
@@ -65,20 +56,20 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={styles.buttonContainer}>
             <ThemedButton
               title={t('home.tarot')}
-              onPress={() => navigation.getParent()?.navigate('TarotReading')}
+              onPress={() => router.push('/tarot-reading')}
               variant="primary"
               style={styles.primaryActionButton}
             />
             <View style={styles.buttonSpacer} />
             <ThemedButton
               title={t('history.title')}
-              onPress={() => navigation.navigate('History')}
+              onPress={() => router.push('/(tabs)/history')}
               variant="secondary"
             />
             <View style={styles.buttonSpacer} />
             <ThemedButton
               title={t('profile.title')}
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => router.push('/(tabs)/profile')}
               variant="secondary"
             />
           </View>
@@ -157,3 +148,5 @@ const styles = StyleSheet.create({
     color: theme.colors.text.tertiary,
   },
 });
+
+

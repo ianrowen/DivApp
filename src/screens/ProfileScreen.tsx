@@ -32,6 +32,7 @@ import ThemedText from '../shared/components/ui/ThemedText';
 import ThemedButton from '../shared/components/ui/ThemedButton';
 import ThemedCard from '../shared/components/ui/ThemedCard';
 import LocationSearch, { LocationSearchResult } from '../shared/components/LocationSearch';
+import { LanguageSelector } from '../shared/components/LanguageSelector';
 import { useTranslation } from '../i18n';
 import { calculateChart, type BirthData } from '../services/astrologyService';
 import locationService from '../services/locationService';
@@ -143,9 +144,9 @@ export default function ProfileScreen({ navigation }: Props) {
     loadProfileData();
   }, []);
 
-  // Recalculate when birth data changes (debounced)
+  // Recalculate when birth data changes (debounced) - only if opted in
   useEffect(() => {
-    if (!birthDate) {
+    if (!useForReadings || !birthDate) {
       setCalculatedData({
         sunSign: null,
         moonSign: null,
@@ -168,7 +169,7 @@ export default function ProfileScreen({ navigation }: Props) {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [birthDate, birthTime, birthLocation]);
+  }, [useForReadings, birthDate, birthTime, birthLocation]);
 
   const loadProfileData = async () => {
     try {
@@ -288,7 +289,8 @@ export default function ProfileScreen({ navigation }: Props) {
   }, [locale, birthLocation]);
 
   const saveProfile = async () => {
-    if (!birthDate) {
+    // Only require birth date if user opts in to use birth data
+    if (useForReadings && !birthDate) {
       Alert.alert(
         t('common.error'),
         'Please select your birth date'
@@ -316,7 +318,7 @@ export default function ProfileScreen({ navigation }: Props) {
         .from('user_profiles')
         .upsert({
           user_id: user.id,
-          birth_date: birthDate.toISOString().split('T')[0], // Store as date only (YYYY-MM-DD)
+          birth_date: birthDate ? birthDate.toISOString().split('T')[0] : null, // Store as date only (YYYY-MM-DD)
           birth_time: formatTimeForDB(birthTime), // Store as time string (HH:mm)
           birth_location: birthLocation ? {
             lat: birthLocation.lat,
@@ -413,14 +415,19 @@ export default function ProfileScreen({ navigation }: Props) {
         style={styles.scrollView}
       >
         <ThemedCard variant="elevated" style={styles.mainCard}>
+          {/* Language Selector */}
+          <View style={styles.languageSelectorContainer}>
+            <ThemedText variant="caption" style={styles.languageLabel}>
+              {locale === 'zh-TW' ? '語言' : 'Language'}
+            </ThemedText>
+            <LanguageSelector />
+          </View>
+
           {/* Header */}
           <View style={styles.headerContainer}>
             <View style={styles.titleContainer}>
               <ThemedText variant="h1" style={styles.title}>
                 {t('profile.title')}
-              </ThemedText>
-              <ThemedText variant="body" style={styles.subtitle}>
-                {t('profile.subtitle')}
               </ThemedText>
             </View>
           </View>
@@ -434,7 +441,87 @@ export default function ProfileScreen({ navigation }: Props) {
             </View>
           )}
 
-          {/* Tier 1: Birth Date */}
+          {/* Use for Readings Toggle - Moved to top */}
+          <View style={styles.section}>
+            <View style={styles.toggleContainer}>
+              <View style={styles.toggleTextContainer}>
+                <ThemedText variant="body" style={styles.toggleLabel}>
+                  {t('profile.useForReadings')}
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.toggleDescription}>
+                  {t('profile.useForReadingsDescription')}
+                </ThemedText>
+              </View>
+              <Switch
+                value={useForReadings}
+                onValueChange={(value) => {
+                  setUseForReadings(value);
+                  setHasUnsavedChanges(true);
+                }}
+                trackColor={{
+                  false: theme.colors.neutrals.midGray,
+                  true: theme.colors.primary.crimson,
+                }}
+                thumbColor={useForReadings ? theme.colors.primary.gold : theme.colors.neutrals.lightGray}
+              />
+            </View>
+          </View>
+
+          {/* Calculated Results - Moved between toggle and entry fields */}
+          {calculatedData.sunSign && (
+            <ThemedCard variant="minimal" style={styles.resultsCard}>
+              <ThemedText variant="h3" style={styles.resultsTitle}>
+                Your Chart
+              </ThemedText>
+              {calculating && (
+                <View style={styles.calculatingContainer}>
+                  <ActivityIndicator size="small" color={theme.colors.primary.gold} />
+                  <ThemedText variant="caption" style={styles.calculatingText}>
+                    {t('profile.calculating')}
+                  </ThemedText>
+                </View>
+              )}
+              <View style={styles.resultRow}>
+                <ThemedText variant="body" style={styles.resultLabel}>
+                  {t('profile.sunSign')}:
+                </ThemedText>
+                <ThemedText variant="body" style={styles.resultValue}>
+                  {getSignDisplayName(calculatedData.sunSign)}
+                </ThemedText>
+              </View>
+              {calculatedData.moonSign && (
+                <View style={styles.resultRow}>
+                  <ThemedText variant="body" style={styles.resultLabel}>
+                    {t('profile.moonSign')}:
+                  </ThemedText>
+                  <ThemedText variant="body" style={styles.resultValue}>
+                    {getSignDisplayName(calculatedData.moonSign)}
+                    {calculatedData.accuracy === 'partial' && ' (approximate)'}
+                  </ThemedText>
+                </View>
+              )}
+              {calculatedData.risingSign && (
+                <View style={styles.resultRow}>
+                  <ThemedText variant="body" style={styles.resultLabel}>
+                    {t('profile.risingSign')}:
+                  </ThemedText>
+                  <ThemedText variant="body" style={styles.resultValue}>
+                    {getSignDisplayName(calculatedData.risingSign)}
+                  </ThemedText>
+                </View>
+              )}
+              <View style={styles.accuracyContainer}>
+                <ThemedText variant="caption" style={styles.accuracyText}>
+                  {getAccuracyText()}
+                </ThemedText>
+              </View>
+            </ThemedCard>
+          )}
+
+          {/* Birth Data Entry Fields - Only show if opted in */}
+          {useForReadings && (
+            <>
+              {/* Tier 1: Birth Date */}
           <View style={styles.section}>
             <ThemedText variant="h3" style={styles.sectionTitle}>
               {t('profile.birthDate')} <ThemedText variant="caption" style={styles.required}>
@@ -539,89 +626,14 @@ export default function ProfileScreen({ navigation }: Props) {
               />
             )}
           </View>
-
-          {/* Calculated Results */}
-          {calculatedData.sunSign && (
-            <ThemedCard variant="minimal" style={styles.resultsCard}>
-              <ThemedText variant="h3" style={styles.resultsTitle}>
-                Your Chart
-              </ThemedText>
-              {calculating && (
-                <View style={styles.calculatingContainer}>
-                  <ActivityIndicator size="small" color={theme.colors.primary.gold} />
-                  <ThemedText variant="caption" style={styles.calculatingText}>
-                    {t('profile.calculating')}
-                  </ThemedText>
-                </View>
-              )}
-              <View style={styles.resultRow}>
-                <ThemedText variant="body" style={styles.resultLabel}>
-                  {t('profile.sunSign')}:
-                </ThemedText>
-                <ThemedText variant="body" style={styles.resultValue}>
-                  {getSignDisplayName(calculatedData.sunSign)}
-                </ThemedText>
-              </View>
-              {calculatedData.moonSign && (
-                <View style={styles.resultRow}>
-                  <ThemedText variant="body" style={styles.resultLabel}>
-                    {t('profile.moonSign')}:
-                  </ThemedText>
-                  <ThemedText variant="body" style={styles.resultValue}>
-                    {getSignDisplayName(calculatedData.moonSign)}
-                    {calculatedData.accuracy === 'partial' && ' (approximate)'}
-                  </ThemedText>
-                </View>
-              )}
-              {calculatedData.risingSign && (
-                <View style={styles.resultRow}>
-                  <ThemedText variant="body" style={styles.resultLabel}>
-                    {t('profile.risingSign')}:
-                  </ThemedText>
-                  <ThemedText variant="body" style={styles.resultValue}>
-                    {getSignDisplayName(calculatedData.risingSign)}
-                  </ThemedText>
-                </View>
-              )}
-              <View style={styles.accuracyContainer}>
-                <ThemedText variant="caption" style={styles.accuracyText}>
-                  {getAccuracyText()}
-                </ThemedText>
-              </View>
-            </ThemedCard>
+            </>
           )}
-
-          {/* Use for Readings Toggle */}
-          <View style={styles.section}>
-            <View style={styles.toggleContainer}>
-              <View style={styles.toggleTextContainer}>
-                <ThemedText variant="body" style={styles.toggleLabel}>
-                  {t('profile.useForReadings')}
-                </ThemedText>
-                <ThemedText variant="caption" style={styles.toggleDescription}>
-                  {t('profile.useForReadingsDescription')}
-                </ThemedText>
-              </View>
-              <Switch
-                value={useForReadings}
-                onValueChange={(value) => {
-                  setUseForReadings(value);
-                  setHasUnsavedChanges(true);
-                }}
-                trackColor={{
-                  false: theme.colors.neutrals.midGray,
-                  true: theme.colors.primary.crimson,
-                }}
-                thumbColor={useForReadings ? theme.colors.primary.gold : theme.colors.neutrals.lightGray}
-              />
-            </View>
-          </View>
 
           {/* Save Button */}
           <ThemedButton
             title={t('common.save')}
             onPress={saveProfile}
-            disabled={loading || !birthDate}
+            disabled={loading || (useForReadings && !birthDate)}
             variant="primary"
             style={styles.saveButton}
           />
@@ -650,6 +662,19 @@ const styles = StyleSheet.create({
   },
   mainCard: {
     marginBottom: theme.spacing.spacing.md,
+  },
+  languageSelectorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.spacing.lg,
+    paddingBottom: theme.spacing.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.neutrals.midGray,
+  },
+  languageLabel: {
+    color: theme.colors.text.secondary,
+    marginRight: theme.spacing.spacing.sm,
   },
   headerContainer: {
     flexDirection: 'row',

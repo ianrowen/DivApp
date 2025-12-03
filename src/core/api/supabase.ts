@@ -86,7 +86,7 @@ const getRedirectUri = () => {
 
   // For development builds, use custom scheme
   const redirectUri = makeRedirectUri({
-    scheme: 'com.divin8.app',
+    scheme: 'divin8',
     path: 'supabase-auth',
   });
   console.log('[Supabase] Generated dev build redirect URI:', redirectUri);

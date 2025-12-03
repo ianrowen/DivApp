@@ -49,6 +49,7 @@ export default {
     quickAccess: 'Quick Access',
     tarot: 'Tarot Reading',
     dailyDraw: 'Daily Card Draw',
+    reading: 'Reading',
   },
   reading: {
     title: 'Tarot Reading',
@@ -133,6 +134,12 @@ export default {
     mostPulled: 'Most Pulled Cards',
     times: 'times',
     expected: 'Expected',
+  },
+  tabs: {
+    reading: 'Reading',
+    history: 'History',
+    library: 'Library',
+    profile: 'Profile',
   },
   tarot: {
     planets: {

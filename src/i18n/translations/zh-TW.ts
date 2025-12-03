@@ -49,6 +49,7 @@ export default {
     quickAccess: '快速存取',
     tarot: '塔羅占卜',
     dailyDraw: '每日抽牌',
+    reading: '解讀',
   },
   reading: {
     title: '塔羅占卜',
@@ -133,6 +134,12 @@ export default {
     mostPulled: '最常抽到的卡牌',
     times: '次',
     expected: '預期',
+  },
+  tabs: {
+    reading: '解讀',
+    history: '歷史',
+    library: '圖書館',
+    profile: '個人資料',
   },
   tarot: {
     planets: {

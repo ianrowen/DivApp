@@ -1,0 +1,419 @@
+// app/(tabs)/history.tsx
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { supabase } from '../../src/core/api/supabase';
+import { Reading } from '../../src/core/models/Reading';
+import theme from '../../src/shared/theme';
+import ThemedText from '../../src/shared/components/ui/ThemedText';
+import ThemedButton from '../../src/shared/components/ui/ThemedButton';
+import { useTranslation } from '../../src/i18n';
+import { LOCAL_RWS_CARDS } from '../../src/systems/tarot/data/localCardData';
+import { getLocalizedCard } from '../../src/systems/tarot/utils/cardHelpers';
+
+export default function HistoryScreen() {
+  const { t, locale } = useTranslation();
+  const [readings, setReadings] = useState<Reading[]>([]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
+
+  useEffect(() => {
+    loadReadings();
+  }, []);
+
+  const loadReadings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('readings')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setReadings(data as any[]);
+    } catch (error) {
+      console.error('Error loading readings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleExpand = (id: string) => {
+    const newExpanded = new Set(expandedIds);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedIds(newExpanded);
+  };
+
+  const handleDeleteReading = async (id: string) => {
+    Alert.alert(
+      t('history.deleteTitle'),
+      t('history.deleteWarning'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('readings')
+                .delete()
+                .eq('id', id);
+
+              if (error) throw error;
+              loadReadings();
+            } catch (error) {
+              console.error('Error deleting reading:', error);
+              Alert.alert(t('common.error'), t('history.deleteFailed'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleClearHistory = () => {
+    const confirmMessage = locale === 'zh-TW' 
+      ? '此操作將刪除所有占卜記錄，且無法復原。確定要繼續嗎？'
+      : 'This will permanently delete ALL your reading history and cannot be undone. Are you sure you want to continue?';
+    
+    Alert.alert(
+      locale === 'zh-TW' ? '清除所有記錄' : 'Clear All History',
+      confirmMessage,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: locale === 'zh-TW' ? '確定刪除' : 'Delete All',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setClearing(true);
+              
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) {
+                Alert.alert(t('common.error'), locale === 'zh-TW' ? '請先登入' : 'Please sign in first');
+                setClearing(false);
+                return;
+              }
+
+              // Delete all readings for this user
+              const { error } = await supabase
+                .from('readings')
+                .delete()
+                .eq('user_id', user.id);
+
+              if (error) {
+                console.error('Error clearing history:', error);
+                throw error;
+              }
+
+              // Clear local state immediately
+              setReadings([]);
+              
+              // Reload to confirm
+              await loadReadings();
+              
+              // Show success message
+              Alert.alert(
+                t('common.success'), 
+                locale === 'zh-TW' 
+                  ? '已成功刪除所有記錄' 
+                  : 'Successfully deleted all reading history'
+              );
+            } catch (error) {
+              console.error('Error clearing history:', error);
+              Alert.alert(
+                t('common.error'), 
+                locale === 'zh-TW' 
+                  ? '刪除記錄時發生錯誤，請稍後再試。' 
+                  : 'Failed to delete reading history. Please try again later.'
+              );
+            } finally {
+              setClearing(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(locale === 'zh-TW' ? 'zh-TW' : 'en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getCardName = (elementId: string, metadata?: any): string => {
+    if (metadata?.cardTitle) {
+      const card = LOCAL_RWS_CARDS.find(c => c.title.en === metadata.cardTitle || c.title.zh === metadata.cardTitle);
+      if (card) {
+        const localizedCard = getLocalizedCard(card);
+        return localizedCard.title;
+      }
+      return metadata.cardTitle;
+    }
+    
+    const card = LOCAL_RWS_CARDS.find(c => c.filename === elementId || c.filename === `${elementId}.jpg`);
+    if (card) {
+      const localizedCard = getLocalizedCard(card);
+      return localizedCard.title;
+    }
+    
+    return elementId;
+  };
+
+  const renderReading = ({ item }: { item: any }) => {
+    const isExpanded = expandedIds.has(item.id);
+    const elements = item.elements_drawn || [];
+    const interpretations = item.interpretations || {};
+
+    return (
+      <View style={styles.readingCard}>
+        <View style={styles.collapsedContent}>
+          <ThemedText variant="body" style={styles.question}>
+            {item.question || (locale === 'zh-TW' ? '無問題' : 'No question')}
+          </ThemedText>
+          <View style={styles.cardsCompact}>
+            {elements.slice(0, 3).map((el: any, idx: number) => (
+              <ThemedText key={idx} variant="caption" style={styles.cardName}>
+                {getCardName(el.elementId || el.cardId || '', el.metadata)}
+                {idx < Math.min(elements.length, 3) - 1 ? ', ' : ''}
+              </ThemedText>
+            ))}
+            {elements.length > 3 && (
+              <ThemedText variant="caption" style={styles.cardName}>
+                ... +{elements.length - 3}
+              </ThemedText>
+            )}
+          </View>
+          <ThemedText variant="caption" style={styles.date}>
+            {formatDate(item.created_at)}
+          </ThemedText>
+        </View>
+
+        {isExpanded && (
+          <View style={styles.expandedContent}>
+            {Object.entries(interpretations).map(([style, data]: [string, any]) => (
+              <View key={style} style={styles.detailRow}>
+                <ThemedText variant="body" style={styles.detailLabel}>
+                  {t(`reading.${style}` as any)}
+                </ThemedText>
+                <ThemedText variant="body" style={styles.detailValue}>
+                  {data?.content || t('reading.noInterpretation')}
+                </ThemedText>
+              </View>
+            ))}
+            {elements.length > 0 && (
+              <View style={styles.cardsDetailed}>
+                {elements.map((el: any, idx: number) => (
+                  <View key={idx} style={styles.cardWithPosition}>
+                    {el.position && (
+                      <ThemedText variant="caption" style={styles.position}>
+                        {el.position}
+                      </ThemedText>
+                    )}
+                    <ThemedText variant="body" style={styles.cardNameExpanded}>
+                      {getCardName(el.elementId || el.cardId || '', el.metadata)}
+                      {el.metadata?.reversed && (locale === 'zh-TW' ? ' (逆位)' : ' (R)')}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            )}
+            <ThemedButton
+              title={t('common.delete')}
+              onPress={() => handleDeleteReading(item.id)}
+              variant="secondary"
+              style={styles.deleteButton}
+            />
+          </View>
+        )}
+
+        <ThemedText
+          variant="caption"
+          style={styles.expandIndicator}
+          onPress={() => toggleExpand(item.id)}
+        >
+          {isExpanded ? t('history.collapse') : t('history.expand')}
+        </ThemedText>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary.gold} />
+      </View>
+    );
+  }
+
+  if (readings.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centerContainer}>
+          <ThemedText variant="h2" style={styles.emptyText}>
+            {t('history.noReadings')}
+          </ThemedText>
+          <ThemedText variant="body" style={styles.emptySubtext}>
+            {t('history.noReadingsSubtitle')}
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={readings}
+        renderItem={renderReading}
+        keyExtractor={(item) => item.id || ''}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListFooterComponent={
+          <View style={styles.footerContainer}>
+            <ThemedButton
+              title={clearing ? (locale === 'zh-TW' ? '刪除中...' : 'Deleting...') : (locale === 'zh-TW' ? '清除全部記錄' : 'Clear All History')}
+              onPress={handleClearHistory}
+              disabled={clearing}
+              variant="secondary"
+              style={styles.clearButton}
+            />
+          </View>
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.neutrals.black,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.neutrals.black,
+    padding: theme.spacing.spacing.xl,
+  },
+  listContent: {
+    padding: theme.spacing.spacing.md,
+    paddingBottom: 100,
+  },
+  readingCard: {
+    backgroundColor: theme.colors.neutrals.darkGray,
+    borderRadius: theme.spacing.borderRadius.lg,
+    padding: theme.spacing.spacing.lg,
+    marginBottom: theme.spacing.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.neutrals.midGray,
+  },
+  collapsedContent: {
+    marginBottom: theme.spacing.spacing.sm,
+  },
+  question: {
+    color: theme.colors.primary.gold,
+    marginBottom: theme.spacing.spacing.sm,
+    fontSize: theme.typography.fontSize.lg,
+  },
+  cardsCompact: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: theme.spacing.spacing.xs,
+  },
+  cardName: {
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.sm,
+  },
+  date: {
+    color: theme.colors.text.tertiary,
+    fontSize: theme.typography.fontSize.xs,
+  },
+  expandedContent: {
+    marginTop: theme.spacing.spacing.md,
+    paddingTop: theme.spacing.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.neutrals.midGray,
+  },
+  detailRow: {
+    marginBottom: theme.spacing.spacing.md,
+  },
+  detailLabel: {
+    color: theme.colors.primary.gold,
+    fontWeight: theme.typography.fontWeight.semibold,
+    marginBottom: theme.spacing.spacing.xs,
+    fontSize: theme.typography.fontSize.sm,
+  },
+  detailValue: {
+    color: theme.colors.text.primary,
+    fontSize: theme.typography.fontSize.md,
+  },
+  cardsDetailed: {
+    marginTop: theme.spacing.spacing.xs,
+  },
+  cardWithPosition: {
+    marginBottom: theme.spacing.spacing.sm,
+  },
+  position: {
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
+  },
+  cardNameExpanded: {
+    color: theme.colors.text.primary,
+    fontSize: theme.typography.fontSize.md,
+    marginTop: theme.spacing.spacing.xs,
+  },
+  deleteButton: {
+    marginTop: theme.spacing.spacing.md,
+  },
+  expandIndicator: {
+    color: theme.colors.text.secondary,
+    textAlign: 'right',
+    marginTop: theme.spacing.spacing.sm,
+    fontSize: theme.typography.fontSize.xs,
+  },
+  emptyText: {
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.spacing.md,
+  },
+  emptySubtext: {
+    color: theme.colors.text.tertiary,
+    textAlign: 'center',
+  },
+  footerContainer: {
+    padding: theme.spacing.spacing.lg,
+    paddingTop: theme.spacing.spacing.xl,
+    alignItems: 'center',
+  },
+  clearButton: {
+    width: '100%',
+    maxWidth: 300,
+  },
+});
