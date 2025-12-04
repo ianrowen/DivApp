@@ -533,10 +533,7 @@ export default function StatisticsScreen() {
   return (
     <MysticalBackground variant="subtle">
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Header */}
-        <ThemedText variant="h1" style={styles.title}>
-          📊 {t('statistics.title')}
-        </ThemedText>
+        {/* Subtitle only - header is shown by Stack.Screen */}
         <ThemedText variant="body" style={styles.subtitle}>
           {t('statistics.basedOn', { count: stats.totalCards }) || `Based on ${stats.totalCards} cards drawn`}
         </ThemedText>
@@ -863,7 +860,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: theme.spacing.spacing.lg,
-    paddingTop: theme.spacing.spacing.xl,
+    paddingTop: theme.spacing.spacing.md + 10, // Reduced top padding since header removed
     paddingBottom: theme.spacing.spacing.xxl,
   },
   title: {
@@ -874,6 +871,7 @@ const styles = StyleSheet.create({
   subtitle: {
     color: theme.colors.text.secondary,
     textAlign: 'center',
+    marginTop: theme.spacing.spacing.sm,
     marginBottom: theme.spacing.spacing.xl,
   },
   section: {

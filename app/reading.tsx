@@ -14,7 +14,8 @@ import {
   Modal,
   Text,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../src/core/api/supabase';
 import theme from '../src/theme';
 import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
@@ -31,6 +32,7 @@ import { getLocalizedCard } from '../src/systems/tarot/utils/cardHelpers';
 import { getCardImage } from '../src/systems/tarot/utils/cardImageLoader';
 import { getSpreadByKey } from '../src/services/spreadService';
 import AIProvider from '../src/core/api/aiProvider';
+import { PromptBuilder } from '../src/core/ai/prompts/promptBuilder';
 import type { TarotSpread } from '../src/types/spreads';
 import type { DrawnCard, ChatMessage, InterpretationStyle } from '../src/types/reading';
 import type { LocalTarotCard } from '../src/systems/tarot/data/localCardData';
@@ -176,12 +178,16 @@ export default function ReadingScreen() {
         }
         setSpread(spreadData);
         
-        // Show card selection for 2 and 3 card spreads
-        if (spreadData.card_count === 2 || spreadData.card_count === 3) {
+        // Check animation preference
+        const animationsEnabled = await AsyncStorage.getItem('@divin8_animations_enabled');
+        const shouldAnimate = animationsEnabled !== 'false'; // Default to true if not set
+        
+        // Show card selection for 2 and 3 card spreads ONLY if animations are enabled
+        if ((spreadData.card_count === 2 || spreadData.card_count === 3) && shouldAnimate) {
           setShowCardSelection(true);
           setLoading(false);
         } else {
-          // Auto-draw for other spreads
+          // Auto-draw for other spreads OR if animations are disabled
           await drawCardsForSpread(spreadData);
         }
       }
@@ -199,9 +205,11 @@ export default function ReadingScreen() {
     console.log('🎴 Cards selected:', selectedCards.map(c => c.title.en));
 
     // Convert selected cards to DrawnCard format
+    // IMPORTANT: Use the reversed state that was already determined during card selection animation
     const drawnCards: DrawnCard[] = selectedCards.map((card, index) => {
       const position = spread.positions[index];
-      const reversed = Math.random() < 0.3; // Random reversal
+      // Use the reversed state from the card (already determined during selection)
+      const reversed = card.reversed || false;
 
       return {
         cardCode: card.code,
@@ -384,18 +392,29 @@ export default function ReadingScreen() {
       console.log('🎴 Cards:', cardsToInterpret.length);
       console.log('👤 User tier:', currentTier);
 
-      // Build concise card descriptions (optimized for speed)
+      // Build detailed card descriptions with explicit reversed indication
       const cardsDetailed = cardsToInterpret.map((c, idx) => {
         const card = LOCAL_RWS_CARDS.find(lc => lc.code === c.cardCode);
         if (!card) return '';
         
         const localCard = getLocalizedCard(card);
         const position = c.position ? `[${c.position}] ` : '';
-        const orientation = c.reversed ? 'R' : 'U';
-        const keywords = localCard.keywords.slice(0, 3).join(', '); // Reduced from 5 to 3
         
-        return `${position}${localCard.title} (${orientation}): ${keywords}`;
-      }).join('\n');
+        // Explicit reversed indication
+        const orientationText = c.reversed 
+          ? (locale === 'zh-TW' ? '（逆位/REVERSED）' : '(REVERSED)')
+          : (locale === 'zh-TW' ? '（正位/UPRIGHT）' : '(UPRIGHT)');
+        
+        // Get reversed or upright meaning
+        const meaningObj = c.reversed ? card.reversed_meaning : card.upright_meaning;
+        const lang = locale === 'zh-TW' ? 'zh' : 'en';
+        const meaning = meaningObj[lang] || meaningObj.en || '';
+        
+        // Get keywords (same keywords for both reversed and upright)
+        const keywords = localCard.keywords.slice(0, 3).join(', ');
+        
+        return `${position}${localCard.title} ${orientationText}\n  Keywords: ${keywords}\n  Meaning: ${meaning.substring(0, 100)}${meaning.length > 100 ? '...' : ''}`;
+      }).join('\n\n');
 
       // Build birth context with detail (use current profile state)
       // Beta testers get enhanced astrological context regardless of tier
@@ -435,23 +454,40 @@ export default function ReadingScreen() {
       
       if (style === 'traditional') {
         systemPrompt = locale === 'zh-TW' 
-          ? `專業塔羅解讀：3段落（概述、指導、行動），250-300字，具體不籠統。${astroInstruction}`
-          : `Expert tarot reader. 3 paragraphs: overview, guidance, actions. 250-300 words. Be specific.${astroInstruction}`;
+          ? `專業塔羅解讀。130-156字。${astroInstruction}`
+          : `Expert tarot reader. 130-156 words.${astroInstruction}`;
       } else if (style === 'esoteric') {
         systemPrompt = locale === 'zh-TW'
-          ? `神秘學專家。揭示象徵意義，簡潔。${astroInstruction}`
-          : `Esoteric expert. Reveal symbolic meanings concisely.${astroInstruction}`;
+          ? `神秘學專家。195-234字。${astroInstruction}`
+          : `Esoteric expert. 195-234 words.${astroInstruction}`;
       } else {
         systemPrompt = locale === 'zh-TW'
-          ? `榮格心理學家。原型解讀，簡潔。${astroInstruction}`
-          : `Jungian analyst. Archetypal interpretation, concise.${astroInstruction}`;
+          ? `榮格心理學家。234-260字。${astroInstruction}`
+          : `Jungian analyst. 234-260 words.${astroInstruction}`;
       }
 
-      // Fetch last 10 readings context for daily cards
+      // Load reading history with conversations and reflections for ALL readings
       let readingsContext = '';
-      if (!spreadData) {
-        readingsContext = await fetchLast10Readings();
-        console.log('📚 Last 10 readings context:', readingsContext ? `${readingsContext.length} chars` : 'None');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Use PromptBuilder to get comprehensive history including conversations and reflections
+          const historyCount = PromptBuilder.getSmartHistoryCount(currentTier, false);
+          const includeConversations = currentTier !== 'free'; // Premium+ get conversations
+          readingsContext = await PromptBuilder.loadRecentReadingHistory(
+            user.id,
+            locale,
+            historyCount,
+            includeConversations
+          );
+          console.log('📚 Reading history context:', readingsContext ? `${readingsContext.length} chars` : 'None');
+        }
+      } catch (error) {
+        console.error('Error loading reading history:', error);
+        // Fallback to simple history if PromptBuilder fails
+        if (!spreadData) {
+          readingsContext = await fetchLast10Readings();
+        }
       }
 
       // Concise prompts (optimized for speed)
@@ -462,24 +498,53 @@ export default function ReadingScreen() {
             : ' Naturally weave astrological context into the interpretation, especially when cards resonate with Sun, Moon, or Rising sign energies.')
         : '';
       
+      // Build prompt with context for all readings
+      // PRIORITY: Past readings, conversations, and reflections are MORE IMPORTANT than astrology
+      const reversedInstruction = locale === 'zh-TW'
+        ? '注意：如果卡牌標示為「逆位/REVERSED」，必須使用逆位的意義和能量來解讀，這與正位完全不同。'
+        : 'IMPORTANT: If a card is marked as "(REVERSED)", you MUST interpret it using reversed meanings and energy, which is fundamentally different from upright.';
+      
+      const contextPriorityInstruction = locale === 'zh-TW'
+        ? '重要：過去解讀、對話和反思的內容比占星背景更優先。優先考慮用戶的歷史問題、洞察和反思，然後才融入占星元素。'
+        : 'PRIORITY: Past readings, conversations, and reflections are MORE IMPORTANT than astrology. Prioritize the user\'s historical questions, insights, and reflections, then weave in astrological elements as secondary context.';
+      
+      // Define word limits by style (30% longer than before)
+      const wordLimits = style === 'traditional' 
+        ? (locale === 'zh-TW' ? '130-156' : '130-156')
+        : style === 'esoteric'
+        ? (locale === 'zh-TW' ? '195-234' : '195-234')
+        : (locale === 'zh-TW' ? '234-260' : '234-260');
+      
       if (spreadData) {
-        // SPREAD READING - simplified prompt
+        // SPREAD READING - prioritize context over astrology
         prompt = `Q: "${question || 'Guidance'}"
 
 Cards:
 ${cardsDetailed}
 
-${birthContextDetailed ? `Astrological Context: ${birthContextDetailed}\n` : ''}${astroGuidance}
-Write 3 paragraphs: overview, guidance, actions. 250-300 words.`;
+${reversedInstruction}
+
+${readingsContext ? `**HIGH PRIORITY - Past Reading Context (includes questions, conversations, and reflections):**
+${readingsContext}
+
+` : ''}${contextPriorityInstruction}
+
+${birthContextDetailed ? `Astrological Context (secondary - use as supporting detail): ${birthContextDetailed}\n` : ''}${astroGuidance}
+Write ${wordLimits} words. Consider patterns from past readings as primary guidance.`;
       } else {
-        // DAILY CARD - simplified prompt with reading history context
+        // DAILY CARD - prioritize context over astrology
         prompt = `Daily Card:
 ${cardsDetailed}
 
-${birthContextDetailed ? `Astrological Context: ${birthContextDetailed}\n` : ''}${astroGuidance}${readingsContext ? `Recent Reading History (for context and continuity):
+${reversedInstruction}
+
+${readingsContext ? `**HIGH PRIORITY - Past Reading Context (includes questions, conversations, and reflections):**
 ${readingsContext}
 
-` : ''}Write 2 paragraphs: today's energy, practical guidance. When referencing past readings, use the day of the week or the themes/context mentioned (e.g., "last Tuesday's reading about relationships" or "the reading where you asked about career changes"), NOT reading numbers. Connect today's card to patterns from recent readings if relevant. 180-220 words.`;
+` : ''}${contextPriorityInstruction}
+
+${birthContextDetailed ? `Astrological Context (secondary - use as supporting detail): ${birthContextDetailed}\n` : ''}${astroGuidance}
+Write ${wordLimits} words. When referencing past readings, use the day of the week or themes mentioned.`;
       }
 
       console.log('📝 Prompt length:', prompt.length, 'chars');
@@ -491,24 +556,42 @@ ${readingsContext}
         maxTokens: 1200, // Increased to allow for Gemini 2.5 thinking tokens + output
       });
 
-      // Validate response isn't truncated
+      // Validate and truncate if too long
       const wordCount = result.text.split(/\s+/).length;
       console.log(`📊 Generated ${wordCount} words`);
 
-      if (wordCount < 150 && !result.text.includes('.')) {
-        console.warn('⚠️ Response appears truncated, retrying with shorter prompt...');
-        // Retry logic here if needed
+      // Define word limits by style (30% longer than before)
+      const maxWords = style === 'traditional' ? 156 : style === 'esoteric' ? 234 : 260;
+      
+      let finalText = result.text;
+      if (wordCount > maxWords) {
+        console.warn(`⚠️ Response too long (${wordCount} words), truncating to ${maxWords} words...`);
+        // Truncate to max words, preserving sentence boundaries
+        const words = result.text.split(/\s+/);
+        const truncatedWords = words.slice(0, maxWords);
+        // Try to end at a sentence boundary
+        let truncatedText = truncatedWords.join(' ');
+        const lastSentenceEnd = Math.max(
+          truncatedText.lastIndexOf('.'),
+          truncatedText.lastIndexOf('!'),
+          truncatedText.lastIndexOf('?')
+        );
+        if (lastSentenceEnd > truncatedText.length * 0.7) {
+          truncatedText = truncatedText.substring(0, lastSentenceEnd + 1);
+        }
+        finalText = truncatedText;
+        console.log(`✂️ Truncated to ${finalText.split(/\s+/).length} words`);
       }
 
       console.log('✅ Generated interpretation');
       console.log('📊 Tokens used:', result.tokensUsed);
-      console.log('📝 Output length:', result.text.length, 'chars');
-      console.log('💬 Word count:', result.text.split(/\s+/).length);
+      console.log('📝 Output length:', finalText.length, 'chars');
+      console.log('💬 Word count:', finalText.split(/\s+/).length);
 
       setInterpretations(prev => {
         const updated = {
           ...prev,
-          [style]: result.text,
+          [style]: finalText,
         };
         
         // Update saved reading with new interpretation style if already saved
@@ -1226,19 +1309,63 @@ Answer the question. If the user asks about previous readings mentioned in the i
     );
   }
 
+  // Determine header title
+  const headerTitle = type === 'daily' 
+    ? (locale === 'zh-TW' ? '每日卡牌' : 'Daily Card')
+    : spread 
+      ? (locale === 'zh-TW' ? spread.name.zh : spread.name.en)
+      : (locale === 'zh-TW' ? '解讀' : 'Reading');
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={100}
-    >
-      <MysticalBackground variant="default">
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
+    <>
+      <Stack.Screen 
+        options={{
+          title: headerTitle,
+          headerShown: true,
+          presentation: 'card',
+          headerStyle: { 
+            backgroundColor: theme.colors.neutrals.black,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.primary.goldDark,
+            height: 60,
+          },
+          headerTintColor: theme.colors.primary.gold,
+          headerTitleStyle: {
+            fontFamily: 'Cinzel_600SemiBold',
+            fontSize: 24,
+            color: theme.colors.primary.gold,
+            letterSpacing: 0.5,
+            textTransform: 'uppercase',
+          },
+          headerTitleAlign: 'center',
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()}
+              style={{ marginLeft: 20, padding: 10 }}
+            >
+              <ThemedText variant="body" style={{ 
+                color: theme.colors.primary.gold, 
+                fontSize: 18,
+                fontFamily: 'Lato_400Regular',
+              }}>
+                ← {t('common.back')}
+              </ThemedText>
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={100}
+      >
+        <MysticalBackground variant="default">
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
           {/* Question (for spread readings) */}
           {type === 'spread' && question && (
             <ThemedCard variant="minimal" style={styles.questionCard}>
@@ -1259,7 +1386,11 @@ Answer the question. If the user asks about previous readings mentioned in the i
           )}
 
           {/* Cards Display */}
-          <View style={styles.cardsContainer}>
+          <View style={[
+            styles.cardsContainer,
+            cards.length === 3 && styles.cardsContainerThree,
+            cards.length === 2 && styles.cardsContainerTwo,
+          ]}>
             {cards.map((drawnCard, idx) => {
               console.log('🎴 Rendering card:', drawnCard.cardCode);
               
@@ -1311,6 +1442,8 @@ Answer the question. If the user asks about previous readings mentioned in the i
                   key={idx}
                   style={[
                     styles.cardItem,
+                    cards.length === 3 && styles.cardItemThree,
+                    cards.length === 2 && styles.cardItemTwo,
                     {
                       opacity: cardAnimationsRef.current[idx] || 1,
                       transform: [{
@@ -1582,6 +1715,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
         />
       )}
     </KeyboardAvoidingView>
+    </>
   );
 }
 
@@ -1624,16 +1758,32 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'center',
+    alignItems: 'flex-start',
     gap: theme.spacing.spacing.md,
     marginBottom: theme.spacing.spacing.xl,
+    paddingHorizontal: theme.spacing.spacing.md,
+  },
+  cardsContainerTwo: {
+    gap: theme.spacing.spacing.lg,
+  },
+  cardsContainerThree: {
+    gap: theme.spacing.spacing.sm,
+    paddingHorizontal: theme.spacing.spacing.sm,
   },
   cardItem: {
     width: 150,
     alignItems: 'center',
     marginBottom: theme.spacing.spacing.md,
-    minHeight: 350, // Ensure consistent card height to prevent overlap
+    minHeight: 350,
+  },
+  cardItemTwo: {
+    width: 150, // Keep same size for 2 cards
+  },
+  cardItemThree: {
+    width: 120, // Smaller width for 3 cards to fit better
+    minHeight: 320, // Slightly smaller height too
   },
   cardImageContainer: {
     width: '100%',

@@ -1,0 +1,10 @@
+[33mb3faedf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/apply-core-fixes[m[33m)[m pre beta
+[33m6aa43db[m almost complete, except ai model now 2.5 and maybe soon 1.5
+[33me3f2a15[m SAVEPOINT: Before running dependency cleanup and doctor fixes
+[33m89c4f92[m day 1 complete with bottom tab etc but still mismatch from old nav to bottom tab nav
+[33m694a05d[m fix: complete theme implementation and OAuth deep linking configuration
+[33m2a0ce7b[m feat: implement Divin8 theme system and OAuth deep linking
+[33me353345[m gemini recommendations
+[33m9baf3c9[m[33m ([m[1;32mmain[m[33m)[m ARCH: Stubs created, ready to apply Supabase/Registry changes
+[33m8a23852[m[33m ([m[1;31mgdrive/main[m[33m)[m Day 1 complete - app running on emulator!
+[33m17b140c[m Testing backup after setup

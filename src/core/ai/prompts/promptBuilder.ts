@@ -500,11 +500,14 @@ export class PromptBuilder {
    * Get token budget by tier
    */
   static getTierTokens(tier: InterpretationTier): number {
+    // Token limits adjusted for 30% longer interpretations
+    // Note: Gemini 2.5 uses ~1500 tokens for "thinking", so we set output tokens accordingly
+    // The model will auto-adjust total tokens, but output will be limited
     switch (tier) {
-      case 'traditional': return 3500;  // Was 800, now 2000
-      case 'esoteric': return 4000;     // Was 1200, now 2500
-      case 'jungian': return 5000;      // Was 1500, now 3000
-      default: return 2000;
+      case 'traditional': return 2200;   // ~700 output tokens for ~156 words (30% longer)
+      case 'esoteric': return 2800;      // ~1100 output tokens for ~234 words (30% longer)
+      case 'jungian': return 3200;       // ~1300 output tokens for ~260 words (30% longer)
+      default: return 2200;
     }
   }
 }

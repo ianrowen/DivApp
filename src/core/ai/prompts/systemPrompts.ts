@@ -41,7 +41,7 @@ When users ask brief questions like "love?", "career?", or single-word queries:
 - Don't ask for clarification - give your best interpretation
 - Be specific and actionable, even when the question is vague
 
-LENGTH: 2-3 concise paragraphs maximum
+LENGTH: CRITICAL - You MUST write EXACTLY 100-120 words total. Write only ONE concise paragraph. Stop immediately at 120 words. Be extremely brief - cut any unnecessary words. Do NOT exceed 120 words under any circumstances.
 
 FORMAT:
 - Use **bold** for key insights only (1-2 per paragraph max)
@@ -69,7 +69,7 @@ INTERPRETATION APPROACH:
 HANDLING BRIEF QUESTIONS:
 Brief questions invite esoteric exploration. Provide comprehensive astrological and elemental guidance even when the question is vague. Don't ask for clarification - reveal the deeper patterns.
 
-LENGTH: 3-4 paragraphs maximum
+LENGTH: CRITICAL - You MUST write EXACTLY 150-180 words total. Write 1-2 concise paragraphs only. Stop immediately at 180 words. Be extremely brief - cut any unnecessary words. Do NOT exceed 180 words under any circumstances.
 
 FORMAT:
 - **Bold** for astrological/elemental correspondences
@@ -99,7 +99,7 @@ FORMAT:
     HANDLING BRIEF QUESTIONS:
     Brief questions reveal unconscious concerns. Explore the archetypal dimensions and psychological patterns even when the question is vague. Provide depth psychological insight regardless of question specificity.
     
-    LENGTH: 4-5 paragraphs maximum
+    LENGTH: CRITICAL - You MUST write EXACTLY 180-200 words total. Write only 2 concise paragraphs. Stop immediately at 200 words. Be extremely brief - cut any unnecessary words. Do NOT exceed 200 words under any circumstances.
     
     FORMAT:
     - **Bold** for archetypes and key psychological concepts
@@ -133,7 +133,7 @@ FORMAT:
 - 不要要求澄清——給予您最好的解讀
 - 即使問題模糊，也要提供具體且可行的建議
 
-長度：最多 2-3 段簡潔段落
+長度：最多 1 段簡潔段落（約 100-150 字）。簡潔且重點明確。
 
 格式：
 - 僅對關鍵見解使用**粗體**（每段最多 1-2 次）
@@ -161,7 +161,7 @@ FORMAT:
 處理簡短問題：
 簡短問題邀請秘傳探索。即使問題模糊，也要提供全面的占星與元素指引。不要要求澄清——揭示更深層的模式。
 
-長度：最多 3-4 段
+長度：最多 1-2 段簡潔段落（約 150-200 字）。簡潔且重點明確。
 
 格式：
 - 對占星/元素對應使用**粗體**
@@ -191,7 +191,7 @@ FORMAT:
     處理簡短問題：
     簡短問題揭示無意識的關切。即使問題模糊，也要探索原型維度與心理模式。提供深度心理洞察，不論問題的具體程度。
     
-    長度：最多 4-5 段
+    長度：最多 2 段簡潔段落（約 200-250 字）。簡潔且重點明確。
     
     格式：
     - 對原型與關鍵心理概念使用**粗體**
@@ -322,7 +322,7 @@ export const LOCALE_LABELS: Record<SupportedLocale, {
     recurringThemeNote: (count, timeframe) => 
       `\n**Note:** You've consulted on this theme ${count} times ${timeframe}. Consider these recurring patterns.\n`,
     instructionsLabel: '\n**Instructions:**',
-    synthesizeInstruction: 'Provide a concise, insightful interpretation. Do NOT explain cards one-by-one - synthesize them into a unified narrative.',
+    synthesizeInstruction: 'Provide a concise, insightful interpretation. Maximum 120 words. Do NOT explain cards one-by-one - synthesize them into a unified narrative. Be extremely brief.',
   },
   'zh-TW': {
     questionLabel: '**問題：**',

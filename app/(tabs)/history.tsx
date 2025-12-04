@@ -445,15 +445,26 @@ export default function HistoryScreen() {
         keyExtractor={(item) => item.id || ''}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={styles.headerContainer}>
+            <View style={styles.headerRow}>
+              <ThemedText variant="h1" style={styles.headerTitle}>
+                History
+              </ThemedText>
+              <View style={styles.statsLinkContainer}>
+                <ThemedButton
+                  title={t('statistics.title') || 'Statistics'}
+                  onPress={() => router.push('/statistics')}
+                  variant="primary"
+                  style={styles.statsLinkButton}
+                />
+              </View>
+            </View>
+          </View>
+        }
         ListFooterComponent={
           readings.length > 0 ? (
             <View style={styles.footerContainer}>
-              <ThemedButton
-                title={t('statistics.title') || 'View Statistics'}
-                onPress={() => router.push('/statistics')}
-                variant="primary"
-                style={styles.statsButton}
-              />
               <ThemedButton
                 title={clearing ? (locale === 'zh-TW' ? '刪除中...' : 'Deleting...') : (locale === 'zh-TW' ? '清除全部記錄' : 'Clear All History')}
                 onPress={handleClearHistory}
@@ -478,7 +489,31 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: theme.spacing.spacing.md,
+    paddingTop: theme.spacing.spacing.md + 10, // Reduced top padding to move header up
     paddingBottom: 100,
+  },
+  headerContainer: {
+    paddingTop: theme.spacing.spacing.sm,
+    paddingBottom: theme.spacing.spacing.md,
+    paddingHorizontal: theme.spacing.spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    color: theme.colors.primary.gold,
+    fontSize: 32,
+    fontFamily: 'Cinzel_500Medium',
+    flex: 1,
+  },
+  statsLinkContainer: {
+    marginTop: theme.spacing.spacing.xs, // Position slightly below the header
+    marginLeft: theme.spacing.spacing.md,
+  },
+  statsLinkButton: {
+    minWidth: 120,
   },
   readingCard: {
     backgroundColor: theme.colors.neutrals.darkGray,
@@ -615,8 +650,8 @@ const styles = StyleSheet.create({
   },
   footerContainer: {
     padding: theme.spacing.spacing.lg,
-    paddingTop: theme.spacing.spacing.xl,
-    paddingBottom: theme.spacing.spacing.xxl,
+    paddingTop: theme.spacing.spacing.xl + 20, // Added extra top padding
+    paddingBottom: theme.spacing.spacing.xxl + 20, // Added extra bottom padding
     gap: theme.spacing.spacing.md,
   },
   statsButton: {

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-import { router, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, router, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../src/core/api/supabase';
 import theme from '../src/theme';
 import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
@@ -229,24 +229,45 @@ export default function SpreadSelectionScreen() {
   }
 
   return (
-    <MysticalBackground variant="default">
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Header with Back Button */}
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
+    <>
+      <Stack.Screen 
+        options={{
+          title: t('spreads.selectSpread'),
+          headerShown: true,
+          presentation: 'card',
+          headerStyle: { 
+            backgroundColor: theme.colors.neutrals.black,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.primary.goldDark,
+            height: 60,
+          },
+          headerTintColor: theme.colors.primary.gold,
+          headerTitleStyle: {
+            fontFamily: 'Cinzel_600SemiBold',
+            fontSize: 24,
+            color: theme.colors.primary.gold,
+            letterSpacing: 0.5,
+            textTransform: 'uppercase',
+          },
+          headerTitleAlign: 'center',
+          headerLeft: () => (
             <TouchableOpacity 
               onPress={() => routerNav.back()}
-              style={styles.backButton}
+              style={{ marginLeft: 20, padding: 10 }}
             >
-              <ThemedText variant="body" style={styles.backButtonText}>
+              <ThemedText variant="body" style={{ 
+                color: theme.colors.primary.gold, 
+                fontSize: 18,
+                fontFamily: 'Lato_400Regular',
+              }}>
                 ← {t('common.back')}
               </ThemedText>
             </TouchableOpacity>
-          </View>
-          <ThemedText variant="h1" style={styles.title}>
-            {t('spreads.selectSpread')}
-          </ThemedText>
-          
+          ),
+        }}
+      />
+      <MysticalBackground variant="default">
+        <ScrollView contentContainerStyle={styles.container}>
           {/* Question Field - Always Editable */}
           {editedQuestion && (
             <ThemedCard variant="minimal" style={styles.questionCard}>
@@ -277,7 +298,6 @@ export default function SpreadSelectionScreen() {
               </View>
             </ThemedCard>
           )}
-        </View>
 
         {/* Suggested Spread */}
         {suggesting ? (
@@ -400,6 +420,7 @@ export default function SpreadSelectionScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </MysticalBackground>
+    </>
   );
 }
 
@@ -416,19 +437,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: theme.spacing.spacing.xl,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.spacing.md,
-  },
-  backButton: {
-    paddingVertical: theme.spacing.spacing.sm,
-    paddingHorizontal: theme.spacing.spacing.md,
-  },
-  backButtonText: {
-    color: theme.colors.primary.goldLight,
-    fontSize: theme.typography.fontSize.md,
+    paddingTop: theme.spacing.spacing.md,
   },
   title: {
     textAlign: 'center',

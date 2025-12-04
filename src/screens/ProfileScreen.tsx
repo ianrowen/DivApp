@@ -19,6 +19,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
@@ -708,6 +709,29 @@ export default function ProfileScreen({ navigation }: Props) {
             style={styles.saveButton}
           />
 
+          {/* About Section */}
+          <View style={styles.aboutSection}>
+            <ThemedText variant="h3" style={styles.aboutTitle}>
+              {t('profile.about')}
+            </ThemedText>
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => WebBrowser.openBrowserAsync('https://divin8.com/terms')}
+            >
+              <ThemedText variant="body" style={styles.linkText}>
+                {t('profile.termsOfService')}
+              </ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => WebBrowser.openBrowserAsync('https://divin8.com/privacy')}
+            >
+              <ThemedText variant="body" style={styles.linkText}>
+                {t('profile.privacyPolicy')}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+
           {/* Sign Out Button */}
           <ThemedButton
             title={signingOut ? t('common.loading') : t('common.signOut')}
@@ -901,6 +925,28 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     color: theme.colors.semantic.error,
+  },
+  aboutSection: {
+    marginTop: theme.spacing.spacing.xl,
+    marginBottom: theme.spacing.spacing.md,
+    paddingTop: theme.spacing.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.neutrals.midGray,
+  },
+  aboutTitle: {
+    color: theme.colors.primary.gold,
+    marginBottom: theme.spacing.spacing.md,
+    fontSize: 20,
+    fontFamily: 'Cinzel_500Medium',
+  },
+  linkButton: {
+    paddingVertical: theme.spacing.spacing.sm,
+    paddingHorizontal: theme.spacing.spacing.xs,
+    marginBottom: theme.spacing.spacing.xs,
+  },
+  linkText: {
+    color: theme.colors.primary.goldLight,
+    textDecorationLine: 'underline',
   },
 });
 

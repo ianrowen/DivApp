@@ -1,10 +1,10 @@
 // src/shared/components/CardSelectionScreen.tsx
 /**
- * CardSelectionScreen Component
- * Cards animate to top when selected, then transition to reading screen
+ * CardSelectionScreen Component - Simplified version
+ * Cards arranged in a fan, user taps to select cards
  */
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,7 +12,9 @@ import {
   Animated,
   Dimensions,
   Image,
+  Easing,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import theme from '../../theme';
 import MysticalBackground from './ui/MysticalBackground';
 import ThemedText from './ui/ThemedText';
@@ -20,20 +22,14 @@ import ThemedButton from './ui/ThemedButton';
 import { LOCAL_RWS_CARDS } from '../../systems/tarot/data/localCardData';
 import type { LocalTarotCard } from '../../systems/tarot/data/localCardData';
 import { getCardImage } from '../../systems/tarot/utils/cardImageLoader';
-import { applyShadow } from '../../theme/shadows';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from '../../i18n';
 
 const CARD_BACK_IMAGE = require('../../../assets/images/logo/divin8-card-curtains-horizontal.png');
-const ANIMATIONS_ENABLED_KEY = '@divin8_animations_enabled';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_WIDTH = 90;
 const CARD_HEIGHT = 135;
-const SPREAD_CARD_COUNT = 15;
-
-// Target card size for top area (matches reading screen)
-const TARGET_CARD_WIDTH = 150; // matches cardItem width
-const READING_CARD_WIDTH = 150;
+const FAN_CARD_COUNT = 15;
 
 interface CardSelectionScreenProps {
   cardCount: number;
@@ -41,21 +37,32 @@ interface CardSelectionScreenProps {
   onCancel: () => void;
 }
 
+interface CardState {
+  index: number;
+  card: LocalTarotCard;
+  isSelected: boolean;
+  isFlipped: boolean;
+  reversed: boolean; // Track if card is reversed
+  initialPosition: { x: number; y: number; rotation: number };
+  animTranslateX: Animated.Value;
+  animTranslateY: Animated.Value;
+  animScale: Animated.Value;
+  animRotate: Animated.Value;
+  animOpacity: Animated.Value;
+  selectionOrder: number;
+}
+
 function CardSelectionScreen({
   cardCount,
   onCardsSelected,
   onCancel,
 }: CardSelectionScreenProps) {
-  const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
-  const [animatingCards, setAnimatingCards] = useState<Set<number>>(new Set());
-  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const { locale } = useTranslation();
+  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+  const [selectionOrder, setSelectionOrder] = useState<number[]>([]);
+  const cardStatesRef = useRef<Map<number, CardState>>(new Map());
   
-  // Animation refs for each card
-  const positionAnims = useRef<{ [key: number]: Animated.ValueXY }>({});
-  const scaleAnims = useRef<{ [key: number]: Animated.Value }>({});
-  const rotationAnims = useRef<{ [key: number]: Animated.Value }>({});
-  
-  // Shuffle deck ONCE - never changes
+  // Shuffle deck once
   const shuffledDeck = useMemo(() => {
     const deck = [...LOCAL_RWS_CARDS];
     for (let i = deck.length - 1; i > 0; i--) {
@@ -65,253 +72,205 @@ function CardSelectionScreen({
     return deck;
   }, []);
 
-  // Load animation preference
-  useEffect(() => {
-    const loadAnimationPreference = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(ANIMATIONS_ENABLED_KEY);
-        if (saved !== null) {
-          setAnimationsEnabled(saved === 'true');
-        } else {
-          setAnimationsEnabled(true); // Default is true
-        }
-      } catch (error) {
-        console.error('Error loading animation preference:', error);
-        setAnimationsEnabled(true);
-      }
-    };
-    loadAnimationPreference();
-  }, []);
-
-  // Initialize animations for all cards
-  useEffect(() => {
-    shuffledDeck.slice(0, SPREAD_CARD_COUNT).forEach((_, index) => {
-      const fanPos = getCardPosition(index);
-      positionAnims.current[index] = new Animated.ValueXY({
-        x: fanPos.left,
-        y: fanPos.top,
-      });
-      scaleAnims.current[index] = new Animated.Value(1);
-      // Store initial rotation for interpolation
-      rotationAnims.current[index] = new Animated.Value(fanPos.rotation);
-    });
-  }, [shuffledDeck]);
-
-  const getCardPosition = (index: number) => {
-    const totalCards = SPREAD_CARD_COUNT;
-    const centerY = SCREEN_HEIGHT * 0.55;
-    const startX = SCREEN_WIDTH * 0.1;
-    const endX = SCREEN_WIDTH * 0.9;
-    const arcHeight = SCREEN_HEIGHT * 0.12;
+  // Calculate fan position - higher arc, wider spread
+  const getFanPosition = (index: number, total: number) => {
+    const centerY = SCREEN_HEIGHT * 0.6; // Higher arc
+    const centerX = SCREEN_WIDTH / 2;
+    const radius = SCREEN_WIDTH * 0.5; // Wide spread
+    const startAngle = -70;
+    const endAngle = 70;
     
-    const t = index / (totalCards - 1);
-    const x = startX + (endX - startX) * t;
-    const y = centerY + (arcHeight * 4 * t * (1 - t)) - (arcHeight * 2);
-    const baseRotation = -50 + (100 * t);
-    const curveRotation = Math.sin(t * Math.PI) * 2;
-    const rotation = baseRotation + curveRotation;
+    const t = total > 1 ? index / (total - 1) : 0.5;
+    const angleDeg = startAngle + (endAngle - startAngle) * t;
+    const angleRad = (angleDeg * Math.PI) / 180;
     
     return {
-      left: x - CARD_WIDTH / 2,
-      top: y - CARD_HEIGHT / 2,
-      rotation: rotation,
+      x: centerX + radius * Math.sin(angleRad) - CARD_WIDTH / 2,
+      y: centerY - radius * Math.cos(angleRad) - CARD_HEIGHT / 2,
+      rotation: angleDeg,
     };
   };
 
-  const getTargetPosition = (selectionIndex: number) => {
-    // Calculate exact position to match reading screen layout
-    // Reading screen uses: scrollContent padding (24px), cardsContainer with gap (16px), cardItem width (150px)
-    const scrollPadding = 24; // theme.spacing.spacing.lg
-    const cardGap = 16; // theme.spacing.spacing.md
-    const readingCardWidth = 150; // matches cardItem width
-    const scaleFactor = READING_CARD_WIDTH / CARD_WIDTH; // ~1.67
+  // Initialize card states
+  const cardStates = useMemo(() => {
+    const states = new Map<number, CardState>();
+    const cardsToShow = shuffledDeck.slice(0, FAN_CARD_COUNT);
     
-    // Calculate total width of all cards with gaps
-    const totalCardsWidth = readingCardWidth * cardCount + cardGap * (cardCount - 1);
-    
-    // Cards are centered in the scroll view content area
-    // Content area = SCREEN_WIDTH - (scrollPadding * 2)
-    const contentWidth = SCREEN_WIDTH - (scrollPadding * 2);
-    const cardsStartX = scrollPadding + (contentWidth - totalCardsWidth) / 2;
-    
-    // Calculate x position for this card (center of card item in reading screen)
-    const cardCenterX = cardsStartX + selectionIndex * (readingCardWidth + cardGap) + readingCardWidth / 2;
-    
-    // Position card so its CENTER aligns with target center
-    // Since scale happens from center, we position the card's center at the target center
-    // Card's center is at (x + CARD_WIDTH/2, y + CARD_HEIGHT/2)
-    // We want this center to be at (cardCenterX, targetCenterY)
-    const x = cardCenterX - CARD_WIDTH / 2;
-    
-    // Y position: account for header, padding, and ensure card center aligns
-    // Reading screen card center is roughly at: header + padding + cardImageContainer height/2
-    // cardImageContainer has aspectRatio 0.6, so height = 150 * 0.6 = 90px
-    const headerHeight = 60;
-    const topPadding = scrollPadding;
-    const cardImageHeight = readingCardWidth * 0.6; // aspectRatio 0.6
-    const targetCenterY = headerHeight + topPadding + 20 + cardImageHeight / 2;
-    
-    // Position card so its center is at targetCenterY
-    const y = targetCenterY - CARD_HEIGHT / 2;
-    
-    // Add padding to prevent clipping when scaled
-    // When card scales, it expands from center, so we need extra margin
-    // But since we're positioning the center, we need to ensure bounds aren't exceeded
-    const scaleExpansionX = (CARD_WIDTH * (scaleFactor - 1)) / 2;
-    const scaleExpansionY = (CARD_HEIGHT * (scaleFactor - 1)) / 2;
-    
-    // Adjust position to keep card within screen bounds when scaled
-    const adjustedX = Math.max(scaleExpansionX, Math.min(x, SCREEN_WIDTH - CARD_WIDTH - scaleExpansionX));
-    const adjustedY = Math.max(scaleExpansionY, Math.min(y, SCREEN_HEIGHT - CARD_HEIGHT - scaleExpansionY));
-    
-    return { x: adjustedX, y: adjustedY };
-  };
-
-  const handleCardPress = (index: number) => {
-    if (flippedIndices.includes(index)) return;
-    if (flippedIndices.length >= cardCount) return;
-    if (animatingCards.has(index)) return;
-
-    const selectionIndex = flippedIndices.length;
-    const newFlipped = [...flippedIndices, index];
-    setFlippedIndices(newFlipped);
-    setAnimatingCards(prev => new Set(prev).add(index));
-
-    // Get target position
-    const targetPos = getTargetPosition(selectionIndex);
-    const fanPos = getCardPosition(index);
-
-    // Animate card to top
-    const positionAnim = positionAnims.current[index];
-    const scaleAnim = scaleAnims.current[index];
-    const rotationAnim = rotationAnims.current[index];
-
-    // Calculate scale factor to match reading screen card size
-    const scaleFactor = READING_CARD_WIDTH / CARD_WIDTH;
-
-    if (animationsEnabled) {
-      // Animate position, scale, and rotation
-      Animated.parallel([
-        Animated.timing(positionAnim, {
-          toValue: { x: targetPos.x, y: targetPos.y },
-          duration: 1000,
-          useNativeDriver: false, // Can't use native driver for layout properties
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: scaleFactor,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rotationAnim, {
-          toValue: 0, // Straighten card
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Wait a moment for cards to settle in exact position, then transition
-        if (newFlipped.length === cardCount) {
-          setTimeout(() => {
-            const selectedCards = newFlipped.map(i => shuffledDeck[i]);
-            onCardsSelected(selectedCards);
-          }, 500); // Longer delay to ensure smooth transition
-        }
+    cardsToShow.forEach((card, index) => {
+      const position = getFanPosition(index, cardsToShow.length);
+      states.set(index, {
+        index,
+        card,
+        isSelected: false,
+        isFlipped: false,
+        reversed: false, // Will be set when card is selected
+        initialPosition: position,
+        animTranslateX: new Animated.Value(0), // Start at 0, we'll use initialPosition.x as base
+        animTranslateY: new Animated.Value(0), // Start at 0, we'll use initialPosition.y as base
+        animScale: new Animated.Value(1),
+        animRotate: new Animated.Value(position.rotation),
+        animOpacity: new Animated.Value(1),
+        selectionOrder: -1,
       });
-    } else {
-      // No animation - instantly move to target position
-      positionAnim.setValue({ x: targetPos.x, y: targetPos.y });
-      scaleAnim.setValue(scaleFactor);
-      rotationAnim.setValue(0);
-      
-      // If this is the last card, transition immediately
-      if (newFlipped.length === cardCount) {
-        setTimeout(() => {
-          const selectedCards = newFlipped.map(i => shuffledDeck[i]);
-          onCardsSelected(selectedCards);
-        }, 100);
-      }
+    });
+    
+    cardStatesRef.current = states;
+    return states;
+  }, [shuffledDeck]);
+
+  const handleCardPress = async (index: number) => {
+    const state = cardStatesRef.current.get(index);
+    if (!state || state.isSelected || selectedIndices.size >= cardCount) {
+      return;
     }
+
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Determine if card is reversed (30% chance)
+    const reversed = Math.random() < 0.3;
+    
+    // Mark as selected and flipped
+    state.isSelected = true;
+    state.isFlipped = true;
+    state.reversed = reversed; // Store reversed state immediately
+    const newSelected = new Set(selectedIndices);
+    newSelected.add(index);
+    const newOrder = [...selectionOrder, index];
+    setSelectedIndices(newSelected);
+    setSelectionOrder(newOrder);
+    
+    state.selectionOrder = newOrder.length - 1;
+
+    // Calculate target position at top
+    const selectionIndex = state.selectionOrder;
+    const padding = 24;
+    const gap = 16;
+    const targetCardWidth = 150;
+    const totalWidth = targetCardWidth * cardCount + gap * (cardCount - 1);
+    const contentWidth = SCREEN_WIDTH - (padding * 2);
+    const startX = padding + (contentWidth - totalWidth) / 2;
+    const targetX = startX + selectionIndex * (targetCardWidth + gap) + targetCardWidth / 2 - CARD_WIDTH / 2;
+    const targetY = 100;
+    const targetScale = targetCardWidth / CARD_WIDTH;
+
+    // Calculate translation needed (target - initial)
+    const translateX = targetX - state.initialPosition.x;
+    const translateY = targetY - state.initialPosition.y;
+
+    // Animate: Flip first, then move to top
+    Animated.sequence([
+      // Quick flip animation
+      Animated.timing(state.animOpacity, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+      // Move to top using transforms
+      Animated.parallel([
+        Animated.timing(state.animTranslateX, {
+          toValue: translateX,
+          duration: 800,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true, // Can use native driver with translateX
+        }),
+        Animated.timing(state.animTranslateY, {
+          toValue: translateY,
+          duration: 800,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true, // Can use native driver with translateY
+        }),
+        Animated.timing(state.animScale, {
+          toValue: targetScale,
+          duration: 800,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(state.animRotate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      // When all cards selected, proceed
+      if (newSelected.size === cardCount) {
+        setTimeout(() => {
+          const selectedCards = newOrder
+            .map(i => {
+              const s = cardStatesRef.current.get(i);
+              if (!s) return null;
+                  // Use the reversed state already stored in the card state
+              return { ...s.card, reversed: s.reversed };
+            })
+            .filter((c): c is LocalTarotCard => c !== null);
+          onCardsSelected(selectedCards);
+        }, 300);
+      }
+    });
   };
+
+  const cards = Array.from(cardStates.values());
+  const selectedCards = selectionOrder
+    .map(i => cardStatesRef.current.get(i))
+    .filter((s): s is CardState => s !== undefined && s.isSelected);
 
   return (
     <MysticalBackground variant="default">
       <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
           <ThemedText variant="h3" style={styles.title}>
-            Tap {cardCount} Card{cardCount > 1 ? 's' : ''}
+            {locale === 'zh-TW' 
+              ? `點選 ${cardCount} 張卡牌`
+              : `Tap ${cardCount} Card${cardCount > 1 ? 's' : ''}`}
           </ThemedText>
-          <ThemedText variant="caption" style={styles.subtitle}>
-            {flippedIndices.length > 0 
-              ? `Card ${flippedIndices.length} of ${cardCount} revealed`
-              : 'Tap a card to reveal it'}
-          </ThemedText>
+          {selectedIndices.size > 0 && (
+            <ThemedText variant="caption" style={styles.subtitle}>
+              {locale === 'zh-TW'
+                ? `已選 ${selectedIndices.size} / ${cardCount} 張`
+                : `${selectedIndices.size} of ${cardCount} selected`}
+            </ThemedText>
+          )}
         </View>
 
-        {/* Top area where cards will animate to - invisible placeholder for reference */}
-        <View style={styles.topArea} pointerEvents="none" />
+        {/* Top area for selected cards */}
+        {selectedCards.length > 0 && (
+          <View style={styles.selectedCardsArea} pointerEvents="none">
+            {selectedCards.map((state) => {
+              const rotateStr = state.animRotate.interpolate({
+                inputRange: [-90, 90],
+                outputRange: ['-90deg', '90deg'],
+              });
 
-        {/* Card spread - wrapper to allow overflow during animation */}
-        <View style={styles.cardSpreadContainer}>
-          <View style={styles.cardSpread}>
-          {shuffledDeck.length > 0 && shuffledDeck.slice(0, SPREAD_CARD_COUNT).map((card, index) => {
-            const isFlipped = flippedIndices.includes(index);
-            const isAnimating = animatingCards.has(index);
-            const canFlip = !isFlipped && flippedIndices.length < cardCount && !isAnimating;
-            
-            const positionAnim = positionAnims.current[index];
-            const scaleAnim = scaleAnims.current[index];
-            const rotationAnim = rotationAnims.current[index];
-
-            if (!positionAnim || !scaleAnim || !rotationAnim) {
-              return null;
-            }
-
-            const zIndex = isFlipped ? 1000 + index : 1;
-            const elevation = isFlipped ? 15 : 3;
-
-            return (
-              <Animated.View
-                key={`card-${card.code}-${index}`}
-                style={[
-                  styles.cardWrapper,
-                  {
-                    position: 'absolute',
-                    left: positionAnim.x,
-                    top: positionAnim.y,
-                    zIndex,
-                    opacity: 1,
-                    transform: [
-                      { 
-                        rotate: rotationAnim.interpolate({
-                          inputRange: [-60, 60],
-                          outputRange: ['-60deg', '60deg'],
-                        }) 
-                      },
-                      { scale: scaleAnim },
-                    ],
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => handleCardPress(index)}
-                  disabled={!canFlip}
+              return (
+                <Animated.View
+                  key={`selected-${state.index}`}
                   style={[
-                    styles.cardTouchable,
-                    applyShadow({
-                      shadowColor: isFlipped ? theme.colors.primary.gold : '#000',
-                      shadowOffset: { width: 0, height: elevation },
-                      shadowOpacity: isFlipped ? 0.5 : 0.2,
-                      shadowRadius: elevation * 0.8,
-                      elevation: elevation * 0.6,
-                    }),
+                    styles.cardWrapper,
+                    {
+                      left: state.initialPosition.x,
+                      top: state.initialPosition.y,
+                      transform: [
+                        { translateX: state.animTranslateX },
+                        { translateY: state.animTranslateY },
+                        { scale: state.animScale },
+                        { rotate: rotateStr },
+                      ],
+                      opacity: state.animOpacity,
+                      zIndex: 1000 + state.selectionOrder,
+                    },
                   ]}
                 >
-                  <View style={styles.card3D}>
-                    {/* Show front if flipped, back otherwise */}
-                    {isFlipped ? (
+                  <View style={styles.cardContent}>
+                    {state.isFlipped ? (
                       <Image
-                        source={getCardImage(card.code)}
-                        style={styles.cardImage}
+                        source={getCardImage(state.card.code)}
+                        style={[
+                          styles.cardImage,
+                          state.reversed && styles.cardReversed,
+                        ]}
                         resizeMode="cover"
                       />
                     ) : (
@@ -322,13 +281,74 @@ function CardSelectionScreen({
                       />
                     )}
                   </View>
+                </Animated.View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Fan of cards - only show non-selected cards */}
+        <View style={styles.cardsContainer}>
+          {cards
+            .filter(state => !state.isSelected)
+            .map((state) => {
+            const canSelect = selectedIndices.size < cardCount;
+            const rotateStr = state.animRotate.interpolate({
+              inputRange: [-90, 90],
+              outputRange: ['-90deg', '90deg'],
+            });
+
+            return (
+              <Animated.View
+                key={`fan-card-${state.index}`}
+                style={[
+                  styles.cardWrapper,
+                  {
+                    left: state.initialPosition.x,
+                    top: state.initialPosition.y,
+                    transform: [
+                      { scale: state.animScale },
+                      { rotate: rotateStr },
+                    ],
+                    opacity: state.animOpacity,
+                    zIndex: 100 - state.index,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => handleCardPress(state.index)}
+                  disabled={!canSelect}
+                  style={[
+                    styles.cardTouchable,
+                    !canSelect && styles.cardDisabled,
+                  ]}
+                >
+                  <View style={styles.cardContent}>
+                    {!state.isFlipped ? (
+                      <Image
+                        source={CARD_BACK_IMAGE}
+                        style={styles.cardImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Image
+                        source={getCardImage(state.card.code)}
+                        style={[
+                          styles.cardImage,
+                          state.reversed && styles.cardReversed,
+                        ]}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </View>
                 </TouchableOpacity>
               </Animated.View>
             );
           })}
-          </View>
         </View>
 
+        {/* Footer */}
         <View style={styles.footer}>
           <ThemedButton
             title="Cancel"
@@ -345,83 +365,78 @@ function CardSelectionScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
-    paddingBottom: 100,
-    overflow: 'visible', // Allow cards to be visible when animated to top
+    overflow: 'hidden',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    paddingTop: 60,
+    paddingBottom: 20,
     paddingHorizontal: theme.spacing.spacing.lg,
-    zIndex: 10,
+    zIndex: 100,
   },
   title: {
-    color: theme.colors.primary.goldLight,
+    color: theme.colors.primary.gold,
     marginBottom: theme.spacing.spacing.xs,
-    textAlign: 'center',
-    opacity: 0.9,
+    fontSize: 24,
   },
   subtitle: {
-    color: theme.colors.text.tertiary,
-    textAlign: 'center',
-    opacity: 0.7,
-    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.sm,
   },
-  topArea: {
+  selectedCardsArea: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 300,
-    zIndex: 100,
+    height: 250,
+    zIndex: 1000,
+    overflow: 'visible',
   },
-  cardSpreadContainer: {
-    flex: 1,
-    width: SCREEN_WIDTH,
-    minHeight: SCREEN_HEIGHT * 0.6,
-    overflow: 'visible', // Allow cards to overflow during animation
-  },
-  cardSpread: {
+  cardsContainer: {
     flex: 1,
     position: 'relative',
-    width: SCREEN_WIDTH,
-    minHeight: SCREEN_HEIGHT * 0.6,
-    overflow: 'visible', // Allow cards to be visible when scaled/moved
+    overflow: 'visible',
   },
   cardWrapper: {
+    position: 'absolute',
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    // Account for scaling - cards scale up to ~1.67x, so we need extra space
-    // The wrapper itself doesn't clip, but we ensure proper positioning
   },
   cardTouchable: {
     width: '100%',
     height: '100%',
   },
-  card3D: {
+  cardDisabled: {
+    opacity: 0.5,
+  },
+  cardContent: {
     width: '100%',
     height: '100%',
     borderRadius: theme.spacing.borderRadius.md,
     overflow: 'hidden',
+    backgroundColor: theme.colors.neutrals.darkGray,
   },
   cardImage: {
     width: '100%',
     height: '100%',
-    borderRadius: theme.spacing.borderRadius.md,
+  },
+  cardReversed: {
+    transform: [{ rotate: '180deg' }],
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: theme.spacing.spacing.lg,
+    paddingBottom: 40,
     paddingTop: theme.spacing.spacing.lg,
-    zIndex: 10,
+    zIndex: 100,
+    alignItems: 'center',
   },
   cancelButton: {
     minWidth: 120,
   },
 });
 
-// Memoize to prevent unnecessary re-renders
-export default React.memo(CardSelectionScreen, (prevProps, nextProps) => {
-  return prevProps.cardCount === nextProps.cardCount;
-});
+export default React.memo(CardSelectionScreen);

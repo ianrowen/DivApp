@@ -270,6 +270,51 @@ export default function DailyCardDraw() {
             : 'Tap to draw your daily card'}
         </ThemedText>
       )}
+      {/* Show card name and keywords immediately after flip */}
+      {isFlipped && card && localizedCard && (
+        <View style={styles.cardInfoContainer}>
+          <ThemedText variant="h2" style={styles.cardTitleBelow}>
+            {localizedCard.title}
+          </ThemedText>
+          {card.reversed && (
+            <ThemedText variant="caption" style={styles.reversedLabelBelow}>
+              {locale === 'zh-TW' ? '逆位' : 'Reversed'}
+            </ThemedText>
+          )}
+          {(() => {
+            const localizedKeywords = localizedCard?.keywords;
+            const originalKeywords = card?.keywords;
+            const keywordsToShow = (localizedKeywords && Array.isArray(localizedKeywords) && localizedKeywords.length > 0)
+              ? localizedKeywords
+              : (originalKeywords && Array.isArray(originalKeywords) && originalKeywords.length > 0)
+                ? originalKeywords
+                : [];
+            
+            if (keywordsToShow.length === 0) return null;
+            
+            return (
+              <View style={styles.keywordsContainerBelow}>
+                {keywordsToShow.slice(0, 5).map((keyword: string, idx: number) => {
+                  if (!keyword || typeof keyword !== 'string') return null;
+                  const isLast = idx === keywordsToShow.slice(0, 5).length - 1;
+                  return (
+                    <React.Fragment key={idx}>
+                      <ThemedText variant="caption" style={styles.keywordBelow}>
+                        {keyword}
+                      </ThemedText>
+                      {!isLast && (
+                        <ThemedText variant="caption" style={styles.keywordSeparatorBelow}>
+                          {' • '}
+                        </ThemedText>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </View>
+            );
+          })()}
+        </View>
+      )}
       {isFlipped && card && (
         <ThemedButton
           title={locale === 'zh-TW' ? '查看完整解讀' : 'View Full Reading'}
@@ -306,13 +351,13 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     width: '100%',
-    minHeight: 450,
+    minHeight: 250,
     marginBottom: theme.spacing.spacing.sm,
     padding: theme.spacing.spacing.xs,
   },
   cardWrapper: {
     width: '100%',
-    height: 450,
+    height: 250,
     position: 'relative',
   },
   cardFace: {
@@ -332,6 +377,9 @@ const styles = StyleSheet.create({
   cardBackImage: {
     width: '100%',
     height: '100%',
+    maxWidth: 200,
+    maxHeight: 230,
+    alignSelf: 'center',
   },
   cardBack: {
     backgroundColor: theme.colors.neutrals.darkGray,
@@ -343,9 +391,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   cardImage: {
-    width: 200,
-    height: 350,
-    marginBottom: theme.spacing.spacing.md,
+    width: 150,
+    height: 230,
+    marginBottom: theme.spacing.spacing.sm,
     borderRadius: theme.spacing.borderRadius.md,
   },
   cardReversedImage: {
@@ -386,6 +434,39 @@ const styles = StyleSheet.create({
   },
   viewFullButton: {
     marginTop: theme.spacing.spacing.md,
+  },
+  cardInfoContainer: {
+    marginTop: theme.spacing.spacing.md,
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.spacing.md,
+  },
+  cardTitleBelow: {
+    color: theme.colors.primary.gold,
+    marginBottom: theme.spacing.spacing.xs,
+    textAlign: 'center',
+  },
+  reversedLabelBelow: {
+    color: theme.colors.semantic.error,
+    textAlign: 'center',
+    marginBottom: theme.spacing.spacing.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
+  },
+  keywordsContainerBelow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.spacing.sm,
+    paddingHorizontal: theme.spacing.spacing.md,
+  },
+  keywordBelow: {
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.sm,
+  },
+  keywordSeparatorBelow: {
+    color: theme.colors.text.tertiary,
+    fontSize: theme.typography.fontSize.sm,
+    opacity: 0.5,
   },
 });
 

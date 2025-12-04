@@ -130,6 +130,9 @@ export default {
     "animations": "動畫效果",
     "animationsDescription": "啟用卡片選擇和轉場動畫",
     "saveSuccess": "個人資料更新成功！",
+    "about": "關於",
+    "termsOfService": "服務條款",
+    "privacyPolicy": "隱私權政策",
     "signOutConfirm": "您確定要登出嗎？"
   },
   "statistics": {

@@ -247,9 +247,11 @@ Be specific to their question if provided. Use rich imagery and metaphor.`,
         : `\nQuerent's Reflection: ${meta.customData.reflection}\n`;
     }
 
+    // Add explicit word count enforcement at the end
+    const wordLimit = language === 'zh-TW' ? '100-120' : '100-120';
     prompt += language === 'zh-TW'
-      ? `\n請提供一個連貫的解讀，將這些牌面編織成一個有意義的故事。`
-      : `\nPlease provide a cohesive interpretation that weaves these cards into a meaningful narrative.`;
+      ? `\n請提供一個連貫的解讀，將這些牌面編織成一個有意義的故事。\n\n重要：您的回應必須正好是 ${wordLimit} 個字。絕對不要超過這個限制。`
+      : `\nPlease provide a cohesive interpretation that weaves these cards into a meaningful narrative.\n\nCRITICAL: Your response must be exactly ${wordLimit} words. Do NOT exceed this limit.`;
 
     return prompt;
   }

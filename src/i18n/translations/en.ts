@@ -147,6 +147,9 @@ export default {
     animations: 'Animations',
     animationsDescription: 'Enable animations for card selection and transitions',
     saveSuccess: 'Profile updated successfully!',
+    about: 'About',
+    termsOfService: 'Terms of Service',
+    privacyPolicy: 'Privacy Policy',
   },
   statistics: {
     title: 'Statistics',
