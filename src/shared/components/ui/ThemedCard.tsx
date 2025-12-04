@@ -13,8 +13,8 @@
 
 import React from 'react';
 import { View, ViewProps, StyleSheet, ViewStyle } from 'react-native';
-import theme from '../../theme';
-import { applyShadow } from '../../theme/shadows';
+import theme from '../../../theme';
+import { applyShadow } from '../../../theme/shadows';
 
 /**
  * Card variant types

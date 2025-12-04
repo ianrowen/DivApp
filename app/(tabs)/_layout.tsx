@@ -1,17 +1,20 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, Platform } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import InfinityEight from '../../src/shared/components/icons/InfinityEight';
 import { ProfileIcon } from '../../src/shared/components/icons/ProfileIcon';
 import { StatisticsIcon } from '../../src/shared/components/icons/StatisticsIcon';
 import { HistoryScroll } from '../../src/shared/components/icons/HistoryScroll';
 import { LibraryBook } from '../../src/shared/components/icons/LibraryBook';
 import { useTranslation } from '../../src/i18n';
-import theme from '../../src/shared/theme';
+import theme from '../../src/theme';
+import ThemedText from '../../src/shared/components/ui/ThemedText';
 
 export default function TabsLayout() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -20,35 +23,52 @@ export default function TabsLayout() {
           backgroundColor: theme.colors.neutrals.black,
           borderBottomWidth: 1,
           borderBottomColor: theme.colors.primary.goldDark,
-          elevation: 0,
-          shadowOpacity: 0,
+          height: 60,
         },
         headerTitleStyle: {
           fontFamily: 'Cinzel_600SemiBold',
-          fontSize: theme.typography.fontSize.xl,
-          color: theme.colors.text.primary,
+          fontSize: 24,
+          color: theme.colors.primary.gold,
           letterSpacing: 0.5,
+          textTransform: 'uppercase',
         },
+        headerTitleAlign: 'center',
         headerTintColor: theme.colors.primary.gold,
-        headerShown: true,
         tabBarStyle: {
           backgroundColor: theme.colors.neutrals.black,
           borderTopColor: theme.colors.primary.goldDark,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: theme.spacing.spacing.sm,
-          paddingTop: theme.spacing.spacing.sm,
+          height: Platform.select({
+            ios: 105 + insets.bottom,
+            android: 95,
+          }),
+          paddingBottom: Platform.select({
+            ios: insets.bottom + 24,
+            android: 32,
+          }),
+          paddingTop: 12,
+          paddingHorizontal: 16,
         },
         tabBarActiveTintColor: theme.colors.primary.gold,
         tabBarInactiveTintColor: theme.colors.neutrals.lightGray,
         tabBarLabelStyle: {
           fontFamily: 'Lato_400Regular',
-          fontSize: theme.typography.fontSize.xs,
+          fontSize: 17,
           fontWeight: '600',
-          marginTop: theme.spacing.spacing.xs,
+          marginTop: 8,
+          marginBottom: 0,
+          paddingBottom: 0,
         },
         tabBarIconStyle: {
-          marginTop: 4,
+          marginTop: 2,
+          marginBottom: 0,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
+          paddingHorizontal: 8,
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 8,
         },
       }}
     >
@@ -56,12 +76,9 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: t('tabs.reading') || 'Reading',
-          headerShown: true,
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
-            <InfinityEight 
-              size={28} 
-              isActive={focused}
-            />
+            <InfinityEight size={38} isActive={focused} />
           ),
         }}
       />
@@ -73,13 +90,34 @@ export default function TabsLayout() {
           headerRight: () => (
             <TouchableOpacity 
               onPress={() => router.push('/statistics')}
-              style={{ marginRight: 15 }}
+              style={{ 
+                marginRight: 16, 
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+              }}
             >
-              <StatisticsIcon size={24} color={theme.colors.primary.gold} showLabel={true} />
+              <ThemedText variant="body" style={{ 
+                color: theme.colors.primary.goldLight, 
+                fontSize: 16, 
+                fontWeight: '400',
+                fontFamily: 'Lato_400Regular',
+                textDecorationLine: 'underline',
+                textDecorationColor: theme.colors.primary.goldLight,
+              }}>
+                {t('statistics.linkTitle')}
+              </ThemedText>
+              <StatisticsIcon 
+                size={22} 
+                color={theme.colors.primary.goldLight} 
+                showLabel={false}
+              />
             </TouchableOpacity>
           ),
           tabBarIcon: ({ focused }) => (
-            <HistoryScroll size={28} isActive={focused} />
+            <HistoryScroll size={38} isActive={focused} />
           ),
         }}
       />
@@ -89,7 +127,7 @@ export default function TabsLayout() {
           title: t('tabs.library') || 'Library',
           headerShown: true,
           tabBarIcon: ({ focused }) => (
-            <LibraryBook size={28} isActive={focused} />
+            <LibraryBook size={38} isActive={focused} />
           ),
         }}
       />
@@ -99,10 +137,7 @@ export default function TabsLayout() {
           title: t('tabs.profile') || 'Profile',
           headerShown: true,
           tabBarIcon: ({ focused }) => (
-            <ProfileIcon 
-              size={28} 
-              isActive={focused}
-            />
+            <ProfileIcon size={38} isActive={focused} />
           ),
         }}
       />

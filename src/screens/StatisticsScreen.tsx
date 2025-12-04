@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -6,9 +6,12 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
+import { router } from 'expo-router';
 import { supabase } from '../core/api/supabase';
 import ThemedText from '../shared/components/ui/ThemedText';
-import theme from '../shared/theme';
+import ThemedButton from '../shared/components/ui/ThemedButton';
+import MysticalBackground from '../shared/components/ui/MysticalBackground';
+import theme from '../theme';
 import { LOCAL_RWS_CARDS } from '../systems/tarot/data/localCardData';
 import { useTranslation } from '../i18n';
 import type { TranslationKey } from '../i18n';
@@ -48,48 +51,113 @@ export default function StatisticsScreen() {
   const { t, locale } = useTranslation();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<CardStats | null>(null);
   const [patterns, setPatterns] = useState<PatternDetection[]>([]);
+  const loadingCompleteRef = useRef(false);
 
   useEffect(() => {
     loadUser();
+
+    // Failsafe: If still loading after 5 seconds, force stop
+    const timeout = setTimeout(() => {
+      setLoading((currentLoading) => {
+        if (currentLoading && !loadingCompleteRef.current) {
+          console.warn('Statistics loading timeout - forcing completion');
+          setError((currentError) => {
+            if (!currentError && !stats) {
+              return 'Loading timeout. Please check your connection and try again.';
+            }
+            return currentError;
+          });
+          return false;
+        }
+        return currentLoading;
+      });
+    }, 5000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
     if (user?.id) {
       loadStatistics();
+    } else if (user === null && !loading) {
+      // User fetch completed but no user found
+      setLoading(false);
     }
   }, [user]);
 
   const loadUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      setLoading(true);
+      setError(null);
+      console.log('Statistics: Starting to load readings...');
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError) {
+        console.error('Statistics: User fetch error:', userError);
+        throw userError;
+      }
+
+      if (!user) {
+        console.log('Statistics: No user found');
+        setUser(null);
+        loadingCompleteRef.current = true;
+        setLoading(false);
+        return;
+      }
+
+      console.log('Statistics: User found, fetching readings...');
       setUser(user);
-    } catch (error) {
-      console.error('Error loading user:', error);
+    } catch (err) {
+      console.error('Statistics: User load error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load user');
+      loadingCompleteRef.current = true;
+      setLoading(false);
     }
   };
 
   const loadStatistics = async () => {
     try {
+      setLoading(true);
+      setError(null);
+
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      console.log('Statistics: Fetching readings...');
+
       // Load all readings
-      const { data: readings, error } = await supabase
+      const { data: readings, error: readingsError } = await supabase
         .from('readings')
         .select('elements_drawn')
-        .eq('user_id', user!.id);
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (readingsError) {
+        console.error('Statistics: Readings fetch error:', readingsError);
+        throw readingsError;
+      }
+
+      console.log(`Statistics: Loaded ${readings?.length || 0} readings`);
 
       // Process statistics
-      const processedStats = processReadings(readings);
+      const processedStats = processReadings(readings || []);
       setStats(processedStats);
 
       // Detect patterns and anomalies
       const detectedPatterns = detectPatterns(processedStats);
       setPatterns(detectedPatterns);
-    } catch (error) {
-      console.error('Error loading statistics:', error);
+      loadingCompleteRef.current = true;
+    } catch (err) {
+      console.error('Statistics: Fatal error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load statistics');
+      loadingCompleteRef.current = true;
     } finally {
+      console.log('Statistics: Loading complete');
       setLoading(false);
     }
   };
@@ -291,24 +359,71 @@ export default function StatisticsScreen() {
     return card.title[locale === 'zh-TW' ? 'zh' : 'en'] || card.title.en;
   };
 
+  // Loading state
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary.gold} />
-      </View>
+      <MysticalBackground variant="subtle">
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary.gold} />
+          <ThemedText variant="body" style={styles.loadingText}>
+            Loading statistics...
+          </ThemedText>
+        </View>
+      </MysticalBackground>
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <MysticalBackground variant="subtle">
+        <View style={styles.centerContainer}>
+          <ThemedText variant="h2" style={styles.errorText}>
+            Unable to Load Statistics
+          </ThemedText>
+          <ThemedText variant="body" style={styles.errorSubtext}>
+            {error}
+          </ThemedText>
+          <ThemedButton
+            title="Try Again"
+            onPress={() => {
+              setError(null);
+              loadingCompleteRef.current = false;
+              loadUser();
+            }}
+            variant="primary"
+            style={styles.retryButton}
+          />
+          <ThemedButton
+            title="← Back to History"
+            onPress={() => router.back()}
+            variant="secondary"
+            style={styles.backButton}
+          />
+        </View>
+      </MysticalBackground>
+    );
+  }
+
+  // Empty state
   if (!stats || stats.totalCards === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText variant="h2" style={styles.emptyText}>
-          {t('statistics.noStats')}
-        </ThemedText>
-        <ThemedText variant="body" style={styles.emptySubtext}>
-          {t('statistics.noStatsSubtext')}
-        </ThemedText>
-      </View>
+      <MysticalBackground variant="subtle">
+        <View style={styles.centerContainer}>
+          <ThemedText variant="h2" style={styles.emptyText}>
+            {t('statistics.noStats') || 'No Statistics Yet'}
+          </ThemedText>
+          <ThemedText variant="body" style={styles.emptySubtext}>
+            {t('statistics.noStatsSubtext') || 'Complete some readings to see your patterns and insights here.'}
+          </ThemedText>
+          <ThemedButton
+            title="← Back to History"
+            onPress={() => router.back()}
+            variant="secondary"
+            style={styles.backButton}
+          />
+        </View>
+      </MysticalBackground>
     );
   }
 
@@ -317,14 +432,15 @@ export default function StatisticsScreen() {
     .slice(0, 5);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <ThemedText variant="h1" style={styles.title}>
-        📊 {t('statistics.title')}
-      </ThemedText>
-      <ThemedText variant="body" style={styles.subtitle}>
-        {t('statistics.basedOn', { count: stats.totalCards })}
-      </ThemedText>
+    <MysticalBackground variant="subtle">
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* Header */}
+        <ThemedText variant="h1" style={styles.title}>
+          📊 {t('statistics.title')}
+        </ThemedText>
+        <ThemedText variant="body" style={styles.subtitle}>
+          {t('statistics.basedOn', { count: stats.totalCards })}
+        </ThemedText>
 
       {/* Pattern Alerts */}
       {patterns.length > 0 && (
@@ -467,7 +583,8 @@ export default function StatisticsScreen() {
           </View>
         ))}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </MysticalBackground>
   );
 }
 
@@ -533,18 +650,17 @@ function StatBar({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.neutrals.black,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.neutrals.black,
     padding: theme.spacing.spacing.xl,
   },
   content: {
     padding: theme.spacing.spacing.lg,
-    paddingBottom: 100, // Extra padding for tab bar
+    paddingTop: theme.spacing.spacing.xl,
+    paddingBottom: theme.spacing.spacing.xxl,
   },
   title: {
     color: theme.colors.primary.gold,
@@ -653,6 +769,20 @@ const styles = StyleSheet.create({
     color: theme.colors.primary.gold,
     fontWeight: theme.typography.fontWeight.semibold,
   },
+  loadingText: {
+    marginTop: theme.spacing.spacing.md,
+    color: theme.colors.text.secondary,
+  },
+  errorText: {
+    color: theme.colors.semantic?.error || '#ff6b6b',
+    textAlign: 'center',
+    marginBottom: theme.spacing.spacing.md,
+  },
+  errorSubtext: {
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.spacing.xl,
+  },
   emptyText: {
     color: theme.colors.text.secondary,
     textAlign: 'center',
@@ -661,5 +791,13 @@ const styles = StyleSheet.create({
   emptySubtext: {
     color: theme.colors.text.tertiary,
     textAlign: 'center',
+    marginBottom: theme.spacing.spacing.xl,
+  },
+  retryButton: {
+    marginBottom: theme.spacing.spacing.md,
+    minWidth: 200,
+  },
+  backButton: {
+    minWidth: 200,
   },
 });

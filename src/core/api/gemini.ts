@@ -30,7 +30,7 @@ export class GeminiProvider implements IAIProvider {
     const {
       prompt,
       systemPrompt,
-      maxTokens = 2048,
+      maxTokens = 1200,
       temperature = 0.7,
       language = 'en',
     } = params;
@@ -73,7 +73,8 @@ export class GeminiProvider implements IAIProvider {
                         generationConfig: {
                             temperature,
                             maxOutputTokens: maxTokens,
-                             // Gemini manages thinking automatically 
+                            candidateCount: 1,
+                            responseMimeType: 'text/plain',
                         },
                     }),
                 }

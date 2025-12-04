@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import ThemedText from './ui/ThemedText';
 import ThemedCard from './ui/ThemedCard';
-import theme from '../theme';
+import theme from '../../theme';
 import locationService, { LocationResult } from '../../services/locationService';
 import { useTranslation } from '../../i18n';
 

@@ -1,17 +1,22 @@
 // src/shared/components/DailyCardDraw.tsx
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LOCAL_RWS_CARDS } from '../../systems/tarot/data/localCardData';
 import { getLocalizedCard } from '../../systems/tarot/utils/cardHelpers';
-import theme from '../theme';
+import theme from '../../theme';
 import ThemedText from './ui/ThemedText';
 import ThemedCard from './ui/ThemedCard';
+import ThemedButton from './ui/ThemedButton';
 import { useTranslation } from '../../i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const CARD_BACK_IMAGE = require('../../../assets/images/logo/divin8-card-curtains-horizontal.png');
+
 const DAILY_CARD_STORAGE_KEY = 'divin8_daily_card';
 const DAILY_CARD_DATE_KEY = 'divin8_daily_card_date';
+const DAILY_CARD_REVERSED_KEY = 'divin8_daily_card_reversed';
 
 export default function DailyCardDraw() {
   const { t, locale } = useTranslation();
@@ -29,12 +34,15 @@ export default function DailyCardDraw() {
       const today = new Date().toDateString();
       const savedDate = await AsyncStorage.getItem(DAILY_CARD_DATE_KEY);
       const savedCardCode = await AsyncStorage.getItem(DAILY_CARD_STORAGE_KEY);
+      const savedReversed = await AsyncStorage.getItem(DAILY_CARD_REVERSED_KEY);
 
       // If we have a card for today, use it
       if (savedDate === today && savedCardCode) {
         const foundCard = LOCAL_RWS_CARDS.find(c => c.code === savedCardCode);
         if (foundCard) {
-          setCard(foundCard);
+          const reversed = savedReversed === 'true';
+          console.log('📥 Loading saved daily card:', foundCard.code, 'reversed:', reversed);
+          setCard({ ...foundCard, reversed });
           return;
         }
       }
@@ -60,12 +68,14 @@ export default function DailyCardDraw() {
       const reversed = Math.random() < 0.3; // 30% chance of reversal
 
       const cardWithReversal = { ...drawnCard, reversed };
+      console.log('🎴 Drawing new daily card:', drawnCard.code, 'reversed:', reversed);
       setCard(cardWithReversal);
 
       // Save for today
       const today = new Date().toDateString();
       await AsyncStorage.setItem(DAILY_CARD_DATE_KEY, today);
       await AsyncStorage.setItem(DAILY_CARD_STORAGE_KEY, drawnCard.code);
+      await AsyncStorage.setItem(DAILY_CARD_REVERSED_KEY, reversed ? 'true' : 'false');
     } catch (error) {
       console.error('Error drawing daily card:', error);
     }
@@ -73,6 +83,20 @@ export default function DailyCardDraw() {
 
   const handleFlip = () => {
     if (isAnimating) return;
+
+    // If card is already flipped, navigate to reading screen
+    if (isFlipped) {
+      console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed);
+      router.push({
+        pathname: '/reading',
+        params: {
+          type: 'daily',
+          cardCode: card.code,
+          reversed: card.reversed ? 'true' : 'false',
+        },
+      });
+      return;
+    }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -156,14 +180,11 @@ export default function DailyCardDraw() {
               { opacity: isFlipped ? 0 : 1 },
             ]}
           >
-            <View style={styles.cardFrontContent}>
-              <ThemedText variant="h1" style={styles.cardEmoji}>
-                🎴
-              </ThemedText>
-              <ThemedText variant="body" style={styles.tapToReveal}>
-                {locale === 'zh-TW' ? '點擊翻牌' : 'Tap to Reveal'}
-              </ThemedText>
-            </View>
+            <Image
+              source={CARD_BACK_IMAGE}
+              style={styles.cardBackImage}
+              resizeMode="contain"
+            />
           </Animated.View>
         </View>
       </TouchableOpacity>
@@ -172,6 +193,24 @@ export default function DailyCardDraw() {
           ? '每日一張卡牌，為您指引方向'
           : 'One card a day to guide your path'}
       </ThemedText>
+      {isFlipped && (
+        <ThemedButton
+          title={locale === 'zh-TW' ? '查看完整解讀' : 'View Full Reading'}
+          onPress={() => {
+            console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed);
+            router.push({
+              pathname: '/reading',
+              params: {
+                type: 'daily',
+                cardCode: card.code,
+                reversed: card.reversed ? 'true' : 'false',
+              },
+            });
+          }}
+          variant="primary"
+          style={styles.viewFullButton}
+        />
+      )}
     </ThemedCard>
   );
 }
@@ -179,7 +218,8 @@ export default function DailyCardDraw() {
 const styles = StyleSheet.create({
   card: {
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 600,
+    alignSelf: 'center',
     marginBottom: theme.spacing.spacing.lg,
   },
   title: {
@@ -189,12 +229,13 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     width: '100%',
-    minHeight: 200,
+    minHeight: 450,
     marginBottom: theme.spacing.spacing.sm,
+    padding: theme.spacing.spacing.xs,
   },
   cardWrapper: {
     width: '100%',
-    height: 200,
+    height: 450,
     position: 'relative',
   },
   cardFace: {
@@ -202,32 +243,25 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backfaceVisibility: 'hidden',
-    borderRadius: theme.spacing.borderRadius.md,
-    borderWidth: 2,
-    borderColor: theme.colors.primary.gold,
+    borderRadius: theme.spacing.borderRadius.lg,
+    overflow: 'hidden',
   },
   cardFront: {
-    backgroundColor: theme.colors.neutrals.darkGray,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  cardBackImage: {
+    width: '100%',
+    height: '100%',
   },
   cardBack: {
     backgroundColor: theme.colors.neutrals.darkGray,
     padding: theme.spacing.spacing.md,
   },
-  cardFrontContent: {
-    alignItems: 'center',
-  },
   cardBackContent: {
     flex: 1,
-  },
-  cardEmoji: {
-    fontSize: 64,
-    marginBottom: theme.spacing.spacing.sm,
-  },
-  tapToReveal: {
-    color: theme.colors.text.secondary,
-    textAlign: 'center',
   },
   cardTitle: {
     color: theme.colors.primary.gold,
@@ -250,6 +284,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.text.tertiary,
     fontStyle: 'italic',
+  },
+  viewFullButton: {
+    marginTop: theme.spacing.spacing.md,
   },
 });
 

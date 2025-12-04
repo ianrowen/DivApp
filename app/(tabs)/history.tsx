@@ -7,9 +7,11 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { router } from 'expo-router';
 import { supabase } from '../../src/core/api/supabase';
 import { Reading } from '../../src/core/models/Reading';
-import theme from '../../src/shared/theme';
+import theme from '../../src/theme';
+import MysticalBackground from '../../src/shared/components/ui/MysticalBackground';
 import ThemedText from '../../src/shared/components/ui/ThemedText';
 import ThemedButton from '../../src/shared/components/ui/ThemedButton';
 import { useTranslation } from '../../src/i18n';
@@ -264,15 +266,17 @@ export default function HistoryScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary.gold} />
-      </View>
+      <MysticalBackground variant="subtle">
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary.gold} />
+        </View>
+      </MysticalBackground>
     );
   }
 
   if (readings.length === 0) {
     return (
-      <View style={styles.container}>
+      <MysticalBackground variant="subtle">
         <View style={styles.centerContainer}>
           <ThemedText variant="h2" style={styles.emptyText}>
             {t('history.noReadings')}
@@ -281,12 +285,12 @@ export default function HistoryScreen() {
             {t('history.noReadingsSubtitle')}
           </ThemedText>
         </View>
-      </View>
+      </MysticalBackground>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <MysticalBackground variant="subtle">
       <FlatList
         data={readings}
         renderItem={renderReading}
@@ -294,31 +298,34 @@ export default function HistoryScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListFooterComponent={
-          <View style={styles.footerContainer}>
-            <ThemedButton
-              title={clearing ? (locale === 'zh-TW' ? '刪除中...' : 'Deleting...') : (locale === 'zh-TW' ? '清除全部記錄' : 'Clear All History')}
-              onPress={handleClearHistory}
-              disabled={clearing}
-              variant="secondary"
-              style={styles.clearButton}
-            />
-          </View>
+          readings.length > 0 ? (
+            <View style={styles.footerContainer}>
+              <ThemedButton
+                title={t('statistics.title') || 'View Statistics'}
+                onPress={() => router.push('/statistics')}
+                variant="primary"
+                style={styles.statsButton}
+              />
+              <ThemedButton
+                title={clearing ? (locale === 'zh-TW' ? '刪除中...' : 'Deleting...') : (locale === 'zh-TW' ? '清除全部記錄' : 'Clear All History')}
+                onPress={handleClearHistory}
+                disabled={clearing}
+                variant="secondary"
+                style={styles.clearButton}
+              />
+            </View>
+          ) : null
         }
       />
-    </View>
+    </MysticalBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.neutrals.black,
-  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.neutrals.black,
     padding: theme.spacing.spacing.xl,
   },
   listContent: {
@@ -402,18 +409,23 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
     textAlign: 'center',
     marginBottom: theme.spacing.spacing.md,
+    fontSize: 28,
   },
   emptySubtext: {
     color: theme.colors.text.tertiary,
     textAlign: 'center',
+    fontSize: 18,
   },
   footerContainer: {
     padding: theme.spacing.spacing.lg,
     paddingTop: theme.spacing.spacing.xl,
-    alignItems: 'center',
+    paddingBottom: theme.spacing.spacing.xxl,
+    gap: theme.spacing.spacing.md,
+  },
+  statsButton: {
+    width: '100%',
   },
   clearButton: {
     width: '100%',
-    maxWidth: 300,
   },
 });

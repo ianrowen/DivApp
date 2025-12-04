@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import type { AppStackParamList } from '../../App';
 import { useTranslation } from '../i18n';
-import theme from '../shared/theme';
+import theme from '../theme';
 import MysticalBackground from '../shared/components/ui/MysticalBackground';
 import ThemedText from '../shared/components/ui/ThemedText';
 import ThemedButton from '../shared/components/ui/ThemedButton';

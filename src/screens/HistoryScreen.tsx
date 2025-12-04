@@ -13,7 +13,7 @@ import type { StackScreenProps } from '@react-navigation/stack';
 import type { AppStackParamList, MainTabParamList } from '../../App';
 import { supabase } from '../core/api/supabase';
 import { Reading } from '../core/models/Reading';
-import theme from '../shared/theme';
+import theme from '../theme';
 import ThemedText from '../shared/components/ui/ThemedText';
 import ThemedButton from '../shared/components/ui/ThemedButton';
 import { useTranslation } from '../i18n';

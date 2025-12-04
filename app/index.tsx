@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Redirect } from 'expo-router';
 import { supabase } from '../src/core/api/supabase';
-import theme from '../src/shared/theme';
+import theme from '../src/theme';
 import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
 import ThemedText from '../src/shared/components/ui/ThemedText';
 

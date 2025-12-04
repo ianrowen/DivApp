@@ -3,7 +3,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from '../src/i18n';
-import theme from '../src/shared/theme';
+import theme from '../src/theme';
 import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
 import ThemedText from '../src/shared/components/ui/ThemedText';
 import ThemedButton from '../src/shared/components/ui/ThemedButton';

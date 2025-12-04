@@ -19,7 +19,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation, setLocale, getLocale, type SupportedLocale, i18n } from '../../i18n';
 import ThemedText from './ui/ThemedText';
-import theme from '../theme';
+import theme from '../../theme';
 
 interface LanguageOption {
   code: SupportedLocale;

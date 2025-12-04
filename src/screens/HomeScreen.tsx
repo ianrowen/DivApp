@@ -7,7 +7,7 @@ import { CompositeScreenProps } from '@react-navigation/native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { supabaseHelpers } from '../core/api/supabase';
 import type { AppStackParamList, MainTabParamList } from '../../App';
-import theme from '../shared/theme';
+import theme from '../theme';
 import MysticalBackground from '../shared/components/ui/MysticalBackground';
 import ThemedText from '../shared/components/ui/ThemedText';
 import ThemedButton from '../shared/components/ui/ThemedButton';

@@ -1,7 +1,10 @@
 // app/statistics.tsx
 import { Stack } from 'expo-router';
+import { router } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
 import StatisticsScreen from '../src/screens/StatisticsScreen';
-import theme from '../src/shared/theme';
+import ThemedText from '../src/shared/components/ui/ThemedText';
+import theme from '../src/theme';
 
 export default function Statistics() {
   return (
@@ -15,15 +18,31 @@ export default function Statistics() {
             backgroundColor: theme.colors.neutrals.black,
             borderBottomWidth: 1,
             borderBottomColor: theme.colors.primary.goldDark,
+            height: 60,
           },
           headerTintColor: theme.colors.primary.gold,
           headerTitleStyle: {
-            color: theme.colors.text.primary,
             fontFamily: 'Cinzel_600SemiBold',
-            fontSize: theme.typography.fontSize.xl,
+            fontSize: 24,
+            color: theme.colors.primary.gold,
             letterSpacing: 0.5,
+            textTransform: 'uppercase',
           },
-          headerBackTitle: 'Back',
+          headerTitleAlign: 'center',
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()}
+              style={{ marginLeft: 20, padding: 10 }}
+            >
+              <ThemedText variant="body" style={{ 
+                color: theme.colors.primary.gold, 
+                fontSize: 18,
+                fontFamily: 'Lato_400Regular',
+              }}>
+                ← Back
+              </ThemedText>
+            </TouchableOpacity>
+          ),
         }}
       />
       <StatisticsScreen />

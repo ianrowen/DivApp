@@ -1,82 +1,57 @@
-// src/shared/components/ui/MysticalBackground.tsx
-/**
- * MysticalBackground Component
- * 
- * A background wrapper component that creates a mystical atmosphere
- * using pure React Native View components (no native modules).
- * Provides consistent background styling throughout the application.
- * 
- * Supports two variants: default (dramatic mystical glow) and subtle
- * (solid black for content-heavy screens).
- * 
- * @module MysticalBackground
- */
-
 import React from 'react';
-import { View, ViewProps, StyleSheet, ViewStyle } from 'react-native';
-import theme from '../../theme';
+import { View, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import theme from '../../../theme';
 
-/**
- * Background variant types
- */
-export type BackgroundVariant = 'default' | 'subtle';
+export type BackgroundVariant = 'default' | 'subtle' | 'pure';
 
-/**
- * MysticalBackground component props
- */
-export interface MysticalBackgroundProps extends Omit<ViewProps, 'style'> {
-  /**
-   * Content to render over the background
-   */
+export interface MysticalBackgroundProps {
   children: React.ReactNode;
-  
-  /**
-   * Background variant
-   * Defaults to 'default' if not specified
-   */
   variant?: BackgroundVariant;
-  
-  /**
-   * Optional style override for the container
-   */
-  style?: ViewStyle | ViewStyle[];
+  style?: any;
 }
 
-/**
- * MysticalBackground Component
- * 
- * A background wrapper that creates a mystical atmosphere using pure React Native
- * View components. The default variant uses a black background with a centered
- * crimson glow overlay, while the subtle variant uses a solid black background.
- * 
- * @example
- * ```tsx
- * <MysticalBackground variant="default">
- *   <ThemedText variant="h1">Mystical Content</ThemedText>
- * </MysticalBackground>
- * 
- * <MysticalBackground variant="subtle">
- *   <ScrollView>
- *     <ThemedCard>Content here</ThemedCard>
- *   </ScrollView>
- * </MysticalBackground>
- * ```
- */
-const MysticalBackground: React.FC<MysticalBackgroundProps> = ({
-  children,
+export default function MysticalBackground({ 
+  children, 
   variant = 'default',
-  style,
-  ...viewProps
-}) => {
+  style 
+}: MysticalBackgroundProps) {
+  
+  // Pure black - no gradient
+  if (variant === 'pure') {
+    return (
+      <View style={[styles.baseLayer, { backgroundColor: theme.colors.backgrounds.pure }, style]}>
+        <View style={styles.contentLayer}>
+          {children}
+        </View>
+      </View>
+    );
+  }
+  
+  // Get gradient config based on variant
+  const gradientConfig = variant === 'subtle' 
+    ? theme.colors.backgrounds.subtleGradient
+    : theme.colors.backgrounds.mysticalGradient;
+  
   return (
-    <View
-      style={[styles.baseLayer, style]}
-      {...viewProps}
-    >
-      {/* Radial glow overlay for default variant */}
-      {variant === 'default' && (
-        <View style={styles.glowOverlay} />
-      )}
+    <View style={[styles.baseLayer, style]}>
+      {/* Base gradient layer */}
+      <LinearGradient
+        colors={gradientConfig.colors}
+        locations={gradientConfig.locations}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={styles.gradientLayer}
+      />
+      
+      {/* Radial glow overlay */}
+      <View style={[
+        styles.glowOverlay,
+        { 
+          backgroundColor: theme.colors.backgrounds.glowOverlay.color,
+          opacity: theme.colors.backgrounds.glowOverlay.opacity,
+        }
+      ]} />
       
       {/* Content layer */}
       <View style={styles.contentLayer}>
@@ -84,32 +59,33 @@ const MysticalBackground: React.FC<MysticalBackgroundProps> = ({
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  // Base layer: solid black background
   baseLayer: {
     flex: 1,
-    backgroundColor: theme.colors.neutrals.black,
     position: 'relative',
-    overflow: 'hidden', // Clip the glow overlay to container bounds
+    overflow: 'hidden',
   },
-  // Radial glow overlay: soft crimson glow radiating from center
+  gradientLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   glowOverlay: {
     position: 'absolute',
-    top: '-25%', // Position so center is at 50% (150% / 2 = 75%, so -25% positions center at 50%)
+    top: '-25%',
     left: '-25%',
     width: '150%',
     height: '150%',
-    backgroundColor: theme.colors.primary.crimson,
-    opacity: 0.2,
-    borderRadius: 9999, // Circular shape for radial effect
+    borderRadius: 9999,
   },
-  // Content layer: children rendered on top
   contentLayer: {
     flex: 1,
-    zIndex: 1, // Ensure content is above the glow overlay
+    zIndex: 1,
   },
 });
 
-export default MysticalBackground;
+export { MysticalBackground };

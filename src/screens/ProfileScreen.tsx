@@ -26,7 +26,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import type { AppStackParamList, MainTabParamList } from '../../App';
 import { supabase } from '../core/api/supabase';
 import { supabaseHelpers } from '../core/api/supabase';
-import theme from '../shared/theme';
+import theme from '../theme';
 import MysticalBackground from '../shared/components/ui/MysticalBackground';
 import ThemedText from '../shared/components/ui/ThemedText';
 import ThemedButton from '../shared/components/ui/ThemedButton';
@@ -138,6 +138,7 @@ export default function ProfileScreen({ navigation }: Props) {
   const [calculating, setCalculating] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   // Load existing profile data
   useEffect(() => {
@@ -395,6 +396,32 @@ export default function ProfileScreen({ navigation }: Props) {
     }
   };
 
+  const handleSignOut = async () => {
+    Alert.alert(
+      t('common.signOut'),
+      t('profile.signOutConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.signOut'),
+          style: 'destructive',
+          onPress: async () => {
+            setSigningOut(true);
+            try {
+              await supabaseHelpers.signOut();
+              // Navigation will be handled by auth state change
+            } catch (error) {
+              console.error('Sign out error:', error);
+              Alert.alert(t('common.error'), 'Failed to sign out. Please try again.');
+            } finally {
+              setSigningOut(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading && !birthDate) {
     return (
       <MysticalBackground variant="default">
@@ -418,18 +445,9 @@ export default function ProfileScreen({ navigation }: Props) {
           {/* Language Selector */}
           <View style={styles.languageSelectorContainer}>
             <ThemedText variant="caption" style={styles.languageLabel}>
-              {locale === 'zh-TW' ? '語言' : 'Language'}
+              {t('profile.language')}
             </ThemedText>
             <LanguageSelector />
-          </View>
-
-          {/* Header */}
-          <View style={styles.headerContainer}>
-            <View style={styles.titleContainer}>
-              <ThemedText variant="h1" style={styles.title}>
-                {t('profile.title')}
-              </ThemedText>
-            </View>
           </View>
 
           {/* Success Message */}
@@ -471,7 +489,7 @@ export default function ProfileScreen({ navigation }: Props) {
           {calculatedData.sunSign && (
             <ThemedCard variant="minimal" style={styles.resultsCard}>
               <ThemedText variant="h3" style={styles.resultsTitle}>
-                Your Chart
+                {t('profile.yourChart')}
               </ThemedText>
               {calculating && (
                 <View style={styles.calculatingContainer}>
@@ -637,6 +655,16 @@ export default function ProfileScreen({ navigation }: Props) {
             variant="primary"
             style={styles.saveButton}
           />
+
+          {/* Sign Out Button */}
+          <ThemedButton
+            title={signingOut ? t('common.loading') : t('common.signOut')}
+            onPress={handleSignOut}
+            disabled={signingOut}
+            variant="ghost"
+            style={styles.signOutButton}
+            textStyle={styles.signOutText}
+          />
         </ThemedCard>
       </ScrollView>
     </MysticalBackground>
@@ -648,8 +676,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: theme.spacing.spacing.md,
-    paddingBottom: 100, // Extra padding for tab bar
+    padding: theme.spacing.spacing.lg,
+    paddingTop: theme.spacing.spacing.lg,
+    paddingBottom: theme.spacing.spacing.xxl,
   },
   loadingContainer: {
     flex: 1,
@@ -667,42 +696,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.spacing.lg,
-    paddingBottom: theme.spacing.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.neutrals.midGray,
+    marginBottom: theme.spacing.spacing.xl,
+    paddingVertical: theme.spacing.spacing.sm,
   },
   languageLabel: {
     color: theme.colors.text.secondary,
+    fontSize: 12,
+    fontFamily: 'Lato_400Regular',
     marginRight: theme.spacing.spacing.sm,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: theme.spacing.spacing.md,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  title: {
-    color: theme.colors.primary.gold,
-    marginBottom: theme.spacing.spacing.xs,
-  },
-  subtitle: {
-    color: theme.colors.text.secondary,
-  },
-  homeButton: {
-    padding: theme.spacing.spacing.sm,
-    borderRadius: theme.spacing.borderRadius.sm,
-    backgroundColor: theme.colors.neutrals.darkGray,
-    borderWidth: 1,
-    borderColor: theme.colors.primary.gold,
-    marginLeft: theme.spacing.spacing.md,
-  },
-  homeButtonText: {
-    color: theme.colors.primary.gold,
-    fontSize: theme.typography.fontSize.sm,
   },
   successMessage: {
     backgroundColor: theme.colors.semantic.success + '20',
@@ -719,6 +720,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: theme.colors.primary.gold,
     marginBottom: theme.spacing.spacing.xs,
+    fontSize: 20,
+    fontFamily: 'Cinzel_500Medium',
   },
   required: {
     color: theme.colors.semantic.error,
@@ -783,7 +786,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.neutrals.darkGray + '80',
   },
   resultsTitle: {
-    color: theme.colors.primary.gold,
+    fontSize: 20,
+    fontFamily: 'Cinzel_500Medium',
+    color: theme.colors.primary.goldLight,
     marginBottom: theme.spacing.spacing.sm,
   },
   calculatingContainer: {
@@ -827,14 +832,23 @@ const styles = StyleSheet.create({
     marginRight: theme.spacing.spacing.md,
   },
   toggleLabel: {
-    color: theme.colors.text.primary,
     marginBottom: theme.spacing.spacing.xs,
+    color: theme.colors.primary.goldLight,
+    fontSize: 20,
+    fontFamily: 'Cinzel_500Medium',
   },
   toggleDescription: {
     color: theme.colors.text.secondary,
   },
   saveButton: {
     marginTop: theme.spacing.spacing.md,
+  },
+  signOutButton: {
+    marginTop: theme.spacing.spacing.lg,
+    paddingHorizontal: theme.spacing.spacing.lg,
+  },
+  signOutText: {
+    color: theme.colors.semantic.error,
   },
 });
 

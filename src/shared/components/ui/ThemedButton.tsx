@@ -13,7 +13,7 @@
 
 import React, { useRef } from 'react';
 import { Pressable, PressableProps, StyleSheet, ViewStyle, TextStyle, Animated } from 'react-native';
-import theme from '../../theme';
+import theme from '../../../theme';
 import ThemedText from './ThemedText';
 
 /**
