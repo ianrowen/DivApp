@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LOCAL_RWS_CARDS } from '../../systems/tarot/data/localCardData';
 import { getLocalizedCard } from '../../systems/tarot/utils/cardHelpers';
+import { getCardImage } from '../../systems/tarot/utils/cardImageLoader';
 import theme from '../../theme';
 import ThemedText from './ui/ThemedText';
 import ThemedCard from './ui/ThemedCard';
@@ -23,69 +24,65 @@ export default function DailyCardDraw() {
   const [card, setCard] = useState<any>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [shouldAutoFlip, setShouldAutoFlip] = useState(false);
   const flipAnimation = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    loadDailyCard();
+    // Always start with card back (not flipped)
+    setIsFlipped(false);
+    // Don't load a card automatically - wait for user to tap
   }, []);
 
-  const loadDailyCard = async () => {
-    try {
-      const today = new Date().toDateString();
-      const savedDate = await AsyncStorage.getItem(DAILY_CARD_DATE_KEY);
-      const savedCardCode = await AsyncStorage.getItem(DAILY_CARD_STORAGE_KEY);
-      const savedReversed = await AsyncStorage.getItem(DAILY_CARD_REVERSED_KEY);
-
-      // If we have a card for today, use it
-      if (savedDate === today && savedCardCode) {
-        const foundCard = LOCAL_RWS_CARDS.find(c => c.code === savedCardCode);
-        if (foundCard) {
-          const reversed = savedReversed === 'true';
-          console.log('📥 Loading saved daily card:', foundCard.code, 'reversed:', reversed);
-          setCard({ ...foundCard, reversed });
-          return;
-        }
-      }
-
-      // Otherwise, draw a new card for today
-      drawNewCard();
-    } catch (error) {
-      console.error('Error loading daily card:', error);
-      drawNewCard();
+  // Auto-flip when card is drawn and shouldAutoFlip is true
+  useEffect(() => {
+    if (card && shouldAutoFlip && !isFlipped) {
+      setShouldAutoFlip(false);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setIsAnimating(true);
+      setIsFlipped(true);
+      Animated.spring(flipAnimation, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }).start(() => {
+        setIsAnimating(false);
+      });
     }
-  };
+  }, [card, shouldAutoFlip, isFlipped]);
 
-  const drawNewCard = async () => {
+  const drawNewCard = async (): Promise<void> => {
     try {
-      // Shuffle and pick a random card
+      // Shuffle entire deck using Fisher-Yates for true randomness
       const shuffled = [...LOCAL_RWS_CARDS];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
-
-      const drawnCard = shuffled[0];
+      
+      // Pick a truly random card from the entire shuffled deck
+      const randomIndex = Math.floor(Math.random() * shuffled.length);
+      const drawnCard = shuffled[randomIndex];
       const reversed = Math.random() < 0.3; // 30% chance of reversal
 
       const cardWithReversal = { ...drawnCard, reversed };
       console.log('🎴 Drawing new daily card:', drawnCard.code, 'reversed:', reversed);
       setCard(cardWithReversal);
-
-      // Save for today
-      const today = new Date().toDateString();
-      await AsyncStorage.setItem(DAILY_CARD_DATE_KEY, today);
-      await AsyncStorage.setItem(DAILY_CARD_STORAGE_KEY, drawnCard.code);
-      await AsyncStorage.setItem(DAILY_CARD_REVERSED_KEY, reversed ? 'true' : 'false');
+      
+      // Clear any saved card data (no persistence)
+      await AsyncStorage.removeItem(DAILY_CARD_DATE_KEY);
+      await AsyncStorage.removeItem(DAILY_CARD_STORAGE_KEY);
+      await AsyncStorage.removeItem(DAILY_CARD_REVERSED_KEY);
     } catch (error) {
       console.error('Error drawing daily card:', error);
     }
   };
 
-  const handleFlip = () => {
+  const handleFlip = async () => {
     if (isAnimating) return;
 
     // If card is already flipped, navigate to reading screen
-    if (isFlipped) {
+    if (isFlipped && card) {
       console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed);
       router.push({
         pathname: '/reading',
@@ -98,13 +95,20 @@ export default function DailyCardDraw() {
       return;
     }
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // If no card yet, draw a new random one and mark for auto-flip
+    if (!card) {
+      setShouldAutoFlip(true);
+      await drawNewCard();
+      return;
+    }
 
+    // Card exists but not flipped - flip it
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsAnimating(true);
-    setIsFlipped(!isFlipped);
+    setIsFlipped(true);
 
     Animated.spring(flipAnimation, {
-      toValue: isFlipped ? 0 : 1,
+      toValue: 1,
       useNativeDriver: true,
       tension: 100,
       friction: 8,
@@ -113,11 +117,15 @@ export default function DailyCardDraw() {
     });
   };
 
-  if (!card) {
-    return null;
-  }
-
-  const localizedCard = getLocalizedCard(card);
+  const localizedCard = card ? getLocalizedCard(card) : null;
+  
+  // Debug: Log keyword translation status
+  useEffect(() => {
+    if (localizedCard && card) {
+      console.log(`🌐 Daily card keywords (locale: ${locale}):`, localizedCard.keywords);
+      console.log(`🌐 Original keywords:`, card.keywords);
+    }
+  }, [localizedCard, card, locale]);
   const frontInterpolate = flipAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg'],
@@ -155,19 +163,86 @@ export default function DailyCardDraw() {
             ]}
           >
             <View style={styles.cardBackContent}>
-              <ThemedText variant="h2" style={styles.cardTitle}>
-                {localizedCard.title}
-              </ThemedText>
-              {card.reversed && (
-                <ThemedText variant="caption" style={styles.reversedLabel}>
-                  {locale === 'zh-TW' ? '逆位' : 'Reversed'}
-                </ThemedText>
+              {card && localizedCard && (
+                <>
+                  {/* Card Image */}
+                  <Image
+                    source={getCardImage(card.code)}
+                    style={[
+                      styles.cardImage,
+                      card.reversed && styles.cardReversedImage,
+                    ]}
+                    resizeMode="contain"
+                  />
+                  <ThemedText variant="h2" style={styles.cardTitle}>
+                    {localizedCard.title}
+                  </ThemedText>
+                  {card.reversed && (
+                    <ThemedText variant="caption" style={styles.reversedLabel}>
+                      {locale === 'zh-TW' ? '逆位' : 'Reversed'}
+                    </ThemedText>
+                  )}
+                  {/* Keywords Display - Always show if available, regardless of reversed state */}
+                  {/* CRITICAL: Keywords must display for both upright and reversed cards */}
+                  {(() => {
+                    // Get keywords from localized card first, fallback to original card keywords
+                    const localizedKeywords = localizedCard?.keywords;
+                    const originalKeywords = card?.keywords;
+                    
+                    const keywordsToShow = (localizedKeywords && Array.isArray(localizedKeywords) && localizedKeywords.length > 0)
+                      ? localizedKeywords
+                      : (originalKeywords && Array.isArray(originalKeywords) && originalKeywords.length > 0)
+                        ? originalKeywords // Fallback to original if localized is empty
+                        : [];
+                    
+                    console.log(`🔑 DailyCard keywords check (reversed: ${card.reversed}):`, {
+                      cardCode: card.code,
+                      reversed: card.reversed,
+                      locale: locale,
+                      localizedKeywords: localizedKeywords,
+                      originalKeywords: originalKeywords,
+                      keywordsToShow: keywordsToShow,
+                      keywordsLength: keywordsToShow.length,
+                      willDisplay: keywordsToShow.length > 0
+                    });
+                    
+                    // Always display keywords if they exist - reversed state doesn't affect keywords
+                    if (keywordsToShow.length === 0) {
+                      console.error(`❌ ERROR: No keywords found for card ${card.code} (reversed: ${card.reversed})!`, {
+                        localizedCardExists: !!localizedCard,
+                        cardExists: !!card,
+                        localizedKeywordsType: typeof localizedKeywords,
+                        originalKeywordsType: typeof originalKeywords
+                      });
+                      return null;
+                    }
+                    
+                    return (
+                      <View style={styles.keywordsContainer}>
+                        {keywordsToShow.slice(0, 5).map((keyword: string, idx: number) => {
+                          if (!keyword || typeof keyword !== 'string') {
+                            console.warn(`⚠️ Invalid keyword at index ${idx}:`, keyword);
+                            return null;
+                          }
+                          const isLast = idx === keywordsToShow.length - 1;
+                          return (
+                            <React.Fragment key={idx}>
+                              <ThemedText variant="caption" style={styles.keyword}>
+                                {keyword}
+                              </ThemedText>
+                              {!isLast && (
+                                <ThemedText variant="caption" style={styles.keywordSeparator}>
+                                  {' • '}
+                                </ThemedText>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </View>
+                    );
+                  })()}
+                </>
               )}
-              <ThemedText variant="body" style={styles.cardMeaning}>
-                {card.reversed
-                  ? localizedCard.reversedMeaning
-                  : localizedCard.uprightMeaning}
-              </ThemedText>
             </View>
           </Animated.View>
 
@@ -188,12 +263,14 @@ export default function DailyCardDraw() {
           </Animated.View>
         </View>
       </TouchableOpacity>
-      <ThemedText variant="caption" style={styles.hint}>
-        {locale === 'zh-TW'
-          ? '每日一張卡牌，為您指引方向'
-          : 'One card a day to guide your path'}
-      </ThemedText>
-      {isFlipped && (
+      {!isFlipped && (
+        <ThemedText variant="caption" style={styles.hint}>
+          {locale === 'zh-TW'
+            ? '點擊抽取今日卡牌'
+            : 'Tap to draw your daily card'}
+        </ThemedText>
+      )}
+      {isFlipped && card && (
         <ThemedButton
           title={locale === 'zh-TW' ? '查看完整解讀' : 'View Full Reading'}
           onPress={() => {
@@ -262,6 +339,17 @@ const styles = StyleSheet.create({
   },
   cardBackContent: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  cardImage: {
+    width: 200,
+    height: 350,
+    marginBottom: theme.spacing.spacing.md,
+    borderRadius: theme.spacing.borderRadius.md,
+  },
+  cardReversedImage: {
+    transform: [{ rotate: '180deg' }],
   },
   cardTitle: {
     color: theme.colors.primary.gold,
@@ -274,11 +362,22 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.spacing.sm,
     fontWeight: theme.typography.fontWeight.semibold,
   },
-  cardMeaning: {
-    color: theme.colors.text.primary,
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: 18,
-    textAlign: 'center',
+  keywordsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: theme.spacing.spacing.sm,
+    paddingHorizontal: theme.spacing.spacing.md,
+  },
+  keyword: {
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.xs,
+  },
+  keywordSeparator: {
+    color: theme.colors.text.tertiary,
+    fontSize: theme.typography.fontSize.xs,
+    opacity: 0.5,
   },
   hint: {
     textAlign: 'center',

@@ -7,11 +7,10 @@
 import { IAIProvider, AIGenerateParams, AIGenerateResult } from './aiProvider';
 
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
-// Using Gemini 2.5 Flash model (released 2025)
+// Using Gemini 2.5 Flash model
 // Best balance of quality, speed, and cost for interpretations and follow-up Q&A
-// Note: This model uses "thinking" tokens - we limit them with thinkingBudget parameter
+// Note: This model uses "thinking" tokens. We handle this by ensuring maxTokens is high enough.
 const GEMINI_MODEL = 'gemini-2.5-flash';
-// Alternative models: 'gemini-2.5-pro' (higher quality), 'gemini-1.5-flash' (no thinking mode) 
 
 if (!GEMINI_API_KEY) {
   throw new Error('Missing EXPO_PUBLIC_GEMINI_API_KEY environment variable');
@@ -27,22 +26,37 @@ export class GeminiProvider implements IAIProvider {
   }
 
   async generate(params: AIGenerateParams): Promise<AIGenerateResult> {
-    const {
+    let {
       prompt,
       systemPrompt,
-      maxTokens = 1200,
+      maxTokens = 2500, // Increased default
       temperature = 0.7,
       language = 'en',
     } = params;
     
+    // --- SAFETY PATCH FOR GEMINI 2.5 ---
+    // Gemini 2.5 uses "Thinking Tokens" (approx 1000-2000) before writing.
+    // If maxTokens is too low, it uses them all up thinking and produces 0 output.
+    // We need at least 3000-4000 total: ~1500 for thinking + ~2000-2500 for output.
+    if (this.model.includes('2.5') && maxTokens < 4000) {
+        console.log(`ℹ️ [GeminiProvider] Auto-adjusting maxTokens from ${maxTokens} to 4000 to allow for reasoning/thinking overhead.`);
+        maxTokens = 4000;
+    }
+    // -----------------------------------
+
     // Build language instruction for system prompt
     const languageInstruction = this.getLanguageInstruction(language);
+    
+    // For Gemini 2.5, add instruction to reduce thinking time and be direct
+    const thinkingInstruction = this.model.includes('2.5')
+      ? 'Be direct and concise. Minimize internal reasoning. Focus on generating the response quickly.\n\n'
+      : '';
     
     // Combine language instruction with existing system prompt
     // Language instruction goes at the START for high priority
     const enhancedSystemPrompt = systemPrompt
-      ? `${languageInstruction}\n\n${systemPrompt}`
-      : languageInstruction;
+      ? `${languageInstruction}\n\n${thinkingInstruction}${systemPrompt}`
+      : `${languageInstruction}\n\n${thinkingInstruction}`;
     
     // Simple retry logic (exponential backoff)
     const maxRetries = 3;
@@ -94,40 +108,39 @@ export class GeminiProvider implements IAIProvider {
                 throw new Error(`Gemini API error: ${data.error.message || JSON.stringify(data.error)}`);
             }
             
+            const candidate = data.candidates?.[0];
+            const text = candidate?.content?.parts?.[0]?.text || '';
+            const finishReason = candidate?.finishReason;
+
             // Check for safety ratings that might block content
-            if (data.candidates?.[0]?.finishReason) {
-                const finishReason = data.candidates[0].finishReason;
+            if (finishReason) {
                 if (finishReason !== 'STOP') {
                     console.warn(`⚠️ Gemini finish reason: ${finishReason}`);
+                    
                     if (finishReason === 'SAFETY') {
                         throw new Error('Content was blocked by safety filters. Please try rephrasing your question.');
                     }
-                    // MAX_TOKENS is not an error - we still return the partial response
-                    // The response was just truncated, which is acceptable
+                    
                     if (finishReason === 'MAX_TOKENS') {
-                        console.warn('⚠️ Response was truncated at token limit, but returning partial response');
+                        const thoughts = data.usageMetadata?.thoughtsTokenCount || 0;
+                        console.warn(`⚠️ Response truncated. Thoughts used: ${thoughts}. Text length: ${text.length}`);
                     }
                 }
             }
             
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            
-            // Handle MAX_TOKENS case where model used all tokens for "thoughts" (internal reasoning)
-            // and didn't generate output text yet
-            if ((!text || text.trim().length === 0) && data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+            // Handle MAX_TOKENS case where model used all tokens for "thoughts"
+            // OLD LOGIC: Threw error if text was empty.
+            // NEW LOGIC: Still throw if empty, but with clearer message.
+            if ((!text || text.trim().length === 0) && finishReason === 'MAX_TOKENS') {
                 const thoughtsTokens = data.usageMetadata?.thoughtsTokenCount || 0;
-                const promptTokens = data.usageMetadata?.promptTokenCount || 0;
-                console.warn(`⚠️ Model hit token limit before generating output. Thoughts tokens: ${thoughtsTokens}, Prompt tokens: ${promptTokens}`);
-                throw new Error('The response was too long and hit the token limit before completion. Try reducing the prompt length or increasing max tokens.');
+                console.warn(`⚠️ Model hit token limit purely on thoughts (${thoughtsTokens} tokens).`);
+                throw new Error('The AI spent too long thinking. Please try again (the token limit has been auto-adjusted).');
             }
             
             // Log response details for debugging other empty response cases
             if (!text || text.trim().length === 0) {
                 console.error('❌ Gemini returned empty response');
-                console.error('Response data:', JSON.stringify(data, null, 2));
-                console.error('Candidates:', data.candidates);
-                console.error('Finish reason:', data.candidates?.[0]?.finishReason);
-                console.error('Safety ratings:', data.candidates?.[0]?.safetyRatings);
+                console.error('Finish reason:', finishReason);
                 throw new Error('Gemini API returned empty response. This may be due to content filtering or an API issue.');
             }
             
@@ -145,8 +158,9 @@ export class GeminiProvider implements IAIProvider {
                 model: this.model,
             };
 
-        } catch (error) {
+        } catch (error: any) {
             lastError = error;
+            console.warn(`Attempt ${attempt + 1} failed: ${error?.message || error}`);
             if (attempt < maxRetries - 1) {
                 const delay = Math.pow(2, attempt) * 1000;
                 await new Promise(resolve => setTimeout(resolve, delay));
@@ -165,7 +179,6 @@ export class GeminiProvider implements IAIProvider {
   
   /**
    * Get language instruction for system prompt
-   * Specifies the language and variant (e.g., Traditional Chinese as used in Taiwan)
    */
   private getLanguageInstruction(language: string): string {
     switch (language) {

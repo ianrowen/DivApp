@@ -84,6 +84,8 @@ export default {
     backToHome: 'Back to home',
     noInterpretation: 'No interpretation available',
     traditional: 'Traditional',
+    esoteric: 'Esoteric',
+    jungian: 'Jungian',
     modern: 'Modern',
     intuitive: 'Intuitive',
     drawingCard: 'Drawing your card...',
@@ -142,6 +144,8 @@ export default {
     calculating: 'Calculating...',
     useForReadings: 'Use birth data for readings',
     useForReadingsDescription: 'Automatically include your birth chart data when generating tarot interpretations',
+    animations: 'Animations',
+    animationsDescription: 'Enable animations for card selection and transitions',
     saveSuccess: 'Profile updated successfully!',
   },
   statistics: {

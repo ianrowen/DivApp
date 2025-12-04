@@ -19,6 +19,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
 import type { StackScreenProps } from '@react-navigation/stack';
@@ -36,6 +37,8 @@ import { LanguageSelector } from '../shared/components/LanguageSelector';
 import { useTranslation } from '../i18n';
 import { calculateChart, type BirthData } from '../services/astrologyService';
 import locationService from '../services/locationService';
+
+const ANIMATIONS_ENABLED_KEY = '@divin8_animations_enabled';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Profile'>,
@@ -139,11 +142,37 @@ export default function ProfileScreen({ navigation }: Props) {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
 
   // Load existing profile data
   useEffect(() => {
     loadProfileData();
+    loadAnimationPreference();
   }, []);
+
+  const loadAnimationPreference = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(ANIMATIONS_ENABLED_KEY);
+      if (saved !== null) {
+        setAnimationsEnabled(saved === 'true');
+      } else {
+        // Default is true
+        setAnimationsEnabled(true);
+      }
+    } catch (error) {
+      console.error('Error loading animation preference:', error);
+      setAnimationsEnabled(true);
+    }
+  };
+
+  const handleAnimationToggle = async (value: boolean) => {
+    try {
+      setAnimationsEnabled(value);
+      await AsyncStorage.setItem(ANIMATIONS_ENABLED_KEY, value.toString());
+    } catch (error) {
+      console.error('Error saving animation preference:', error);
+    }
+  };
 
   // Recalculate when birth data changes (debounced) - only if opted in
   useEffect(() => {
@@ -481,6 +510,29 @@ export default function ProfileScreen({ navigation }: Props) {
                   true: theme.colors.primary.crimson,
                 }}
                 thumbColor={useForReadings ? theme.colors.primary.gold : theme.colors.neutrals.lightGray}
+              />
+            </View>
+          </View>
+
+          {/* Animations Toggle */}
+          <View style={styles.section}>
+            <View style={styles.toggleContainer}>
+              <View style={styles.toggleTextContainer}>
+                <ThemedText variant="body" style={styles.toggleLabel}>
+                  {t('profile.animations')}
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.toggleDescription}>
+                  {t('profile.animationsDescription')}
+                </ThemedText>
+              </View>
+              <Switch
+                value={animationsEnabled}
+                onValueChange={handleAnimationToggle}
+                trackColor={{
+                  false: theme.colors.neutrals.midGray,
+                  true: theme.colors.primary.crimson,
+                }}
+                thumbColor={animationsEnabled ? theme.colors.primary.gold : theme.colors.neutrals.lightGray}
               />
             </View>
           </View>

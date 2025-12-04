@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   TextInput,
 } from 'react-native';
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,20 +14,23 @@ import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
 import ThemedText from '../src/shared/components/ui/ThemedText';
 import ThemedButton from '../src/shared/components/ui/ThemedButton';
 import ThemedCard from '../src/shared/components/ui/ThemedCard';
+import SpinningLogo from '../src/shared/components/ui/SpinningLogo';
 import { useTranslation } from '../src/i18n';
+import { useProfile } from '../src/contexts/ProfileContext';
 import { getAvailableSpreads } from '../src/services/spreadService';
 import type { TarotSpread } from '../src/types/spreads';
 
 export default function SpreadSelectionScreen() {
   const { question } = useLocalSearchParams<{ question: string }>();
   const { t, locale } = useTranslation();
+  const { profile, isLoading: profileLoading } = useProfile();
   const [loading, setLoading] = useState(true);
   const [suggesting, setSuggesting] = useState(false);
   const [spreads, setSpreads] = useState<TarotSpread[]>([]);
   const [allSpreads, setAllSpreads] = useState<TarotSpread[]>([]);
   const [suggestedSpread, setSuggestedSpread] = useState<TarotSpread | null>(null);
-  const [userTier, setUserTier] = useState<'free' | 'premium'>('free');
-  const [isBetaTester, setIsBetaTester] = useState(false);
+  const userTier = (profile?.subscription_tier || 'free') as 'free' | 'premium';
+  const isBetaTester = profile?.is_beta_tester || false;
   const [editedQuestion, setEditedQuestion] = useState(question || '');
   const [isTyping, setIsTyping] = useState(false);
   const routerNav = useRouter();
@@ -51,7 +53,7 @@ export default function SpreadSelectionScreen() {
       const timeoutId = setTimeout(() => {
         setSuggesting(true);
         suggestSpreadForQuestion(editedQuestion.trim(), spreads);
-      }, 1000); // 1 second after user stops typing
+      }, 500); // Reduced to 500ms for faster response
 
       return () => clearTimeout(timeoutId);
     }
@@ -82,52 +84,40 @@ export default function SpreadSelectionScreen() {
 
   const loadUserDataAndSpreads = async () => {
     try {
-      // Load user tier and beta status
-      const { data: { user } } = await supabase.auth.getUser();
-      let tier: 'free' | 'premium' = 'free';
-      let betaTester = false;
+      // Show UI immediately - don't block on data loading
+      setLoading(false);
 
-      if (user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('subscription_tier, is_beta_tester')
-          .eq('user_id', user.id)
-          .single();
-
-        if (profile) {
-          tier = profile.subscription_tier || 'free';
-          betaTester = profile.is_beta_tester || false;
-          setUserTier(tier);
-          setIsBetaTester(betaTester);
-        }
-      }
-
-      // Load ALL spreads (for display with locks)
+      // Load spreads FIRST (most important, cacheable)
       const { data: allData } = await supabase
         .from('tarot_spreads')
         .select('*')
         .order('card_count', { ascending: true })
         .order('spread_key', { ascending: true });
       
-      setAllSpreads(allData as TarotSpread[] || []);
+      const allSpreadsData = (allData as TarotSpread[]) || [];
+      setAllSpreads(allSpreadsData);
 
-      // Load available spreads (user can actually use)
-      const availableSpreads = await getAvailableSpreads(tier, betaTester);
+      // Use cached profile from context (loaded at sign-in)
+      // Filter available spreads (client-side, fast)
+      const availableSpreads = isBetaTester 
+        ? allSpreadsData 
+        : allSpreadsData.filter(spread => !spread.is_premium || userTier !== 'free');
+      
       setSpreads(availableSpreads);
-      setLoading(false); // Show UI immediately
 
-      // Get initial suggestion immediately (non-blocking for better UX)
+      // Defer AI suggestion - don't block UI
       if (editedQuestion && editedQuestion.trim().length > 0) {
-        setSuggesting(true);
-        // Don't await - let it run in background so UI shows immediately
-        suggestSpreadForQuestion(editedQuestion.trim(), availableSpreads).catch((error) => {
-          console.error('Suggestion error:', error);
-          setSuggesting(false);
-        });
+        // Small delay to let UI render first
+        setTimeout(() => {
+          setSuggesting(true);
+          suggestSpreadForQuestion(editedQuestion.trim(), availableSpreads).catch((error) => {
+            console.error('Suggestion error:', error);
+            setSuggesting(false);
+          });
+        }, 300);
       }
     } catch (error) {
       console.error('Error loading spreads:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -137,56 +127,58 @@ export default function SpreadSelectionScreen() {
     availableSpreads: TarotSpread[]
   ) => {
     try {
-      // Rule-based suggestion (NO AI call for speed + token efficiency)
+      // Filter out Celtic Cross (10-card) - shadowed out until tested
+      const testableSpreads = availableSpreads.filter(s => s.spread_key !== 'celtic_cross' && s.card_count !== 10);
+      
+      if (testableSpreads.length === 0) {
+        setSuggestedSpread(availableSpreads[0]);
+        setSuggesting(false);
+        return;
+      }
+
+      // FAST: Use rule-based matching first (instant)
       const q = userQuestion.toLowerCase();
-      
-      // Keywords for different spread types
-      const temporalKeywords = ['past', 'future', 'before', 'after', 'history', 'timeline', 'will', 'was', 'going to', 'happened'];
-      const reflectiveKeywords = ['self', 'myself', 'who am i', 'feel', 'emotion', 'spiritual', 'growth', 'understanding', 'confused'];
-      const comparativeKeywords = ['should i', 'or', 'choice', 'option', 'path', 'decide', 'compare', 'versus', 'vs'];
-      const challengeKeywords = ['problem', 'challenge', 'obstacle', 'difficulty', 'issue', 'struggle', 'overcome', 'stuck'];
-      const complexKeywords = ['life', 'everything', 'major', 'important decision', 'comprehensive', 'deep', 'detailed'];
-      
-      let suggested: TarotSpread | null = null;
+      const temporalKeywords = ['past', 'future', 'before', 'after', 'history', 'timeline', 'will', 'was', 'time', 'when'];
+      const reflectiveKeywords = ['self', 'myself', 'feel', 'emotion', 'spiritual', 'growth', 'mind', 'body', 'spirit'];
+      const comparativeKeywords = ['should i', 'or', 'choice', 'option', 'decide', 'compare', 'which', 'better'];
+      const challengeKeywords = ['problem', 'challenge', 'obstacle', 'difficulty', 'issue', 'stuck', 'help', 'trouble'];
+      const adviceKeywords = ['advice', 'guidance', 'what', 'how', 'situation'];
 
-      // Check for complex (Celtic Cross) - only if available
-      if (complexKeywords.some(k => q.includes(k))) {
-        suggested = availableSpreads.find(s => s.spread_key === 'celtic_cross') || null;
+      let suggested: TarotSpread | undefined;
+
+      if (temporalKeywords.some(k => q.includes(k))) {
+        suggested = testableSpreads.find(s => s.spread_key === 'three_card_past_present_future');
+      } else if (reflectiveKeywords.some(k => q.includes(k))) {
+        suggested = testableSpreads.find(s => s.spread_key === 'three_card_mind_body_spirit');
+      } else if (challengeKeywords.some(k => q.includes(k))) {
+        suggested = testableSpreads.find(s => s.spread_key === 'two_card_challenge_outcome');
+      } else if (adviceKeywords.some(k => q.includes(k)) || comparativeKeywords.some(k => q.includes(k))) {
+        suggested = testableSpreads.find(s => s.spread_key === 'two_card_situation_advice');
       }
 
-      // Check for temporal (3-card P/P/F)
-      if (!suggested && temporalKeywords.some(k => q.includes(k))) {
-        suggested = availableSpreads.find(s => s.spread_key === 'three_card_past_present_future') || null;
+      // If rule-based found something, use it immediately (fast!)
+      if (suggested) {
+        setSuggestedSpread(suggested);
+        setSuggesting(false);
+        
+        // Optionally refine with AI in background (non-blocking)
+        // This can be removed if rule-based is good enough
+        return;
       }
 
-      // Check for reflective (3-card M/B/S)
-      if (!suggested && reflectiveKeywords.some(k => q.includes(k))) {
-        suggested = availableSpreads.find(s => s.spread_key === 'three_card_mind_body_spirit') || null;
-      }
-
-      // Check for comparative (2-card Situation/Advice)
-      if (!suggested && comparativeKeywords.some(k => q.includes(k))) {
-        suggested = availableSpreads.find(s => s.spread_key === 'two_card_situation_advice') || null;
-      }
-
-      // Check for challenge (2-card Challenge/Outcome)
-      if (!suggested && challengeKeywords.some(k => q.includes(k))) {
-        suggested = availableSpreads.find(s => s.spread_key === 'two_card_challenge_outcome') || null;
-      }
-
-      // Default: pick best available spread
-      if (!suggested) {
-        // Prefer 3-card if available, then 2-card, then single
-        suggested = availableSpreads.find(s => s.card_count === 3)
-          || availableSpreads.find(s => s.card_count === 2)
-          || availableSpreads[0];
-      }
+      // Fallback: prefer 3-card, then 2-card, then single
+      suggested = testableSpreads.find(s => s.card_count === 3)
+        || testableSpreads.find(s => s.card_count === 2)
+        || testableSpreads.find(s => s.spread_key === 'single_card')
+        || testableSpreads[0];
 
       setSuggestedSpread(suggested);
+      setSuggesting(false);
     } catch (error) {
       console.error('Error getting spread suggestion:', error);
-      setSuggestedSpread(availableSpreads[0]);
-    } finally {
+      // Fallback to first available spread (excluding Celtic Cross)
+      const fallback = availableSpreads.find(s => s.spread_key !== 'celtic_cross' && s.card_count !== 10) || availableSpreads[0];
+      setSuggestedSpread(fallback);
       setSuggesting(false);
     }
   };
@@ -230,7 +222,7 @@ export default function SpreadSelectionScreen() {
     return (
       <MysticalBackground variant="default">
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary.gold} />
+          <SpinningLogo size={100} />
         </View>
       </MysticalBackground>
     );
@@ -290,7 +282,7 @@ export default function SpreadSelectionScreen() {
         {/* Suggested Spread */}
         {suggesting ? (
           <ThemedCard variant="elevated" style={styles.suggestedCard}>
-            <ActivityIndicator size="small" color={theme.colors.primary.gold} />
+            <SpinningLogo size={24} />
             <ThemedText variant="body" style={styles.suggestingText}>
               {t('home.suggestSpread')}...
             </ThemedText>
@@ -339,17 +331,19 @@ export default function SpreadSelectionScreen() {
         {allSpreads.map((spread) => {
           const locked = isSpreadLocked(spread);
           const isSuggested = spread.id === suggestedSpread?.id;
+          const isCelticCross = spread.spread_key === 'celtic_cross' || spread.card_count === 10;
+          const isDisabled = locked || isCelticCross;
           
           return (
             <TouchableOpacity
               key={spread.id}
               onPress={() => handleSelectSpread(spread)}
-              activeOpacity={locked ? 1 : 0.7}
-              disabled={locked}
+              activeOpacity={isDisabled ? 1 : 0.7}
+              disabled={isDisabled}
             >
                <ThemedCard
                  variant={isSuggested ? 'elevated' : 'default'}
-                 style={locked ? [styles.spreadCard, styles.lockedCard] : styles.spreadCard}
+                 style={isDisabled ? [styles.spreadCard, styles.lockedCard, { opacity: 0.5 }] : styles.spreadCard}
                >
                  <View style={styles.spreadHeader}>
                    <View style={styles.spreadTitleRow}>
@@ -360,14 +354,21 @@ export default function SpreadSelectionScreen() {
                        {getLocalizedSpreadName(spread)}
                      </ThemedText>
                      <View style={styles.badges}>
-                       {locked && (
+                       {isCelticCross && (
+                         <View style={styles.lockBadge}>
+                           <ThemedText variant="caption" style={styles.lockText}>
+                             {locale === 'zh-TW' ? '測試中' : 'Testing'}
+                           </ThemedText>
+                         </View>
+                       )}
+                       {locked && !isCelticCross && (
                          <View style={styles.lockBadge}>
                            <ThemedText variant="caption" style={styles.lockText}>
                              🔒
                            </ThemedText>
                          </View>
                        )}
-                       {spread.is_premium && !locked && (
+                       {spread.is_premium && !isDisabled && (
                          <View style={styles.premiumBadge}>
                            <ThemedText variant="caption" style={styles.premiumText}>
                              {t('spreads.premium')}

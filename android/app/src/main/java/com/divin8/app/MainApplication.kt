@@ -1,4 +1,4 @@
-package com.irowen.divin8app
+package com.divin8.app
 
 import android.app.Application
 import android.content.res.Configuration

@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.irowen.divin8app'
+    namespace 'com.divin8.app'
     defaultConfig {
-        applicationId 'com.irowen.divin8app'
+        applicationId 'com.divin8.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

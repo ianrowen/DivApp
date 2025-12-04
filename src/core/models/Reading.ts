@@ -282,7 +282,7 @@ export abstract class Reading {
         prompt,
         systemPrompt,
         temperature: 0.7,
-        maxTokens: 2048,
+        maxTokens: 2500,
         language: this.metadata.language,
       });
 

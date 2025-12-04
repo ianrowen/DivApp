@@ -3,7 +3,6 @@ import {
   View,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -11,10 +10,10 @@ import { supabase } from '../core/api/supabase';
 import ThemedText from '../shared/components/ui/ThemedText';
 import ThemedButton from '../shared/components/ui/ThemedButton';
 import MysticalBackground from '../shared/components/ui/MysticalBackground';
+import SpinningLogo from '../shared/components/ui/SpinningLogo';
 import theme from '../theme';
 import { LOCAL_RWS_CARDS } from '../systems/tarot/data/localCardData';
 import { useTranslation } from '../i18n';
-import type { TranslationKey } from '../i18n';
 
 interface CardStats {
   // Distribution stats
@@ -179,8 +178,38 @@ export default function StatisticsScreen() {
 
     readings.forEach(reading => {
       reading.elements_drawn?.forEach((elem: any) => {
-        const card = LOCAL_RWS_CARDS.find(c => c.filename === elem.elementId);
-        if (!card) return;
+        // Try multiple ways to find the card
+        let card = null;
+        
+        // Method 1: Find by cardCode from metadata (most reliable)
+        if (elem.metadata?.cardCode) {
+          card = LOCAL_RWS_CARDS.find(c => c.code === elem.metadata.cardCode);
+        }
+        
+        // Method 2: Find by elementId as card code
+        if (!card && elem.elementId) {
+          card = LOCAL_RWS_CARDS.find(c => c.code === elem.elementId);
+        }
+        
+        // Method 3: Find by cardTitle from metadata
+        if (!card && elem.metadata?.cardTitle) {
+          card = LOCAL_RWS_CARDS.find(c => c.title.en === elem.metadata.cardTitle || c.title.zh === elem.metadata.cardTitle);
+        }
+        
+        // Method 4: Try filename matching (for old data)
+        if (!card && elem.elementId) {
+          card = LOCAL_RWS_CARDS.find(c => c.filename === elem.elementId || c.filename === `${elem.elementId}.jpg`);
+        }
+        
+        if (!card) {
+          console.warn('Statistics: Card not found for element:', {
+            elementId: elem.elementId,
+            cardCode: elem.metadata?.cardCode,
+            cardTitle: elem.metadata?.cardTitle,
+            metadata: elem.metadata,
+          });
+          return;
+        }
 
         stats.totalCards++;
 
@@ -206,7 +235,7 @@ export default function StatisticsScreen() {
           stats.upright++;
         }
 
-        // Card frequency
+        // Card frequency - use card code as key for consistency
         const cardName = card.title.en;
         stats.cardCounts.set(cardName, (stats.cardCounts.get(cardName) || 0) + 1);
       });
@@ -219,6 +248,8 @@ export default function StatisticsScreen() {
     const patterns: PatternDetection[] = [];
     const isChinese = locale === 'zh-TW';
 
+    if (stats.totalCards === 0) return patterns;
+
     // Calculate expected probabilities
     const expectedMajor = 22 / 78; // ~28%
     const expectedCourt = 16 / 78; // ~21%
@@ -229,6 +260,7 @@ export default function StatisticsScreen() {
     // Actual probabilities
     const actualMajor = stats.majorArcana / stats.totalCards;
     const actualCourt = stats.courtCards / stats.totalCards;
+    const actualMinor = stats.minorArcana / stats.totalCards;
     const actualSuit = {
       wands: stats.wands / stats.totalCards,
       cups: stats.cups / stats.totalCards,
@@ -350,7 +382,74 @@ export default function StatisticsScreen() {
       }
     }
 
-    return patterns;
+    // INSIGHT: Minor Arcana imbalance
+    const minorDiff = Math.abs(actualMinor - expectedMinor);
+    if (minorDiff > 0.15 && stats.totalCards > 10) {
+      patterns.push({
+        type: 'anomaly',
+        severity: minorDiff > 0.25 ? 'high' : 'medium',
+        title: actualMinor > expectedMinor
+          ? (isChinese ? '小阿爾克那出現頻率高' : 'High Minor Arcana Presence')
+          : (isChinese ? '小阿爾克那出現頻率低' : 'Low Minor Arcana Presence'),
+        description: actualMinor > expectedMinor
+          ? (isChinese
+              ? `您的小阿爾克那出現率為 ${Math.round(actualMinor * 100)}%（預期約 51%）。您正在專注於日常生活的實際層面和具體情況。`
+              : `You're drawing Minor Arcana cards ${Math.round(actualMinor * 100)}% of the time (expected ~51%). You're focused on practical aspects and specific situations in daily life.`)
+          : (isChinese
+              ? `您的小阿爾克那出現率僅為 ${Math.round(actualMinor * 100)}%（預期約 51%）。您的占卜更傾向於重大主題和深層轉變。`
+              : `You're drawing Minor Arcana only ${Math.round(actualMinor * 100)}% of the time (expected ~51%). Your readings lean toward major themes and deep transformations.`),
+      });
+    }
+
+    // INSIGHT: Elemental balance (suits represent elements)
+    const suitVariance = Object.values(actualSuit).reduce((sum, val) => {
+      const diff = Math.abs(val - expectedSuit);
+      return sum + diff;
+    }, 0) / 4;
+    
+    if (suitVariance > 0.10 && stats.totalCards > 15) {
+      const balanced = suitVariance < 0.15;
+      patterns.push({
+        type: balanced ? 'trend' : 'anomaly',
+        severity: suitVariance > 0.20 ? 'high' : 'medium',
+        title: balanced
+          ? (isChinese ? '元素平衡' : 'Elemental Balance')
+          : (isChinese ? '元素不平衡' : 'Elemental Imbalance'),
+        description: balanced
+          ? (isChinese
+              ? `您的牌陣顯示出良好的元素平衡（變異係數 ${(suitVariance * 100).toFixed(1)}%）。所有元素能量都在和諧運作。`
+              : `Your readings show good elemental balance (variance ${(suitVariance * 100).toFixed(1)}%). All elemental energies are working in harmony.`)
+          : (isChinese
+              ? `您的牌陣顯示元素不平衡（變異係數 ${(suitVariance * 100).toFixed(1)}%）。某些元素能量可能被過度強調或忽略。`
+              : `Your readings show elemental imbalance (variance ${(suitVariance * 100).toFixed(1)}%). Some elemental energies may be overemphasized or neglected.`),
+      });
+    }
+
+    // INSIGHT: Multiple recurring cards
+    if (sortedCards.length >= 3 && stats.totalCards > 20) {
+      const recurringCards = sortedCards.filter(([_, count]) => {
+        const freq = (count / stats.totalCards) * 100;
+        return freq > (1 / 78) * 100 * 2.5; // 2.5x expected
+      });
+
+      if (recurringCards.length >= 3) {
+        const cardNames = recurringCards.map(([name]) => getCardName(name)).join(', ');
+        patterns.push({
+          type: 'recurring_theme',
+          severity: 'high',
+          title: isChinese ? '多重重複主題' : 'Multiple Recurring Themes',
+          description: isChinese
+            ? `您有多張卡牌重複出現：${cardNames}。這些能量正在形成一個相互關聯的主題網絡，值得深入探索。`
+            : `Multiple cards are recurring: ${cardNames}. These energies are forming an interconnected thematic network worth exploring deeply.`,
+          cards: recurringCards.map(([name]) => name),
+        });
+      }
+    }
+
+    return patterns.sort((a, b) => {
+      const severityOrder = { high: 3, medium: 2, low: 1 };
+      return severityOrder[b.severity] - severityOrder[a.severity];
+    });
   };
 
   const getCardName = (cardEnglishName: string): string => {
@@ -364,7 +463,7 @@ export default function StatisticsScreen() {
     return (
       <MysticalBackground variant="subtle">
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary.gold} />
+          <SpinningLogo size={100} />
           <ThemedText variant="body" style={styles.loadingText}>
             Loading statistics...
           </ThemedText>
@@ -439,32 +538,137 @@ export default function StatisticsScreen() {
           📊 {t('statistics.title')}
         </ThemedText>
         <ThemedText variant="body" style={styles.subtitle}>
-          {t('statistics.basedOn', { count: stats.totalCards })}
+          {t('statistics.basedOn', { count: stats.totalCards }) || `Based on ${stats.totalCards} cards drawn`}
         </ThemedText>
 
-      {/* Pattern Alerts */}
+      {/* Enhanced Insights Panels - At Top */}
       {patterns.length > 0 && (
-        <View style={styles.section}>
-          <ThemedText variant="h2" style={styles.sectionTitle}>
-            🔍 {t('statistics.patternsDetected')}
-          </ThemedText>
-          {patterns.map((pattern, idx) => (
-            <View
-              key={idx}
-              style={[
-                styles.patternCard,
-                pattern.severity === 'high' && styles.patternHigh,
-                pattern.severity === 'medium' && styles.patternMedium,
-              ]}
-            >
-              <ThemedText variant="h3" style={styles.patternTitle}>
-                {pattern.title}
+        <View style={styles.insightsSection}>
+          <View style={styles.insightsHeader}>
+            <ThemedText variant="h1" style={styles.insightsTitle}>
+              💡 {locale === 'zh-TW' ? '關鍵洞察' : 'Key Insights'}
+            </ThemedText>
+            <ThemedText variant="caption" style={styles.insightsSubtitle}>
+              {locale === 'zh-TW' 
+                ? '統計上顯著或異常的模式' 
+                : 'Statistically significant or unexpected patterns'}
+            </ThemedText>
+          </View>
+          
+          {/* High Priority Insights */}
+          {patterns.filter(p => p.severity === 'high').length > 0 && (
+            <View style={styles.priorityGroup}>
+              <ThemedText variant="h3" style={styles.priorityLabel}>
+                ⚠️ {locale === 'zh-TW' ? '高度顯著' : 'Highly Significant'}
               </ThemedText>
-              <ThemedText variant="body" style={styles.patternDescription}>
-                {pattern.description}
-              </ThemedText>
+              {patterns
+                .filter(p => p.severity === 'high')
+                .map((pattern, idx) => (
+                  <View
+                    key={`high-${idx}`}
+                    style={[styles.insightCard, styles.insightCardHigh]}
+                  >
+                    <View style={styles.insightHeader}>
+                      <View style={styles.insightBadge}>
+                        <ThemedText variant="caption" style={styles.insightBadgeText}>
+                          {pattern.type === 'recurring_theme' 
+                            ? (locale === 'zh-TW' ? '重複' : 'RECURRING')
+                            : pattern.type === 'anomaly'
+                            ? (locale === 'zh-TW' ? '異常' : 'ANOMALY')
+                            : (locale === 'zh-TW' ? '趨勢' : 'TREND')}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.insightSeverity}>
+                        <ThemedText variant="caption" style={styles.severityText}>
+                          🔥 {locale === 'zh-TW' ? '高' : 'HIGH'}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <ThemedText variant="h3" style={styles.insightTitle}>
+                      {pattern.title}
+                    </ThemedText>
+                    <ThemedText variant="body" style={styles.insightDescription}>
+                      {pattern.description}
+                    </ThemedText>
+                  </View>
+                ))}
             </View>
-          ))}
+          )}
+
+          {/* Medium Priority Insights */}
+          {patterns.filter(p => p.severity === 'medium').length > 0 && (
+            <View style={styles.priorityGroup}>
+              <ThemedText variant="h3" style={styles.priorityLabel}>
+                📊 {locale === 'zh-TW' ? '值得注意' : 'Notable Patterns'}
+              </ThemedText>
+              {patterns
+                .filter(p => p.severity === 'medium')
+                .map((pattern, idx) => (
+                  <View
+                    key={`medium-${idx}`}
+                    style={[styles.insightCard, styles.insightCardMedium]}
+                  >
+                    <View style={styles.insightHeader}>
+                      <View style={[styles.insightBadge, styles.insightBadgeMedium]}>
+                        <ThemedText variant="caption" style={styles.insightBadgeText}>
+                          {pattern.type === 'recurring_theme' 
+                            ? (locale === 'zh-TW' ? '重複' : 'RECURRING')
+                            : pattern.type === 'anomaly'
+                            ? (locale === 'zh-TW' ? '異常' : 'ANOMALY')
+                            : (locale === 'zh-TW' ? '趨勢' : 'TREND')}
+                        </ThemedText>
+                      </View>
+                      <View style={[styles.insightSeverity, styles.insightSeverityMedium]}>
+                        <ThemedText variant="caption" style={styles.severityText}>
+                          ⚡ {locale === 'zh-TW' ? '中' : 'MED'}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <ThemedText variant="h3" style={styles.insightTitle}>
+                      {pattern.title}
+                    </ThemedText>
+                    <ThemedText variant="body" style={styles.insightDescription}>
+                      {pattern.description}
+                    </ThemedText>
+                  </View>
+                ))}
+            </View>
+          )}
+
+          {/* Low Priority Insights */}
+          {patterns.filter(p => p.severity === 'low').length > 0 && (
+            <View style={styles.priorityGroup}>
+              <ThemedText variant="h3" style={styles.priorityLabel}>
+                💭 {locale === 'zh-TW' ? '觀察' : 'Observations'}
+              </ThemedText>
+              {patterns
+                .filter(p => p.severity === 'low')
+                .map((pattern, idx) => (
+                  <View
+                    key={`low-${idx}`}
+                    style={[styles.insightCard, styles.insightCardLow]}
+                  >
+                    <View style={styles.insightHeader}>
+                      <View style={[styles.insightBadge, styles.insightBadgeLow]}>
+                        <ThemedText variant="caption" style={styles.insightBadgeText}>
+                          {pattern.type === 'recurring_theme' 
+                            ? (locale === 'zh-TW' ? '重複' : 'RECURRING')
+                            : pattern.type === 'anomaly'
+                            ? (locale === 'zh-TW' ? '異常' : 'ANOMALY')
+                            : (locale === 'zh-TW' ? '趨勢' : 'TREND')}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <ThemedText variant="h3" style={styles.insightTitle}>
+                      {pattern.title}
+                    </ThemedText>
+                    <ThemedText variant="body" style={styles.insightDescription}>
+                      {pattern.description}
+                    </ThemedText>
+                  </View>
+                ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -602,7 +806,7 @@ function StatBar({
   total: number;
   expected: number;
   color: string;
-  t: (key: TranslationKey, options?: Record<string, any>) => string;
+  t: (key: string, options?: Record<string, any>) => string;
 }) {
   const percentage = total > 0 ? (value / total) * 100 : 0;
   const expectedPercentage = expected * 100;
@@ -680,6 +884,112 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.spacing.md,
     fontSize: theme.typography.fontSize.lg,
   },
+  // Enhanced Insights Styles
+  insightsSection: {
+    marginBottom: theme.spacing.spacing.xl,
+    paddingBottom: theme.spacing.spacing.lg,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.primary.gold,
+  },
+  insightsHeader: {
+    marginBottom: theme.spacing.spacing.lg,
+    alignItems: 'center',
+  },
+  insightsTitle: {
+    color: theme.colors.primary.gold,
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: theme.typography.fontWeight.bold,
+    marginBottom: theme.spacing.spacing.xs,
+  },
+  insightsSubtitle: {
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.sm,
+    fontStyle: 'italic',
+  },
+  priorityGroup: {
+    marginBottom: theme.spacing.spacing.lg,
+  },
+  priorityLabel: {
+    color: theme.colors.primary.goldLight,
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.semibold,
+    marginBottom: theme.spacing.spacing.md,
+    marginLeft: theme.spacing.spacing.xs,
+  },
+  insightCard: {
+    backgroundColor: theme.colors.neutrals.darkGray,
+    borderRadius: theme.spacing.borderRadius.lg,
+    padding: theme.spacing.spacing.lg,
+    marginBottom: theme.spacing.spacing.md,
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  insightCardHigh: {
+    borderColor: theme.colors.primary.gold,
+    backgroundColor: theme.colors.neutrals.midGray,
+    borderWidth: 3,
+  },
+  insightCardMedium: {
+    borderColor: theme.colors.primary.goldLight,
+  },
+  insightCardLow: {
+    borderColor: theme.colors.text.tertiary,
+    borderWidth: 1,
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.spacing.md,
+  },
+  insightBadge: {
+    backgroundColor: theme.colors.primary.gold,
+    paddingHorizontal: theme.spacing.spacing.sm,
+    paddingVertical: theme.spacing.spacing.xs,
+    borderRadius: theme.spacing.borderRadius.sm,
+  },
+  insightBadgeMedium: {
+    backgroundColor: theme.colors.primary.goldLight,
+  },
+  insightBadgeLow: {
+    backgroundColor: theme.colors.text.tertiary,
+  },
+  insightBadgeText: {
+    color: theme.colors.neutrals.black,
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.bold,
+    letterSpacing: 0.5,
+  },
+  insightSeverity: {
+    backgroundColor: theme.colors.primary.crimson,
+    paddingHorizontal: theme.spacing.spacing.sm,
+    paddingVertical: theme.spacing.spacing.xs,
+    borderRadius: theme.spacing.borderRadius.sm,
+  },
+  insightSeverityMedium: {
+    backgroundColor: theme.colors.primary.crimsonDark,
+  },
+  severityText: {
+    color: theme.colors.text.primary,
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.bold,
+  },
+  insightTitle: {
+    color: theme.colors.primary.gold,
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
+    marginBottom: theme.spacing.spacing.sm,
+  },
+  insightDescription: {
+    color: theme.colors.text.primary,
+    lineHeight: 24,
+    fontSize: theme.typography.fontSize.md,
+  },
+  // Legacy pattern styles (kept for compatibility)
   patternCard: {
     backgroundColor: theme.colors.neutrals.darkGray,
     borderRadius: theme.spacing.borderRadius.md,
@@ -690,18 +1000,36 @@ const styles = StyleSheet.create({
   },
   patternHigh: {
     borderLeftColor: theme.colors.primary.gold,
+    backgroundColor: theme.colors.neutrals.midGray,
   },
   patternMedium: {
-    borderLeftColor: '#ff6b6b',
+    borderLeftColor: theme.colors.primary.goldLight,
+  },
+  patternLow: {
+    borderLeftColor: theme.colors.text.tertiary,
+  },
+  patternHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.spacing.sm,
   },
   patternTitle: {
     color: theme.colors.primary.gold,
-    marginBottom: theme.spacing.spacing.sm,
     fontSize: theme.typography.fontSize.md,
+    flex: 1,
+    fontWeight: theme.typography.fontWeight.semibold,
+  },
+  patternType: {
+    color: theme.colors.text.tertiary,
+    fontSize: theme.typography.fontSize.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   patternDescription: {
-    color: theme.colors.text.primary,
+    color: theme.colors.text.secondary,
     lineHeight: 22,
+    fontSize: theme.typography.fontSize.md,
   },
   statBar: {
     marginBottom: theme.spacing.spacing.lg,

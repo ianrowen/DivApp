@@ -6,10 +6,12 @@ import 'react-native-reanimated';
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { TranslationProvider } from '../src/i18n';
+import { ProfileProvider } from '../src/contexts/ProfileContext';
 import { useFonts, Cinzel_400Regular, Cinzel_500Medium, Cinzel_600SemiBold } from '@expo-google-fonts/cinzel';
 import { Lato_400Regular } from '@expo-google-fonts/lato';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import theme from '../src/theme';
+import SpinningLogo from '../src/shared/components/ui/SpinningLogo';
 import AIProvider from '../src/core/api/aiProvider';
 import { geminiProvider } from '../src/core/api/gemini';
 
@@ -82,14 +84,15 @@ export default function RootLayout() {
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-        <ActivityIndicator size="large" color={theme.colors.primary.gold} />
+        <SpinningLogo size={100} />
       </View>
     );
   }
 
   return (
     <TranslationProvider>
-      <Stack>
+      <ProfileProvider>
+        <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -123,6 +126,7 @@ export default function RootLayout() {
           options={{ headerShown: false }} 
         />
       </Stack>
+      </ProfileProvider>
     </TranslationProvider>
   );
 }

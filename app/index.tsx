@@ -1,11 +1,12 @@
 // app/index.tsx - Root route for Expo Router
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Redirect } from 'expo-router';
 import { supabase } from '../src/core/api/supabase';
 import theme from '../src/theme';
 import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
 import ThemedText from '../src/shared/components/ui/ThemedText';
+import SpinningLogo from '../src/shared/components/ui/SpinningLogo';
 
 export default function Index() {
   const [session, setSession] = useState<any>(null);
@@ -35,10 +36,7 @@ export default function Index() {
     return (
       <MysticalBackground variant="default">
         <View style={styles.loadingContainer}>
-          <ThemedText variant="h1" style={styles.loadingEmoji}>
-            🔮
-          </ThemedText>
-          <ActivityIndicator size="large" color={theme.colors.primary.gold} />
+          <SpinningLogo size={120} />
           <ThemedText variant="body" style={styles.loadingText}>
             Loading...
           </ThemedText>
@@ -61,10 +59,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: theme.spacing.spacing.xl,
-  },
-  loadingEmoji: {
-    fontSize: 64,
-    marginBottom: theme.spacing.spacing.xl,
   },
   loadingText: {
     marginTop: theme.spacing.spacing.md,

@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../src/core/api/supabase';
 import { Reading } from '../../src/core/models/Reading';
 import theme from '../../src/theme';
 import MysticalBackground from '../../src/shared/components/ui/MysticalBackground';
 import ThemedText from '../../src/shared/components/ui/ThemedText';
 import ThemedButton from '../../src/shared/components/ui/ThemedButton';
+import SpinningLogo from '../../src/shared/components/ui/SpinningLogo';
 import { useTranslation } from '../../src/i18n';
 import { LOCAL_RWS_CARDS } from '../../src/systems/tarot/data/localCardData';
 import { getLocalizedCard } from '../../src/systems/tarot/utils/cardHelpers';
@@ -25,11 +27,7 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
 
-  useEffect(() => {
-    loadReadings();
-  }, []);
-
-  const loadReadings = async () => {
+  const loadReadings = React.useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -45,13 +43,62 @@ export default function HistoryScreen() {
 
       if (error) throw error;
 
+      console.log('📚 Loaded readings:', data?.length || 0);
       setReadings(data as any[]);
+      // Note: Don't reset expandedIds here - let useFocusEffect handle it
+      // This prevents resetting when real-time updates come in
     } catch (error) {
       console.error('Error loading readings:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Reset expanded state and reload readings when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Collapse all records when tab is focused
+      setExpandedIds(new Set());
+      // Reload readings to get any new records created while on other tabs
+      loadReadings();
+    }, [loadReadings])
+  );
+
+  useEffect(() => {
+    loadReadings();
+
+    // Set up real-time subscription for new readings
+    let channel: any = null;
+    
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase
+        .channel('readings-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'readings',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log('📥 Real-time update:', payload.eventType);
+            // Reload readings when changes occur
+            loadReadings();
+          }
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [loadReadings]);
 
   const toggleExpand = (id: string) => {
     const newExpanded = new Set(expandedIds);
@@ -168,6 +215,25 @@ export default function HistoryScreen() {
   };
 
   const getCardName = (elementId: string, metadata?: any): string => {
+    // First try to find by cardCode from metadata (most reliable)
+    if (metadata?.cardCode) {
+      const card = LOCAL_RWS_CARDS.find(c => c.code === metadata.cardCode);
+      if (card) {
+        const localizedCard = getLocalizedCard(card);
+        return localizedCard.title;
+      }
+    }
+    
+    // Try to find by elementId as card code (e.g., "00", "01", "P02")
+    if (elementId) {
+      const card = LOCAL_RWS_CARDS.find(c => c.code === elementId);
+      if (card) {
+        const localizedCard = getLocalizedCard(card);
+        return localizedCard.title;
+      }
+    }
+    
+    // Fallback: try to find by cardTitle from metadata
     if (metadata?.cardTitle) {
       const card = LOCAL_RWS_CARDS.find(c => c.title.en === metadata.cardTitle || c.title.zh === metadata.cardTitle);
       if (card) {
@@ -177,39 +243,85 @@ export default function HistoryScreen() {
       return metadata.cardTitle;
     }
     
+    // Last resort: try filename matching (for old data)
     const card = LOCAL_RWS_CARDS.find(c => c.filename === elementId || c.filename === `${elementId}.jpg`);
     if (card) {
       const localizedCard = getLocalizedCard(card);
       return localizedCard.title;
     }
     
-    return elementId;
+    // If nothing found, return elementId as fallback
+    console.warn('History: Card not found for elementId:', elementId, 'metadata:', metadata);
+    return elementId || 'Unknown Card';
   };
 
   const renderReading = ({ item }: { item: any }) => {
     const isExpanded = expandedIds.has(item.id);
     const elements = item.elements_drawn || [];
     const interpretations = item.interpretations || {};
+    const metadata = interpretations._metadata || {};
+    const spreadName = metadata.spread_name 
+      ? (locale === 'zh-TW' ? metadata.spread_name.zh : metadata.spread_name.en)
+      : (item.reading_type === 'daily_card' 
+          ? (locale === 'zh-TW' ? '每日卡牌' : 'Daily Card')
+          : null);
 
     return (
       <View style={styles.readingCard}>
         <View style={styles.collapsedContent}>
-          <ThemedText variant="body" style={styles.question}>
-            {item.question || (locale === 'zh-TW' ? '無問題' : 'No question')}
-          </ThemedText>
-          <View style={styles.cardsCompact}>
-            {elements.slice(0, 3).map((el: any, idx: number) => (
-              <ThemedText key={idx} variant="caption" style={styles.cardName}>
-                {getCardName(el.elementId || el.cardId || '', el.metadata)}
-                {idx < Math.min(elements.length, 3) - 1 ? ', ' : ''}
+          {/* Question - Prominent */}
+          {/* For daily cards in Chinese locale, don't show English "Daily guidance" */}
+          {(() => {
+            const questionText = item.question;
+            const isDailyCard = item.reading_type === 'daily_card';
+            const isEnglishDailyGuidance = questionText === 'Daily guidance';
+            
+            // Hide English "Daily guidance" for Chinese users viewing daily cards
+            if (isDailyCard && isEnglishDailyGuidance && locale === 'zh-TW') {
+              return null;
+            }
+            
+            // Show question for all other cases
+            return (
+              <ThemedText variant="h3" style={styles.questionCollapsed}>
+                {questionText || (locale === 'zh-TW' ? '無問題' : 'No question')}
               </ThemedText>
-            ))}
+            );
+          })()}
+          
+          {/* Spread Name */}
+          {spreadName && (
+            <ThemedText variant="body" style={styles.spreadNameCollapsed}>
+              {spreadName}
+            </ThemedText>
+          )}
+          
+          {/* Cards - Compact */}
+          <View style={styles.cardsCompact}>
+            {elements.length > 0 ? (
+              elements.slice(0, 3).map((el: any, idx: number) => {
+                const cardName = getCardName(el.elementId || el.cardId || '', el.metadata);
+                return (
+                  <ThemedText key={idx} variant="caption" style={styles.cardNameCollapsed}>
+                    {cardName}
+                    {el.metadata?.reversed && (locale === 'zh-TW' ? ' (逆)' : ' (R)')}
+                    {idx < Math.min(elements.length, 3) - 1 ? ', ' : ''}
+                  </ThemedText>
+                );
+              })
+            ) : (
+              <ThemedText variant="caption" style={styles.cardNameCollapsed}>
+                {locale === 'zh-TW' ? '無卡牌' : 'No cards'}
+              </ThemedText>
+            )}
             {elements.length > 3 && (
-              <ThemedText variant="caption" style={styles.cardName}>
+              <ThemedText variant="caption" style={styles.cardNameCollapsed}>
                 ... +{elements.length - 3}
               </ThemedText>
             )}
           </View>
+          
+          {/* Date */}
           <ThemedText variant="caption" style={styles.date}>
             {formatDate(item.created_at)}
           </ThemedText>
@@ -217,31 +329,67 @@ export default function HistoryScreen() {
 
         {isExpanded && (
           <View style={styles.expandedContent}>
-            {Object.entries(interpretations).map(([style, data]: [string, any]) => (
-              <View key={style} style={styles.detailRow}>
-                <ThemedText variant="body" style={styles.detailLabel}>
-                  {t(`reading.${style}` as any)}
+            {/* Interpretations Section */}
+            {Object.entries(interpretations)
+              .filter(([style]) => style !== '_metadata')
+              .length > 0 && (
+              <View style={styles.section}>
+                <ThemedText variant="caption" style={styles.sectionLabel}>
+                  {locale === 'zh-TW' ? '解讀' : 'Interpretations'}
                 </ThemedText>
-                <ThemedText variant="body" style={styles.detailValue}>
-                  {data?.content || t('reading.noInterpretation')}
+                {Object.entries(interpretations)
+                  .filter(([style]) => style !== '_metadata')
+                  .map(([style, data]: [string, any]) => {
+                    const translationKey = `reading.${style}`;
+                    const label = t(translationKey as any) || style.charAt(0).toUpperCase() + style.slice(1);
+                    
+                    return (
+                      <View key={style} style={styles.interpretationRow}>
+                        <ThemedText variant="body" style={styles.interpretationLabel}>
+                          {label}
+                        </ThemedText>
+                        <ThemedText variant="body" style={styles.interpretationContent}>
+                          {data?.content || t('reading.noInterpretation')}
+                        </ThemedText>
+                      </View>
+                    );
+                  })}
+              </View>
+            )}
+            
+            {/* Reflection Section */}
+            {metadata.reflection && (
+              <View style={styles.section}>
+                <ThemedText variant="caption" style={styles.sectionLabel}>
+                  {locale === 'zh-TW' ? '反思' : 'Reflection'}
+                </ThemedText>
+                <ThemedText variant="body" style={styles.reflectionContent}>
+                  {metadata.reflection}
                 </ThemedText>
               </View>
-            ))}
-            {elements.length > 0 && (
-              <View style={styles.cardsDetailed}>
-                {elements.map((el: any, idx: number) => (
-                  <View key={idx} style={styles.cardWithPosition}>
-                    {el.position && (
-                      <ThemedText variant="caption" style={styles.position}>
-                        {el.position}
+            )}
+            
+            {/* Chat History Section */}
+            {metadata.conversation && metadata.conversation.length > 0 && (
+              <View style={styles.section}>
+                <ThemedText variant="caption" style={styles.sectionLabel}>
+                  {locale === 'zh-TW' ? '對話記錄' : 'Conversation'}
+                </ThemedText>
+                <View style={styles.chatHistory}>
+                  {metadata.conversation.map((msg: any, idx: number) => (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.chatMessage,
+                        msg.role === 'user' ? styles.chatMessageUser : styles.chatMessageAssistant,
+                      ]}
+                    >
+                      <ThemedText variant="body" style={styles.chatContent}>
+                        {msg.content}
                       </ThemedText>
-                    )}
-                    <ThemedText variant="body" style={styles.cardNameExpanded}>
-                      {getCardName(el.elementId || el.cardId || '', el.metadata)}
-                      {el.metadata?.reversed && (locale === 'zh-TW' ? ' (逆位)' : ' (R)')}
-                    </ThemedText>
-                  </View>
-                ))}
+                    </View>
+                  ))}
+                </View>
               </View>
             )}
             <ThemedButton
@@ -268,7 +416,7 @@ export default function HistoryScreen() {
     return (
       <MysticalBackground variant="subtle">
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary.gold} />
+          <SpinningLogo size={80} />
         </View>
       </MysticalBackground>
     );
@@ -343,23 +491,31 @@ const styles = StyleSheet.create({
   collapsedContent: {
     marginBottom: theme.spacing.spacing.sm,
   },
-  question: {
+  questionCollapsed: {
     color: theme.colors.primary.gold,
-    marginBottom: theme.spacing.spacing.sm,
+    fontWeight: theme.typography.fontWeight.bold,
+    marginBottom: theme.spacing.spacing.xs,
     fontSize: theme.typography.fontSize.lg,
+  },
+  spreadNameCollapsed: {
+    color: theme.colors.primary.goldLight,
+    fontWeight: theme.typography.fontWeight.medium,
+    marginBottom: theme.spacing.spacing.xs,
+    fontSize: theme.typography.fontSize.md,
   },
   cardsCompact: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginBottom: theme.spacing.spacing.xs,
   },
-  cardName: {
+  cardNameCollapsed: {
     color: theme.colors.text.secondary,
     fontSize: theme.typography.fontSize.sm,
   },
   date: {
     color: theme.colors.text.tertiary,
     fontSize: theme.typography.fontSize.xs,
+    marginTop: theme.spacing.spacing.xs,
   },
   expandedContent: {
     marginTop: theme.spacing.spacing.md,
@@ -367,18 +523,58 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.neutrals.midGray,
   },
-  detailRow: {
-    marginBottom: theme.spacing.spacing.md,
+  section: {
+    marginBottom: theme.spacing.spacing.lg,
+    paddingBottom: theme.spacing.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.neutrals.midGray,
   },
-  detailLabel: {
+  sectionLabel: {
+    color: theme.colors.primary.goldDark,
+    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: theme.typography.fontSize.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: theme.spacing.spacing.sm,
+  },
+  questionExpanded: {
+    color: theme.colors.primary.gold,
+    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: theme.typography.fontSize.xl,
+    lineHeight: 28,
+  },
+  spreadNameExpanded: {
+    color: theme.colors.primary.goldLight,
+    fontWeight: theme.typography.fontWeight.semibold,
+    fontSize: theme.typography.fontSize.lg,
+  },
+  interpretationRow: {
+    marginBottom: theme.spacing.spacing.lg,
+    paddingBottom: theme.spacing.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.neutrals.black,
+  },
+  interpretationLabel: {
     color: theme.colors.primary.gold,
     fontWeight: theme.typography.fontWeight.semibold,
-    marginBottom: theme.spacing.spacing.xs,
-    fontSize: theme.typography.fontSize.sm,
-  },
-  detailValue: {
-    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.spacing.sm,
     fontSize: theme.typography.fontSize.md,
+  },
+  interpretationContent: {
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.md,
+    lineHeight: 22,
+  },
+  reflectionContent: {
+    color: theme.colors.primary.goldLight,
+    fontSize: theme.typography.fontSize.md,
+    lineHeight: 22,
+    fontStyle: 'italic',
+    backgroundColor: theme.colors.neutrals.black,
+    padding: theme.spacing.spacing.md,
+    borderRadius: theme.spacing.borderRadius.md,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary.goldDark,
   },
   cardsDetailed: {
     marginTop: theme.spacing.spacing.xs,
@@ -392,8 +588,9 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.fontWeight.semibold,
   },
   cardNameExpanded: {
-    color: theme.colors.text.primary,
+    color: theme.colors.text.secondary,
     fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.medium,
     marginTop: theme.spacing.spacing.xs,
   },
   deleteButton: {
@@ -427,5 +624,32 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     width: '100%',
+  },
+  chatHistory: {
+    marginTop: theme.spacing.spacing.xs,
+  },
+  chatMessage: {
+    marginBottom: theme.spacing.spacing.md,
+    paddingVertical: theme.spacing.spacing.md,
+    paddingHorizontal: theme.spacing.spacing.lg,
+    borderRadius: theme.spacing.borderRadius.md,
+    maxWidth: '85%',
+  },
+  chatMessageUser: {
+    backgroundColor: theme.colors.primary.crimsonDark,
+    alignSelf: 'flex-end',
+    borderBottomRightRadius: theme.spacing.borderRadius.sm,
+  },
+  chatMessageAssistant: {
+    backgroundColor: theme.colors.neutrals.darkGray,
+    borderWidth: 1,
+    borderColor: theme.colors.primary.goldDark,
+    alignSelf: 'flex-start',
+    borderBottomLeftRadius: theme.spacing.borderRadius.sm,
+  },
+  chatContent: {
+    color: theme.colors.text.primary,
+    fontSize: theme.typography.fontSize.md,
+    lineHeight: 22,
   },
 });
