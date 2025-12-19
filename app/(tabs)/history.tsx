@@ -46,26 +46,21 @@ export default function HistoryScreen() {
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSession',message:'Calling getSession',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
       // #endregion
-      // Use getSession() which reads from local storage immediately
-      // If session not ready, retry a few times with delays
-      let user = null;
-      let retries = 0;
-      const maxRetries = 3; // Reduced from 5 to 3
-      const retryDelay = 300; // Reduced from 500ms to 300ms
+      // Use getSession() - try once immediately, if no session wait briefly and try once more
+      const { data: { session } } = await supabase.auth.getSession();
+      let user = session?.user;
+      let retried = false;
       
-      while (!user && retries < maxRetries) {
-        const { data: { session } } = await supabase.auth.getSession();
-        user = session?.user;
-        if (!user && retries < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          retries++;
-        } else {
-          break;
-        }
+      // If no session immediately, wait 100ms and try once more (session might still be establishing)
+      if (!user) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const { data: { session: retrySession } } = await supabase.auth.getSession();
+        user = retrySession?.user;
+        retried = true;
       }
       
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSessionResult',message:'getSession result',data:{hasUser:!!user,userId:user?.id,retries},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSessionResult',message:'getSession result',data:{hasUser:!!user,userId:user?.id,retried},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
       // #endregion
       if (!user) {
         // #region agent log
@@ -491,7 +486,7 @@ export default function HistoryScreen() {
     return (
       <MysticalBackground variant="subtle">
         <View style={styles.centerContainer}>
-          <SpinningLogo size={80} />
+          <SpinningLogo size={120} />
         </View>
       </MysticalBackground>
     );
