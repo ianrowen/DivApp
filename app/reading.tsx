@@ -48,7 +48,7 @@ export default function ReadingScreen() {
   }>();
 
   const { t, locale } = useTranslation();
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { profile, isLoading: profileLoading, refreshProfile } = useProfile();
   const scrollViewRef = useRef<ScrollView>(null);
 
   // State
@@ -527,9 +527,29 @@ export default function ReadingScreen() {
   ) => {
     setGenerating(true);
     try {
+      // Refresh profile to ensure we have latest birth data
+      // This ensures natal chart info is available even if profile was loaded before birth data was saved
+      await refreshProfile();
+      
+      // Get fresh profile - query directly to ensure we have latest data
+      const { data: { user } } = await supabase.auth.getUser();
+      let currentProfile = userProfile; // Default to context profile
+      
+      if (user) {
+        // Query fresh profile data to ensure we have latest birth chart info
+        const { data: freshProfile } = await supabase
+          .from('user_profiles')
+          .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, use_birth_data_for_readings')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (freshProfile) {
+          currentProfile = freshProfile;
+        }
+      }
+      
       // Use current user tier (may be loading, default to 'free')
-      const currentTier = userTier || 'free';
-      const currentProfile = userProfile;
+      const currentTier = (currentProfile?.subscription_tier || userTier || 'free') as 'free' | 'adept' | 'apex';
       
 
       // Build detailed card descriptions with explicit reversed indication
@@ -563,7 +583,8 @@ export default function ReadingScreen() {
       let birthContextDetailed = '';
       
       // Check if user has opted in to use birth data for readings
-      const useBirthData = currentProfile?.use_birth_data_for_readings !== false; // Default to true if not set
+      // Default to true if not set (null or undefined)
+      const useBirthData = currentProfile?.use_birth_data_for_readings !== false; 
       
       if (useBirthData && currentProfile?.sun_sign) {
         if (currentTier === 'free' && !isBeta) {
