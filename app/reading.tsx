@@ -47,8 +47,6 @@ export default function ReadingScreen() {
     readingId?: string;
   }>();
 
-  console.log('📥 Reading screen params:', { type, cardCode, reversed, spreadKey, question });
-
   const { t, locale } = useTranslation();
   const { profile, isLoading: profileLoading } = useProfile();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -357,8 +355,6 @@ export default function ReadingScreen() {
   const handleCardsSelected = (selectedCards: LocalTarotCard[]) => {
     if (!spread) return;
 
-    console.log('🎴 Cards selected:', selectedCards.map(c => c.title.en));
-
     // Convert selected cards to DrawnCard format
     // IMPORTANT: Use the reversed state that was already determined during card selection animation
     const drawnCards: DrawnCard[] = selectedCards.map((card, index) => {
@@ -384,8 +380,6 @@ export default function ReadingScreen() {
   };
 
   const drawCardsForSpread = async (spreadData: TarotSpread) => {
-    console.log('🎴 Drawing cards for spread:', spreadData.spread_key);
-    
     // Shuffle deck
     const shuffled = [...LOCAL_RWS_CARDS];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -400,8 +394,6 @@ export default function ReadingScreen() {
       const position = spreadData.positions[i];
       const reversed = Math.random() < 0.3;
 
-      console.log(`  Card ${i + 1}:`, card.title.en, reversed ? '(R)' : '');
-
       drawnCards.push({
         cardCode: card.code,
         position: locale === 'zh-TW' ? position.label.zh : position.label.en,
@@ -410,7 +402,6 @@ export default function ReadingScreen() {
     }
 
     setCards(drawnCards);
-    console.log('✅ Cards drawn:', drawnCards.length);
     
     // Show cards immediately - don't wait for interpretation
     setLoading(false);
@@ -726,7 +717,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       
       let finalText = result.text;
       if (wordCount > maxWords) {
-        console.warn(`⚠️ Response too long (${wordCount} words), truncating to ${maxWords} words...`);
         // Truncate to max words, preserving sentence boundaries
         const words = result.text.split(/\s+/);
         const truncatedWords = words.slice(0, maxWords);
@@ -827,8 +817,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           [style]: finalText, // Add/update the new interpretation
         };
         await updateReadingInterpretationsWithId(finalReadingId, updatedInterpretations);
-      } else {
-        console.warn('⚠️ No readingId available to update interpretations');
       }
 
     } catch (error: any) {
@@ -869,16 +857,12 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
   };
 
   const handleFollowUpQuestion = async () => {
-    console.log('📍 Follow-up question:', chatInput);
-    
     if (!chatInput.trim()) {
-      console.log('❌ Empty input');
       return;
     }
 
     // Check follow-up limit for free users (bypass for beta testers)
     if (!isBetaTester && userTier === 'free' && followUpCount >= 3) {
-      console.log('❌ Hit free tier limit');
       Alert.alert(
         t('tiers.upgrade.title'),
         locale === 'zh-TW' 
@@ -898,7 +882,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       timestamp: new Date().toISOString(),
     };
 
-    console.log('✅ Adding user message to chat');
     setChatHistory(prev => [...prev, userMessage]);
     setChatInput('');
     setChatLoading(true);
@@ -934,7 +917,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
 
       // Fetch previous readings context for Q&A
       const readingsContext = await fetchLast10Readings();
-      console.log('📚 Previous readings context for Q&A:', readingsContext ? `${readingsContext.length} chars` : 'None');
 
       // Build prompt with previous readings context and astrological context
       let prompt = `Current Reading: ${cardsContext}
@@ -951,16 +933,12 @@ Answer the question. If the user asks about previous readings mentioned in the i
         ? `你是塔羅解讀師。可以參考過去的占卜記錄和占星背景來回答問題。簡潔回答。${birthContextDetailed ? '當問題相關時，可以自然地融入太陽、月亮和上升星座的影響。' : ''}`
         : `You are a tarot reader. You can reference past reading history${birthContextDetailed ? ' and astrological context' : ''} to answer questions. Answer concisely.${birthContextDetailed ? ' When relevant, naturally incorporate Sun, Moon, and Rising sign influences.' : ''}`;
 
-      console.log('🤖 Calling AI for follow-up...');
-      
       const result = await AIProvider.generate({
         prompt,
         systemPrompt,
         temperature: 0.7,
         maxTokens: 800,
       });
-
-      console.log('✅ Got AI response');
 
       const assistantMessage: ChatMessage = {
         role: 'assistant',
@@ -1580,20 +1558,13 @@ Answer the question. If the user asks about previous readings mentioned in the i
   };
 
   const handleCardPress = (cardCode: string, reversed: boolean) => {
-    console.log('📍 handleCardPress called');
-    console.log('📍 cardCode:', cardCode);
-    console.log('📍 reversed:', reversed);
-    console.log('📍 LOCAL_RWS_CARDS length:', LOCAL_RWS_CARDS.length);
-    
     const card = LOCAL_RWS_CARDS.find(c => c.code === cardCode);
     
     if (card) {
-      console.log('✅ Card found:', card.title.en);
       setSelectedCard({ ...card, reversed });
       setModalVisible(true);
     } else {
       console.error('❌ Card NOT found for code:', cardCode);
-      console.log('📍 Available codes:', LOCAL_RWS_CARDS.slice(0, 5).map(c => c.code));
     }
   };
 
@@ -1875,15 +1846,11 @@ Answer the question. If the user asks about previous readings mentioned in the i
             cards.length === 2 && styles.cardsContainerTwo,
           ]}>
             {cards.map((drawnCard, idx) => {
-              console.log('🎴 Rendering card:', drawnCard.cardCode);
-              
               const cardData = LOCAL_RWS_CARDS.find(c => c.code === drawnCard.cardCode);
               if (!cardData) {
                 console.error('❌ Card data not found:', drawnCard.cardCode);
                 return null;
               }
-
-              console.log('✅ Card data found:', cardData.title.en, 'Loading image for code:', cardData.code);
 
               const localizedCard = getLocalizedCard(cardData);
               
@@ -1910,15 +1877,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
                 });
                 displayKeywords = [];
               }
-              
-              console.log(`🔑 Keywords for ${cardData.code} (reversed: ${drawnCard.reversed}):`, {
-                original: originalKeywords,
-                localized: localizedKeywords,
-                display: displayKeywords,
-                displayLength: displayKeywords.length,
-                locale: locale,
-                willDisplay: displayKeywords.length > 0
-              });
 
               return (
                 <Animated.View
@@ -1940,7 +1898,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
                 >
                   <TouchableOpacity
                     onPress={() => {
-                      console.log('📍 Card image pressed:', drawnCard.cardCode);
                       handleCardPress(drawnCard.cardCode, drawnCard.reversed);
                     }}
                     activeOpacity={0.8}
@@ -1953,7 +1910,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
                         source={getCardImage(cardData.code)}
                         style={styles.cardImage}
                         resizeMode="contain"
-                        onLoad={() => console.log('✅ Image loaded for:', cardData.code)}
                         onError={(e) => console.error('❌ Image error for:', cardData.code, e)}
                       />
                     </View>
@@ -2115,7 +2071,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
               />
               <TouchableOpacity
                 onPress={() => {
-                  console.log('📍 Send pressed, input:', chatInput);
                   handleFollowUpQuestion();
                 }}
                 disabled={!chatInput.trim() || chatLoading}
@@ -2190,7 +2145,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         <CardDetailModal
           visible={modalVisible}
           onClose={() => {
-            console.log('📍 Modal closing');
             setModalVisible(false);
           }}
           card={selectedCard}
