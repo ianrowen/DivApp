@@ -126,7 +126,7 @@ export default {
     },
     "calculating": "計算中...",
     "useForReadings": "將出生資料用於占卜",
-    "useForReadingsDescription": "在生成塔羅解讀時自動包含您的出生命盤資料",
+    "useForReadingsDescription": "輸入出生時間和地點以生成具有占星學依據的解讀。",
     "animations": "動畫效果",
     "animationsDescription": "啟用卡片選擇和轉場動畫",
     "saveSuccess": "個人資料更新成功！",

@@ -143,7 +143,7 @@ export default {
     },
     calculating: 'Calculating...',
     useForReadings: 'Use birth data for readings',
-    useForReadingsDescription: 'Automatically include your birth chart data when generating tarot interpretations',
+    useForReadingsDescription: 'Enter birth time and location to generate astrologically informed interpretations.',
     animations: 'Animations',
     animationsDescription: 'Enable animations for card selection and transitions',
     saveSuccess: 'Profile updated successfully!',
