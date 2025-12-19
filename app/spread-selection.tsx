@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
 } from 'react-native';
 import { Stack, router, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../src/core/api/supabase';
@@ -31,56 +30,11 @@ export default function SpreadSelectionScreen() {
   const [suggestedSpread, setSuggestedSpread] = useState<TarotSpread | null>(null);
   const userTier = (profile?.subscription_tier || 'free') as 'free' | 'premium';
   const isBetaTester = profile?.is_beta_tester || false;
-  const [editedQuestion, setEditedQuestion] = useState(question || '');
-  const [isTyping, setIsTyping] = useState(false);
   const routerNav = useRouter();
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadUserDataAndSpreads();
   }, []);
-
-  // Update editedQuestion when question prop changes (from navigation)
-  useEffect(() => {
-    if (question) {
-      setEditedQuestion(question);
-    }
-  }, [question]);
-
-  // Auto-suggest when user stops typing (debounced)
-  useEffect(() => {
-    if (!isTyping && editedQuestion && editedQuestion.trim().length > 0 && spreads.length > 0) {
-      const timeoutId = setTimeout(() => {
-        setSuggesting(true);
-        suggestSpreadForQuestion(editedQuestion.trim(), spreads);
-      }, 500); // Reduced to 500ms for faster response
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isTyping, editedQuestion, spreads.length]);
-
-  const handleQuestionChange = (text: string) => {
-    setEditedQuestion(text);
-    setIsTyping(true);
-    
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    
-    // Reset typing flag after user stops typing (debounced)
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-      typingTimeoutRef.current = null;
-    }, 1000);
-  };
-
-  const handleAskAgain = () => {
-    if (editedQuestion.trim().length > 0) {
-      setSuggesting(true);
-      suggestSpreadForQuestion(editedQuestion.trim(), spreads);
-    }
-  };
 
   const loadUserDataAndSpreads = async () => {
     try {
@@ -106,11 +60,11 @@ export default function SpreadSelectionScreen() {
       setSpreads(availableSpreads);
 
       // Defer AI suggestion - don't block UI
-      if (editedQuestion && editedQuestion.trim().length > 0) {
+      if (question && question.trim().length > 0) {
         // Small delay to let UI render first
         setTimeout(() => {
           setSuggesting(true);
-          suggestSpreadForQuestion(editedQuestion.trim(), availableSpreads).catch((error) => {
+          suggestSpreadForQuestion(question.trim(), availableSpreads).catch((error) => {
             console.error('Suggestion error:', error);
             setSuggesting(false);
           });
@@ -268,34 +222,15 @@ export default function SpreadSelectionScreen() {
       />
       <MysticalBackground variant="default">
         <ScrollView contentContainerStyle={styles.container}>
-          {/* Question Field - Always Editable */}
-          {editedQuestion && (
+          {/* Display Question */}
+          {question && (
             <ThemedCard variant="minimal" style={styles.questionCard}>
               <ThemedText variant="caption" style={styles.questionLabel}>
                 {t('home.questionPrompt')}
               </ThemedText>
-              <TextInput
-                style={styles.questionInput}
-                value={editedQuestion}
-                onChangeText={handleQuestionChange}
-                onBlur={() => setIsTyping(false)} // Mark as done typing on blur
-                multiline
-                maxLength={500}
-                placeholder={t('home.questionPlaceholder')}
-                placeholderTextColor={theme.colors.text.tertiary}
-              />
-              <View style={styles.questionActions}>
-                <ThemedText variant="caption" style={styles.charCount}>
-                  {editedQuestion.length}/500
-                </ThemedText>
-                <ThemedButton
-                  title={t('home.askQuestion')}
-                  onPress={handleAskAgain}
-                  variant="primary"
-                  disabled={editedQuestion.trim().length === 0 || suggesting}
-                  style={styles.askButton}
-                />
-              </View>
+              <ThemedText variant="body" style={styles.questionDisplay}>
+                {question}
+              </ThemedText>
             </ThemedCard>
           )}
 
@@ -451,29 +386,11 @@ const styles = StyleSheet.create({
     color: theme.colors.text.tertiary,
     marginBottom: theme.spacing.spacing.xs,
   },
-  questionInput: {
-    backgroundColor: theme.colors.neutrals.darkGray,
-    borderWidth: 1,
-    borderColor: theme.colors.primary.goldDark,
-    borderRadius: theme.spacing.borderRadius.md,
-    padding: theme.spacing.spacing.md,
+  questionDisplay: {
     color: theme.colors.text.primary,
     fontSize: theme.typography.fontSize.md,
-    minHeight: 100,
-    textAlignVertical: 'top',
-    marginBottom: theme.spacing.spacing.sm,
-  },
-  questionActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  charCount: {
-    color: theme.colors.text.tertiary,
-    fontSize: theme.typography.fontSize.xs,
-  },
-  askButton: {
-    minWidth: 120,
+    lineHeight: theme.typography.fontSize.md * 1.5,
+    marginTop: theme.spacing.spacing.xs,
   },
   sectionTitle: {
     marginTop: theme.spacing.spacing.xl,
