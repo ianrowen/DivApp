@@ -163,58 +163,82 @@ export default function ReadingScreen() {
         // Show cards immediately - don't wait for interpretation
         setLoading(false);
         
-        // Check if daily card was already saved (from DailyCardDraw component)
+        // Check if daily card was already saved (from DailyCardDraw component or passed as param)
         let savedReadingId: string | null = null;
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            // Check for existing daily card reading from today
-            const { data: existingReading, error: fetchError } = await supabase
-              .from('readings')
-              .select('id, created_at')
-              .eq('user_id', user.id)
-              .eq('reading_type', 'daily_card')
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            
-            if (fetchError) {
-              console.warn('⚠️ Error checking for existing daily card:', fetchError);
-            } else if (existingReading?.id) {
-              // Check if it's from today
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const readingDate = new Date(existingReading.created_at);
-              readingDate.setHours(0, 0, 0, 0);
+        
+        // First check if readingId was passed as param (from DailyCardDraw)
+        if (readingIdParam) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:initializeReading:daily:useParam',message:'Using readingId from params',data:{readingId:readingIdParam},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+          // #endregion
+          savedReadingId = readingIdParam;
+          setReadingId(savedReadingId);
+          readingIdRef.current = savedReadingId;
+          setAutoSaved(true);
+        } else {
+          // If no param, check database for existing daily card from today
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:initializeReading:daily:checkDB',message:'Checking DB for existing daily card',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+              // #endregion
+              // Check for existing daily card reading from today
+              const { data: existingReading, error: fetchError } = await supabase
+                .from('readings')
+                .select('id, created_at')
+                .eq('user_id', user.id)
+                .eq('reading_type', 'daily_card')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
               
-              if (readingDate.getTime() === today.getTime()) {
-                savedReadingId = existingReading.id;
-                setReadingId(savedReadingId);
-                readingIdRef.current = savedReadingId;
+              if (fetchError) {
+                console.warn('⚠️ Error checking for existing daily card:', fetchError);
+              } else if (existingReading?.id) {
+                // Check if it's from today
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const readingDate = new Date(existingReading.created_at);
+                readingDate.setHours(0, 0, 0, 0);
+                
+                if (readingDate.getTime() === today.getTime()) {
+                  // #region agent log
+                  fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:initializeReading:daily:foundToday',message:'Found existing daily card from today',data:{readingId:existingReading.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+                  // #endregion
+                  savedReadingId = existingReading.id;
+                  setReadingId(savedReadingId);
+                  readingIdRef.current = savedReadingId;
+                  setAutoSaved(true);
+                }
               }
             }
-          }
-        } catch (err: any) {
-          console.warn('⚠️ Exception checking for existing daily card:', err);
-        }
-        
-        // Only auto-save if no existing reading was found
-        if (!savedReadingId) {
-          // Auto-save daily card immediately (before interpretation)
-          // Await the save to ensure readingId is set before interpretation starts
-          try {
-            savedReadingId = await autoSaveReading(drawnCards);
-            if (savedReadingId) {
-              // Set readingId in both state and ref immediately
-              setReadingId(savedReadingId);
-              readingIdRef.current = savedReadingId;
-            }
           } catch (err: any) {
-            console.error('❌ Exception auto-saving daily card:', err);
-            console.error('❌ Error type:', typeof err);
-            console.error('❌ Error message:', err?.message);
-            console.error('❌ Error stack:', err?.stack);
-            // Continue even if save fails - interpretation will try to save
+            console.warn('⚠️ Exception checking for existing daily card:', err);
+          }
+          
+          // Only auto-save if no existing reading was found
+          if (!savedReadingId) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:initializeReading:daily:autoSave',message:'No existing reading found, auto-saving',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+            // #endregion
+            // Auto-save daily card immediately (before interpretation)
+            // Await the save to ensure readingId is set before interpretation starts
+            try {
+              savedReadingId = await autoSaveReading(drawnCards);
+              if (savedReadingId) {
+                // Set readingId in both state and ref immediately
+                setReadingId(savedReadingId);
+                readingIdRef.current = savedReadingId;
+                setAutoSaved(true);
+              }
+            } catch (err: any) {
+              console.error('❌ Exception auto-saving daily card:', err);
+              console.error('❌ Error type:', typeof err);
+              console.error('❌ Error message:', err?.message);
+              console.error('❌ Error stack:', err?.stack);
+              // Continue even if save fails - interpretation will try to save
+            }
           }
         }
         

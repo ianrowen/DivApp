@@ -28,6 +28,7 @@ export default function DailyCardDraw() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldAutoFlip, setShouldAutoFlip] = useState(false);
+  const [savedReadingId, setSavedReadingId] = useState<string | null>(null);
   const flipAnimation = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -55,6 +56,9 @@ export default function DailyCardDraw() {
   }, [card, shouldAutoFlip, isFlipped]);
 
   const saveDailyCard = async (cardToSave: any): Promise<string | null> => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:saveDailyCard:entry',message:'Saving daily card',data:{cardCode:cardToSave?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+    // #endregion
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
@@ -183,6 +187,9 @@ export default function DailyCardDraw() {
       }
 
       console.log('✅ Daily card saved! ID:', data.id);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:saveDailyCard:success',message:'Daily card saved successfully',data:{readingId:data.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+      // #endregion
       return data.id;
     } catch (error: any) {
       console.error('❌ Exception saving daily card:', error);
@@ -209,11 +216,16 @@ export default function DailyCardDraw() {
       setCard(cardWithReversal);
       
       // Save the daily card immediately when drawn
-      const savedReadingId = await saveDailyCard(cardWithReversal);
-      if (savedReadingId) {
-        console.log('✅ Daily card saved immediately when drawn, readingId:', savedReadingId);
+      const savedId = await saveDailyCard(cardWithReversal);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:drawNewCard:saveResult',message:'Daily card save result',data:{savedId:savedId,hasId:!!savedId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+      // #endregion
+      if (savedId) {
+        console.log('✅ Daily card saved immediately when drawn, readingId:', savedId);
+        setSavedReadingId(savedId);
       } else {
         console.warn('⚠️ Failed to save daily card when drawn, will retry when viewing full reading');
+        setSavedReadingId(null);
       }
       
       // Clear any saved card data (no persistence)
@@ -230,14 +242,22 @@ export default function DailyCardDraw() {
 
     // If card is already flipped, navigate to reading screen
     if (isFlipped && card) {
-      console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed);
+      console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed, 'readingId:', savedReadingId);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:handleFlip:navigate',message:'Navigating to reading screen',data:{hasReadingId:!!savedReadingId,readingId:savedReadingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+      // #endregion
+      const params: any = {
+        type: 'daily',
+        cardCode: card.code,
+        reversed: card.reversed ? 'true' : 'false',
+      };
+      // Pass readingId if we have it to prevent duplicate save
+      if (savedReadingId) {
+        params.readingId = savedReadingId;
+      }
       router.push({
         pathname: '/reading',
-        params: {
-          type: 'daily',
-          cardCode: card.code,
-          reversed: card.reversed ? 'true' : 'false',
-        },
+        params,
       });
       return;
     }
@@ -404,14 +424,22 @@ export default function DailyCardDraw() {
         <ThemedButton
           title={locale === 'zh-TW' ? '查看完整解讀' : 'View Full Reading'}
           onPress={() => {
-            console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed);
+            console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed, 'readingId:', savedReadingId);
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:viewFullButton:navigate',message:'Navigating to reading screen from button',data:{hasReadingId:!!savedReadingId,readingId:savedReadingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+            // #endregion
+            const params: any = {
+              type: 'daily',
+              cardCode: card.code,
+              reversed: card.reversed ? 'true' : 'false',
+            };
+            // Pass readingId if we have it to prevent duplicate save
+            if (savedReadingId) {
+              params.readingId = savedReadingId;
+            }
             router.push({
               pathname: '/reading',
-              params: {
-                type: 'daily',
-                cardCode: card.code,
-                reversed: card.reversed ? 'true' : 'false',
-              },
+              params,
             });
           }}
           variant="primary"
