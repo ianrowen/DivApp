@@ -1875,15 +1875,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
                         });
                       })()}
                     </View>
-                  ) : (
-                    (() => {
-                        displayKeywordsLength: displayKeywords?.length,
-                        locale: locale,
-                        cardReversed: drawnCard.reversed
-                      });
-                      return null;
-                    })()
-                  )}
+                  ) : null}
                 </Animated.View>
               );
             })}
