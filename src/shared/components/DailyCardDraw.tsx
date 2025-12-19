@@ -342,25 +342,8 @@ export default function DailyCardDraw() {
                         ? originalKeywords // Fallback to original if localized is empty
                         : [];
                     
-                    console.log(`🔑 DailyCard keywords check (reversed: ${card.reversed}):`, {
-                      cardCode: card.code,
-                      reversed: card.reversed,
-                      locale: locale,
-                      localizedKeywords: localizedKeywords,
-                      originalKeywords: originalKeywords,
-                      keywordsToShow: keywordsToShow,
-                      keywordsLength: keywordsToShow.length,
-                      willDisplay: keywordsToShow.length > 0
-                    });
-                    
                     // Always display keywords if they exist - reversed state doesn't affect keywords
                     if (keywordsToShow.length === 0) {
-                      console.error(`❌ ERROR: No keywords found for card ${card.code} (reversed: ${card.reversed})!`, {
-                        localizedCardExists: !!localizedCard,
-                        cardExists: !!card,
-                        localizedKeywordsType: typeof localizedKeywords,
-                        originalKeywordsType: typeof originalKeywords
-                      });
                       return null;
                     }
                     

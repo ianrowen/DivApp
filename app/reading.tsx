@@ -137,8 +137,6 @@ export default function ReadingScreen() {
       
       // Now start reading initialization
       if (type === 'daily') {
-        console.log('📍 Daily card - cardCode:', cardCode);
-        
         if (!cardCode) {
           console.error('❌ No cardCode provided for daily card!');
           Alert.alert('Error', 'Card code missing');
