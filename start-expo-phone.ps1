@@ -42,3 +42,7 @@ npx expo start
 
 
 
+
+
+
+

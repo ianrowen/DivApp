@@ -21,9 +21,11 @@ export function getLocalizedCard(card: LocalTarotCard) {
           return kw || '';
         }
         const translated = translateKeyword(kw);
-        if (translated === kw && isChinese) {
-          console.log(`⚠️ Keyword translation missing for: "${kw}" (normalized: "${kw.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}")`);
-        }
+        // Suppress missing translation warnings - fallback to English works fine
+        // Only log in dev mode if needed for debugging
+        // if (translated === kw && isChinese && __DEV__) {
+        //   console.log(`⚠️ Keyword translation missing for: "${kw}"`);
+        // }
         // Always return something - prefer translated, fallback to original
         const result = translated && translated.trim().length > 0 ? translated : kw;
         return result;

@@ -66,3 +66,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Add comment
 COMMENT ON COLUMN public.user_profiles.is_beta_tester IS 'Beta tester flag - defaults to true for all new users. Set to false to disable beta features.';
 
+
+
+
+

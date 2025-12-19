@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Signup - Divin8</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #e5e5e5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(30, 30, 30, 0.95);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            font-size: 32px;
+            color: #d4af37;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .logo p {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .status {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .status.loading {
+            background: rgba(212, 175, 55, 0.1);
+            color: #d4af37;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .status.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .status.error {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+        
+        .button {
+            display: block;
+            width: 100%;
+            padding: 14px 24px;
+            background: #d4af37;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        
+        .button:hover {
+            background: #c9a030;
+        }
+        
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .button-secondary {
+            background: transparent;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            margin-top: 10px;
+        }
+        
+        .button-secondary:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .info {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(212, 175, 55, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid #d4af37;
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+        
+        .info strong {
+            color: #d4af37;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(212, 175, 55, 0.3);
+            border-top: 3px solid #d4af37;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🔮 Divin8</h1>
+            <p>Mystical Divination</p>
+        </div>
+        
+        <div id="status" class="status loading">
+            <div class="spinner"></div>
+            <div style="margin-top: 12px;">Confirming your account...</div>
+        </div>
+        
+        <div id="success" class="hidden">
+            <div class="status success">
+                ✅ Account confirmed successfully!
+            </div>
+            <div class="info">
+                <strong>Opening Divin8 app...</strong><br>
+                If the app doesn't open automatically, tap the button below or check your device for a notification.
+            </div>
+            <a href="#" id="openApp" class="button">Open Divin8 App</a>
+            <a href="https://divin8.com" class="button button-secondary">Visit Divin8 Website</a>
+        </div>
+        
+        <div id="error" class="hidden">
+            <div class="status error">
+                ❌ Invalid or expired confirmation link
+            </div>
+            <div class="info">
+                This confirmation link is invalid or has expired. Please sign up again or contact support if you continue to have issues.
+            </div>
+            <a href="https://divin8.com" class="button button-secondary">Visit Divin8 Website</a>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            
+            // Combine both query params and hash params
+            const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+            const type = urlParams.get('type') || hashParams.get('type');
+            const tokenType = urlParams.get('token_type') || hashParams.get('token_type') || 'bearer';
+            const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
+            
+            console.log('Signup confirmation params:', { accessToken: !!accessToken, type, hasRefreshToken: !!refreshToken });
+            
+            // Check if we have valid confirmation token
+            if (accessToken && (type === 'signup' || type === 'email')) {
+                // Build deep link URL with all necessary params
+                let deepLink = `divin8://auth/callback?access_token=${encodeURIComponent(accessToken)}&type=${encodeURIComponent(type)}`;
+                if (refreshToken) {
+                    deepLink += `&refresh_token=${encodeURIComponent(refreshToken)}`;
+                }
+                if (tokenType) {
+                    deepLink += `&token_type=${encodeURIComponent(tokenType)}`;
+                }
+                
+                console.log('Opening deep link:', deepLink);
+                
+                // Try to open the app
+                const openApp = () => {
+                    window.location.href = deepLink;
+                    
+                    // Fallback: Try after a short delay
+                    setTimeout(() => {
+                        // If still on page, show manual open option
+                        if (document.getElementById('status').classList.contains('loading')) {
+                            document.getElementById('status').classList.add('hidden');
+                            document.getElementById('success').classList.remove('hidden');
+                        }
+                    }, 1000);
+                };
+                
+                // Show success and try to open app
+                setTimeout(() => {
+                    document.getElementById('status').classList.add('hidden');
+                    document.getElementById('success').classList.remove('hidden');
+                    openApp();
+                }, 500);
+                
+                // Set up manual open button
+                document.getElementById('openApp').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openApp();
+                });
+                
+            } else {
+                // Invalid or missing token
+                setTimeout(() => {
+                    document.getElementById('status').classList.add('hidden');
+                    document.getElementById('error').classList.remove('hidden');
+                }, 500);
+            }
+        })();
+    </script>
+</body>
+</html>
+
+
+
+
+

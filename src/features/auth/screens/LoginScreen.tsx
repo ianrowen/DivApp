@@ -26,6 +26,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Reset loading state when auth state changes (user signs in or error occurs)
   useEffect(() => {
@@ -74,21 +75,40 @@ export default function LoginScreen() {
     try {
       if (isSignUp) {
         // Sign up
+        // Use web URL that will redirect to app (same pattern as password reset)
+        const confirmUrl = 'https://divin8.com/confirm-signup.html';
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: 'https://bawkzybwbpoxftgawvha.supabase.co',
+            emailRedirectTo: confirmUrl,
           },
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Signup error:', error);
+          throw error;
+        }
 
-        Alert.alert(
-          t('auth.success'),
-          t('auth.checkEmail'),
-          [{ text: t('common.ok') }]
-        );
+        // Check if user was auto-confirmed (email confirmation disabled)
+        if (data.user && data.session) {
+          console.log('✅ User signed up and auto-confirmed:', data.user.email);
+          // User is automatically signed in - auth state change will handle navigation
+        } else if (data.user) {
+          // User created but needs email confirmation
+          console.log('📧 User created, confirmation email should be sent to:', data.user.email);
+          Alert.alert(
+            t('auth.success'),
+            `Account created! Please check your email (${email}) to confirm your account.\n\nCheck your spam folder if you don't see it.\n\nNote: If emails are not being sent, check Supabase Dashboard → Authentication → Email Templates and SMTP settings.`,
+            [{ text: t('common.ok') }]
+          );
+        } else {
+          Alert.alert(
+            t('common.error'),
+            'Signup completed but no user data returned. Please try signing in, or contact support if the issue persists.',
+            [{ text: t('common.ok') }]
+          );
+        }
       } else {
         // Sign in
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -101,8 +121,76 @@ export default function LoginScreen() {
         console.log('✅ Signed in:', data.user?.email);
       }
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message);
       console.error('Auth error:', error);
+      
+      // Handle specific error cases
+      if (error.message?.includes('Invalid login credentials') || error.message?.includes('Invalid credentials')) {
+        // Show forgot password link when incorrect password is entered
+        setShowForgotPassword(true);
+        Alert.alert(
+          t('common.error'),
+          'Invalid email or password. Would you like to reset your password?',
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: 'Reset Password',
+              onPress: async () => {
+                    try {
+                      // Use web URL that will exchange code and redirect to app
+                      // CRITICAL: Must be a web URL (not deep link) - Supabase requires web URLs in email links
+                      // The web page will exchange code for tokens, then redirect to app deep link
+                      const resetUrl = 'https://divin8.com/reset-password.html';
+                      
+                      console.log('📧 Requesting password reset for:', email);
+                      console.log('📧 Redirect URL:', resetUrl);
+                      console.log('⚠️ IMPORTANT: This URL must be in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs');
+                      
+                      const { data, error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: resetUrl,
+                      });
+                      
+                      if (resetError) {
+                        console.error('❌ Password reset error:', resetError);
+                        console.error('❌ Error code:', resetError.code);
+                        console.error('❌ Error message:', resetError.message);
+                        throw resetError;
+                      }
+                      
+                      console.log('✅ Password reset request accepted by Supabase');
+                      console.log('⚠️ NOTE: Supabase returns success even if email sending fails');
+                      console.log('⚠️ Check Supabase Dashboard → Authentication → Logs for email sending status');
+                      console.log('⚠️ Look for "email_sent" or "email_failed" events after "user_recovery_requested"');
+                      
+                      // Check if we got any data back (Supabase might return email sending status)
+                      if (data) {
+                        console.log('📧 Response data:', JSON.stringify(data, null, 2));
+                      }
+                      
+                      Alert.alert(
+                        'Password Reset Requested',
+                        `Password reset instructions have been sent to ${email}. Please check your email to reset your password.`,
+                        [{ text: t('common.ok') }]
+                      );
+                    } catch (resetErr: any) {
+                      console.error('❌ Exception requesting password reset:', resetErr);
+                      Alert.alert(
+                        t('common.error'), 
+                        `Failed to request password reset:\n\n${resetErr?.message || 'Unknown error'}\n\nCheck Supabase Dashboard → Authentication → Logs for details.`,
+                        [{ text: t('common.ok') }]
+                      );
+                    }
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(t('common.error'), error.message || 'An error occurred');
+      }
+      
+      // Reset form state on error to allow retry
+      setEmail('');
+      setPassword('');
+      setShowForgotPassword(false);
     } finally {
       setLoading(false);
     }
@@ -162,7 +250,7 @@ export default function LoginScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Image
-              source={require('../../../../assets/adaptive-icon.png')}
+              source={require('../../../../assets/images/logo/divin8-card-curtains-horizontal.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -192,10 +280,62 @@ export default function LoginScreen() {
                 placeholder={t('auth.password')}
                 placeholderTextColor={theme.colors.text.tertiary}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  // Hide forgot password link when user starts typing again
+                  if (showForgotPassword) {
+                    setShowForgotPassword(false);
+                  }
+                }}
                 secureTextEntry
                 editable={!loading}
               />
+
+              {!isSignUp && showForgotPassword && (
+                <ThemedButton
+                  title="Forgot Password?"
+                  onPress={async () => {
+                    if (!email) {
+                      Alert.alert(t('common.error'), 'Please enter your email address first');
+                      return;
+                    }
+                    try {
+                      // Use web URL that will redirect to app
+                      // IMPORTANT: This URL MUST be added to Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
+                      // If emails aren't sending, check that this URL is in the allowed list!
+                      const resetUrl = 'https://divin8.com/reset-password.html';
+                      
+                      console.log('📧 Requesting password reset for:', email);
+                      console.log('📧 Using redirect URL:', resetUrl);
+                      console.log('⚠️ CRITICAL: Make sure this URL is in Supabase allowed redirect URLs!');
+                      console.log('⚠️ Go to: Supabase Dashboard → Authentication → URL Configuration → Redirect URLs');
+                      
+                      const { data, error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: resetUrl,
+                      });
+                      
+                      if (resetError) {
+                        console.error('❌ Password reset error:', resetError);
+                        console.error('❌ Error code:', resetError.code);
+                        console.error('❌ Error message:', resetError.message);
+                        throw resetError;
+                      }
+                      
+                      console.log('✅ Password reset request accepted by Supabase');
+                      Alert.alert(
+                        'Password Reset Requested',
+                        `Password reset instructions have been sent to ${email}. Please check your email to reset your password.`,
+                        [{ text: t('common.ok') }]
+                      );
+                    } catch (resetErr: any) {
+                      Alert.alert(t('common.error'), resetErr?.message || 'Failed to send password reset email');
+                    }
+                  }}
+                  variant="ghost"
+                  disabled={loading}
+                  style={styles.forgotPasswordButton}
+                />
+              )}
 
               <ThemedButton
                 title={loading ? '...' : isSignUp ? t('auth.signUp') : t('auth.signIn')}
@@ -250,35 +390,6 @@ export default function LoginScreen() {
             />
           )}
 
-          {/* Test Button - Remove after deep linking works */}
-          {__DEV__ && (
-            <ThemedButton
-              title="🧪 Test Deep Link"
-              onPress={() => {
-                Alert.alert(
-                  'Test Deep Link',
-                  'This will test if deep linking works',
-                  [
-                    {
-                      text: 'Cancel',
-                      style: 'cancel',
-                    },
-                    {
-                      text: 'Test',
-                      onPress: async () => {
-                        // Simulate receiving a token via deep link
-                        console.log('🧪 Testing deep link handling...');
-                        console.log('In production, this would come from OAuth callback');
-                      },
-                    },
-                  ]
-                );
-              }}
-              variant="ghost"
-              style={styles.testButton}
-              textStyle={styles.testButtonText}
-            />
-          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </MysticalBackground>
@@ -329,6 +440,10 @@ const styles = StyleSheet.create({
   switchButton: {
     marginTop: theme.spacing.spacing.xs,
   },
+  forgotPasswordButton: {
+    marginTop: theme.spacing.spacing.xs,
+    marginBottom: theme.spacing.spacing.xs,
+  },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -354,12 +469,5 @@ const styles = StyleSheet.create({
   },
   appleButtonText: {
     color: theme.colors.primary.gold,
-  },
-  testButton: {
-    marginTop: theme.spacing.spacing.sm,
-  },
-  testButtonText: {
-    color: theme.colors.semantic.warning,
-    fontSize: theme.typography.fontSize.sm,
   },
 });

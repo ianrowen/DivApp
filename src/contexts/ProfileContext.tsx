@@ -89,13 +89,92 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         // PGRST116 = no rows returned - this is OK, user just doesn't have a profile yet
-        if (error.code !== 'PGRST116' && error.code !== 'TIMEOUT') {
+        if (error.code === 'PGRST116') {
+          // User doesn't have a profile - use upsert to create one with beta tester status
+          console.log('📝 Creating new profile with beta tester status for user:', userId);
+          try {
+            // Use upsert to handle race conditions (if profile gets created between check and insert)
+            const { data: newProfile, error: createError } = await supabase
+              .from('user_profiles')
+              .upsert({
+                user_id: userId,
+                subscription_tier: 'free',
+                is_beta_tester: true, // All users get beta tester status
+              }, {
+                onConflict: 'user_id',
+                ignoreDuplicates: false
+              })
+              .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
+              .single();
+            
+            if (createError) {
+              console.error('❌ Error creating profile:', createError);
+              console.error('❌ Create error code:', createError.code);
+              console.error('❌ Create error message:', createError.message);
+              console.error('❌ Create error details:', createError.details);
+              console.error('❌ Create error hint:', createError.hint);
+              // Try to fetch the profile again in case it was created by another process
+              const { data: fetchedProfile } = await supabase
+                .from('user_profiles')
+                .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
+                .eq('user_id', userId)
+                .single();
+              if (fetchedProfile) {
+                console.log('✅ Profile found after failed create, using it');
+                setProfile(fetchedProfile);
+                await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fetchedProfile));
+              }
+            } else if (newProfile) {
+              setProfile(newProfile);
+              await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile));
+              console.log('✅ Created and cached new profile with beta tester status');
+            }
+          } catch (createErr) {
+            console.error('❌ Exception creating profile:', createErr);
+          }
+        } else if (error.code !== 'TIMEOUT') {
           console.error('Error loading profile:', error);
         }
         return;
       }
 
       if (data) {
+        // Ensure beta tester status is set (migration might not have caught all users)
+        // Also handle case where is_beta_tester is null (should be treated as false)
+        if (!data.is_beta_tester || data.is_beta_tester === null) {
+          console.log('📝 Updating profile to set beta tester status for user:', userId, 'current value:', data.is_beta_tester);
+          try {
+            // Use upsert to ensure the update happens even if there's a race condition
+            const { data: updatedProfile, error: updateError } = await supabase
+              .from('user_profiles')
+              .upsert({
+                user_id: userId,
+                is_beta_tester: true,
+                subscription_tier: data.subscription_tier || 'free', // Preserve existing tier
+              }, {
+                onConflict: 'user_id',
+                ignoreDuplicates: false
+              })
+              .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
+              .single();
+            
+            if (updateError) {
+              console.error('❌ Error updating beta tester status:', updateError);
+              console.error('❌ Update error code:', updateError.code);
+              console.error('❌ Update error message:', updateError.message);
+              console.error('❌ Update error details:', updateError.details);
+              console.error('❌ Update error hint:', updateError.hint);
+              // Continue with existing data even if update fails
+            } else if (updatedProfile) {
+              data = updatedProfile;
+              console.log('✅ Updated profile to beta tester status');
+            }
+          } catch (updateErr) {
+            console.error('❌ Exception updating beta tester status:', updateErr);
+            // Continue with existing data even if update fails
+          }
+        }
+        
         setProfile(data);
         // Cache the profile
         await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));

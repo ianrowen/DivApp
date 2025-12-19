@@ -38,12 +38,13 @@ import type { DrawnCard, ChatMessage, InterpretationStyle } from '../src/types/r
 import type { LocalTarotCard } from '../src/systems/tarot/data/localCardData';
 
 export default function ReadingScreen() {
-  const { type, question, spreadKey, cardCode, reversed } = useLocalSearchParams<{
+  const { type, question, spreadKey, cardCode, reversed, readingId: readingIdParam } = useLocalSearchParams<{
     type: 'daily' | 'spread';
     question?: string;
     spreadKey?: string;
     cardCode?: string;
     reversed?: string;
+    readingId?: string;
   }>();
 
   console.log('📥 Reading screen params:', { type, cardCode, reversed, spreadKey, question });
@@ -62,7 +63,11 @@ export default function ReadingScreen() {
   // User & Profile - derived from context (cached at sign-in)
   const userTier = (profile?.subscription_tier || 'free') as 'free' | 'adept' | 'apex';
   const userProfile = profile;
-  const isBetaTester = profile?.is_beta_tester || false;
+  // Default to true for beta tester (all users are beta testers)
+  // Only set to false if profile is explicitly loaded AND is_beta_tester is explicitly false
+  const isBetaTester = profile === null || profile === undefined 
+    ? true  // Default to true if profile not loaded (all users are beta testers)
+    : (profile.is_beta_tester !== false); // Only false if explicitly set to false
   
   // Interpretations
   const [selectedStyle, setSelectedStyle] = useState<'traditional' | 'esoteric' | 'jungian'>('traditional');
@@ -84,6 +89,8 @@ export default function ReadingScreen() {
   const [readingId, setReadingId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [autoSaved, setAutoSaved] = useState(false);
+  // Use ref to track readingId immediately (avoids state timing issues)
+  const readingIdRef = useRef<string | null>(null);
 
   // Modal
   const [selectedCard, setSelectedCard] = useState<any>(null);
@@ -154,6 +161,7 @@ export default function ReadingScreen() {
         const drawnCards = [{
           cardCode: foundCard.code,  // Use code, not filename
           reversed: reversed === 'true',
+          position: 'Daily Guidance', // Add position for daily cards
         }];
         
         console.log('📍 Setting cards state:', drawnCards);
@@ -162,13 +170,96 @@ export default function ReadingScreen() {
         // Show cards immediately - don't wait for interpretation
         setLoading(false);
         
+        // Check if daily card was already saved (from DailyCardDraw component)
+        let savedReadingId: string | null = null;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            // Check for existing daily card reading from today
+            const { data: existingReading, error: fetchError } = await supabase
+              .from('readings')
+              .select('id, created_at')
+              .eq('user_id', user.id)
+              .eq('reading_type', 'daily_card')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            if (fetchError) {
+              console.warn('⚠️ Error checking for existing daily card:', fetchError);
+            } else if (existingReading?.id) {
+              // Check if it's from today
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const readingDate = new Date(existingReading.created_at);
+              readingDate.setHours(0, 0, 0, 0);
+              
+              if (readingDate.getTime() === today.getTime()) {
+                savedReadingId = existingReading.id;
+                console.log('✅ Found existing daily card reading from today:', savedReadingId);
+                setReadingId(savedReadingId);
+                readingIdRef.current = savedReadingId;
+              } else {
+                console.log('ℹ️ Existing daily card is from a different day, will save new one');
+              }
+            } else {
+              console.log('ℹ️ No existing daily card found, will save new one');
+            }
+          }
+        } catch (err: any) {
+          console.warn('⚠️ Exception checking for existing daily card:', err);
+        }
+        
+        // Only auto-save if no existing reading was found
+        if (!savedReadingId) {
+          // Auto-save daily card immediately (before interpretation)
+          // Await the save to ensure readingId is set before interpretation starts
+          console.log('💾 Attempting to auto-save daily card immediately...');
+          console.log('💾 Cards to save:', JSON.stringify(drawnCards, null, 2));
+          console.log('💾 Type:', type, 'Reading type will be:', type === 'daily' ? 'daily_card' : 'spread');
+          try {
+            savedReadingId = await autoSaveReading(drawnCards);
+            console.log('💾 autoSaveReading returned:', savedReadingId);
+            if (savedReadingId) {
+              console.log('✅ Daily card auto-save completed, readingId:', savedReadingId);
+              // Set readingId in both state and ref immediately
+              setReadingId(savedReadingId);
+              readingIdRef.current = savedReadingId;
+              console.log('✅ State and ref updated with readingId:', savedReadingId);
+              console.log('✅ Reading should now appear in history');
+            } else {
+              console.error('❌ Daily card auto-save returned null/undefined - save FAILED');
+              console.error('❌ Check console logs above for error details');
+              console.warn('⚠️ Will retry when interpretation loads');
+            }
+          } catch (err: any) {
+            console.error('❌ Exception auto-saving daily card:', err);
+            console.error('❌ Error type:', typeof err);
+            console.error('❌ Error message:', err?.message);
+            console.error('❌ Error stack:', err?.stack);
+            // Continue even if save fails - interpretation will try to save
+          }
+        } else {
+          console.log('✅ Using existing daily card reading, skipping duplicate save');
+        }
+        
         // Generate interpretation in background (non-blocking)
-        generateInterpretation(drawnCards, 'traditional').catch(err => {
-          console.error('Error generating interpretation:', err);
-        });
+        // Pass readingId directly to avoid state timing issues
+        // Only generate if we have a saved readingId, otherwise wait for save to complete
+        if (savedReadingId) {
+          generateInterpretation(drawnCards, 'traditional', undefined, savedReadingId).catch(err => {
+            console.error('Error generating interpretation:', err);
+          });
+        } else {
+          console.warn('⚠️ Skipping interpretation generation - daily card save failed');
+          console.warn('⚠️ User can manually generate interpretation later');
+        }
         
         return;
       } else if (type === 'spread' && spreadKey) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:258',message:'Loading spread reading',data:{spreadKey:spreadKey,readingIdParam:readingIdParam},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+        // #endregion
         // Spread reading - load spread and draw cards
         const spreadData = await getSpreadByKey(spreadKey);
         if (!spreadData) {
@@ -177,6 +268,70 @@ export default function ReadingScreen() {
           return;
         }
         setSpread(spreadData);
+        
+        // If readingId is provided as param (from history), load existing reading
+        if (readingIdParam) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:268',message:'Loading existing reading by ID',data:{readingId:readingIdParam},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+          // #endregion
+          try {
+            const { data: existingReading, error: loadError } = await supabase
+              .from('readings')
+              .select('*')
+              .eq('id', readingIdParam)
+              .single();
+            
+            if (loadError || !existingReading) {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:275',message:'Failed to load existing reading',data:{error:loadError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+              // #endregion
+              console.warn('⚠️ Failed to load existing reading:', loadError);
+            } else {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:279',message:'Loaded existing reading',data:{readingId:existingReading.id,hasInterpretations:!!existingReading.interpretations},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+              // #endregion
+              // Set readingId
+              setReadingId(existingReading.id);
+              readingIdRef.current = existingReading.id;
+              
+              // Load interpretations if they exist
+              if (existingReading.interpretations) {
+                const interps = existingReading.interpretations as any;
+                const loadedInterpretations: typeof interpretations = {};
+                if (interps.traditional?.content) loadedInterpretations.traditional = interps.traditional.content;
+                if (interps.esoteric?.content) loadedInterpretations.esoteric = interps.esoteric.content;
+                if (interps.jungian?.content) loadedInterpretations.jungian = interps.jungian.content;
+                setInterpretations(loadedInterpretations);
+                
+                // Load chat history
+                if (interps._metadata?.conversation) {
+                  setChatHistory(interps._metadata.conversation);
+                  setFollowUpCount(interps._metadata.follow_up_count || 0);
+                }
+                
+                // Load reflection
+                if (interps._metadata?.reflection) {
+                  setReflection(interps._metadata.reflection);
+                }
+              }
+              
+              // Load cards from elements_drawn
+              if (existingReading.elements_drawn && Array.isArray(existingReading.elements_drawn)) {
+                const loadedCards: DrawnCard[] = existingReading.elements_drawn.map((el: any) => ({
+                  cardCode: el.elementId || el.metadata?.cardCode || '',
+                  reversed: el.metadata?.reversed || false,
+                  position: el.position || el.metadata?.positionLabel || '',
+                }));
+                setCards(loadedCards);
+              }
+            }
+          } catch (err: any) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:305',message:'Exception loading existing reading',data:{error:err?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+            // #endregion
+            console.error('❌ Exception loading existing reading:', err);
+          }
+        }
         
         // Check animation preference
         const animationsEnabled = await AsyncStorage.getItem('@divin8_animations_enabled');
@@ -223,7 +378,7 @@ export default function ReadingScreen() {
     setLoading(false);
 
     // Generate interpretation in background (non-blocking)
-    generateInterpretation(drawnCards, 'traditional', spread).catch(err => {
+    generateInterpretation(drawnCards, 'traditional', spread, undefined).catch(err => {
       console.error('Error generating interpretation:', err);
     });
   };
@@ -261,7 +416,7 @@ export default function ReadingScreen() {
     setLoading(false);
 
     // Generate interpretation in background (non-blocking)
-    generateInterpretation(drawnCards, 'traditional', spreadData).catch(err => {
+    generateInterpretation(drawnCards, 'traditional', spreadData, undefined).catch(err => {
       console.error('Error generating interpretation:', err);
     });
   };
@@ -380,7 +535,8 @@ export default function ReadingScreen() {
   const generateInterpretation = async (
     cardsToInterpret: DrawnCard[],
     style: 'traditional' | 'esoteric' | 'jungian',
-    spreadData?: TarotSpread
+    spreadData?: TarotSpread,
+    existingReadingId?: string | null
   ) => {
     setGenerating(true);
     try {
@@ -452,18 +608,22 @@ export default function ReadingScreen() {
             : ' When astrological context is provided, naturally incorporate Sun, Moon, and Rising sign influences (where applicable).')
         : '';
       
+      const formatInstruction = locale === 'zh-TW'
+        ? ' 使用純文字格式，不要使用任何標記格式（如 **粗體** 或 *斜體*）。'
+        : ' Use plain text format only. Do NOT use markdown formatting (like **bold** or *italic*).';
+      
       if (style === 'traditional') {
         systemPrompt = locale === 'zh-TW' 
-          ? `專業塔羅解讀。130-156字。${astroInstruction}`
-          : `Expert tarot reader. 130-156 words.${astroInstruction}`;
+          ? `專業塔羅解讀。130-156字。${formatInstruction}${astroInstruction}`
+          : `Expert tarot reader. 130-156 words.${formatInstruction}${astroInstruction}`;
       } else if (style === 'esoteric') {
         systemPrompt = locale === 'zh-TW'
-          ? `神秘學專家。195-234字。${astroInstruction}`
-          : `Esoteric expert. 195-234 words.${astroInstruction}`;
+          ? `神秘學專家。195-234字。${formatInstruction}${astroInstruction}`
+          : `Esoteric expert. 195-234 words.${formatInstruction}${astroInstruction}`;
       } else {
         systemPrompt = locale === 'zh-TW'
-          ? `榮格心理學家。234-260字。${astroInstruction}`
-          : `Jungian analyst. 234-260 words.${astroInstruction}`;
+          ? `榮格心理學家。234-260字。${formatInstruction}${astroInstruction}`
+          : `Jungian analyst. 234-260 words.${formatInstruction}${astroInstruction}`;
       }
 
       // Load reading history with conversations and reflections for ALL readings
@@ -508,6 +668,10 @@ export default function ReadingScreen() {
         ? '重要：過去解讀、對話和反思的內容比占星背景更優先。優先考慮用戶的歷史問題、洞察和反思，然後才融入占星元素。'
         : 'PRIORITY: Past readings, conversations, and reflections are MORE IMPORTANT than astrology. Prioritize the user\'s historical questions, insights, and reflections, then weave in astrological elements as secondary context.';
       
+      const formattingInstruction = locale === 'zh-TW'
+        ? '重要：請使用純文字格式，不要使用任何標記格式（如 **粗體** 或 *斜體*）。直接寫出卡牌名稱即可。'
+        : 'IMPORTANT: Use plain text format only. Do NOT use any markdown formatting (like **bold** or *italic*). Write card names directly without any formatting.';
+      
       // Define word limits by style (30% longer than before)
       const wordLimits = style === 'traditional' 
         ? (locale === 'zh-TW' ? '130-156' : '130-156')
@@ -524,10 +688,12 @@ ${cardsDetailed}
 
 ${reversedInstruction}
 
-${readingsContext ? `**HIGH PRIORITY - Past Reading Context (includes questions, conversations, and reflections):**
+${readingsContext ? `HIGH PRIORITY - Past Reading Context (includes questions, conversations, and reflections):
 ${readingsContext}
 
 ` : ''}${contextPriorityInstruction}
+
+${formattingInstruction}
 
 ${birthContextDetailed ? `Astrological Context (secondary - use as supporting detail): ${birthContextDetailed}\n` : ''}${astroGuidance}
 Write ${wordLimits} words. Consider patterns from past readings as primary guidance.`;
@@ -538,10 +704,12 @@ ${cardsDetailed}
 
 ${reversedInstruction}
 
-${readingsContext ? `**HIGH PRIORITY - Past Reading Context (includes questions, conversations, and reflections):**
+${readingsContext ? `HIGH PRIORITY - Past Reading Context (includes questions, conversations, and reflections):
 ${readingsContext}
 
 ` : ''}${contextPriorityInstruction}
+
+${formattingInstruction}
 
 ${birthContextDetailed ? `Astrological Context (secondary - use as supporting detail): ${birthContextDetailed}\n` : ''}${astroGuidance}
 Write ${wordLimits} words. When referencing past readings, use the day of the week or themes mentioned.`;
@@ -594,21 +762,99 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           [style]: finalText,
         };
         
-        // Update saved reading with new interpretation style if already saved
-        if (readingId) {
-          updateReadingInterpretations(updated);
-        }
+        // Don't update here - we'll update after ensuring readingId is set
+        // This prevents race conditions
         
         return updated;
       });
 
       // Auto-save reading after first interpretation is generated - pass cards directly
-      if (!autoSaved && !readingId) {
-        await autoSaveReading(cardsToInterpret);
+      // Use existingReadingId parameter (from immediate save) or check state/ref
+      const currentReadingId = existingReadingId || readingIdRef.current || readingId;
+      
+      if (type === 'daily') {
+        // Daily cards are saved immediately when drawn
+        if (currentReadingId) {
+          console.log('✅ Daily card already saved (readingId:', currentReadingId, '), updating interpretations only');
+          // Update readingId in state and ref if not already set
+          if (!readingId) {
+            setReadingId(currentReadingId);
+            readingIdRef.current = currentReadingId;
+          }
+        } else {
+          // Fallback: if immediate save failed, save now
+          console.log('⚠️ Daily card not saved yet, saving now...');
+          const savedId = await autoSaveReading(cardsToInterpret);
+          if (savedId) {
+            setReadingId(savedId);
+            readingIdRef.current = savedId;
+          }
+        }
+      } else {
+        // Spread readings: save here if not already saved
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:794',message:'Spread reading save check',data:{autoSaved:autoSaved,currentReadingId:currentReadingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+        // #endregion
+        if (!autoSaved && !currentReadingId) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:797',message:'Calling autoSaveReading for spread',data:{cardsCount:cardsToInterpret.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+          // #endregion
+          const savedId = await autoSaveReading(cardsToInterpret);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:800',message:'autoSaveReading for spread returned',data:{savedId:savedId,isNull:savedId===null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+          // #endregion
+          if (savedId) {
+            setReadingId(savedId);
+            readingIdRef.current = savedId;
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:804',message:'Spread readingId set',data:{readingId:savedId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+            // #endregion
+          }
+        } else {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:808',message:'Skipping spread save - already saved',data:{autoSaved:autoSaved,currentReadingId:currentReadingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+          // #endregion
+        }
+      }
+      
+      // Update interpretations in the saved reading
+      const finalReadingId = existingReadingId || readingIdRef.current || readingId;
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:815',message:'Final readingId for update',data:{finalReadingId:finalReadingId,existingReadingId:existingReadingId,readingIdRef:readingIdRef.current,readingId:readingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+      // #endregion
+      if (finalReadingId) {
+        // Ensure readingId is set in state and ref
+        if (!readingId) {
+          setReadingId(finalReadingId);
+        }
+        if (!readingIdRef.current) {
+          readingIdRef.current = finalReadingId;
+        } else if (readingIdRef.current !== finalReadingId) {
+          // Update ref if it's different
+          readingIdRef.current = finalReadingId;
+        }
+        
+        // Update the reading with the new interpretation
+        // Use current interpretations state and add/update the new style
+        const updatedInterpretations = {
+          ...interpretations, // Get current state
+          [style]: finalText, // Add/update the new interpretation
+        };
+        console.log('💾 Updating reading interpretations with readingId:', finalReadingId, 'style:', style);
+        await updateReadingInterpretationsWithId(finalReadingId, updatedInterpretations);
+      } else {
+        console.warn('⚠️ No readingId available to update interpretations');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating interpretation:', error);
+      // Log the error details for debugging
+      if (error?.message) {
+        console.error('Error message:', error.message);
+      }
+      if (error?.stack) {
+        console.error('Error stack:', error.stack);
+      }
       Alert.alert(t('common.error'), 'Failed to generate interpretation');
     } finally {
       setGenerating(false);
@@ -759,19 +1005,69 @@ Answer the question. If the user asks about previous readings mentioned in the i
     }
   };
 
-  // Update reading with new interpretation styles
+  // Update reading with new interpretation styles (uses readingId from state)
   const updateReadingInterpretations = async (updatedInterpretations: typeof interpretations) => {
-    if (!readingId) return;
+    const idToUse = readingIdRef.current || readingId;
+    if (!idToUse) {
+      console.warn('⚠️ No readingId available for updateReadingInterpretations');
+      return;
+    }
+    return updateReadingInterpretationsWithId(idToUse, updatedInterpretations);
+  };
+
+  // Update reading with new interpretation styles (takes readingId as parameter)
+  const updateReadingInterpretationsWithId = async (id: string, updatedInterpretations: typeof interpretations) => {
+    if (!id) {
+      console.warn('⚠️ No readingId provided to updateReadingInterpretationsWithId');
+      return;
+    }
 
     try {
+      console.log('💾 Updating reading interpretations for readingId:', id);
+      
       // Get current reading
-      const { data: currentReading } = await supabase
+      const { data: currentReading, error: fetchError } = await supabase
         .from('readings')
         .select('interpretations')
-        .eq('id', readingId)
+        .eq('id', id)
         .single();
 
-      if (!currentReading?.interpretations) return;
+      if (fetchError) {
+        console.error('❌ Error fetching reading:', fetchError);
+        return;
+      }
+
+      if (!currentReading?.interpretations) {
+        console.warn('⚠️ No interpretations found in reading, creating new structure');
+        // Create new structure if it doesn't exist
+        const newInterpretations: Record<string, any> = {};
+        Object.keys(updatedInterpretations).forEach(key => {
+          if (updatedInterpretations[key as keyof typeof updatedInterpretations]) {
+            newInterpretations[key] = {
+              content: updatedInterpretations[key as keyof typeof updatedInterpretations] || '',
+            };
+          }
+        });
+        newInterpretations._metadata = {
+          reading_type: type === 'daily' ? 'daily_card' : 'spread',
+          interpretation_styles: Object.keys(updatedInterpretations),
+          follow_up_count: followUpCount,
+          conversation: chatHistory,
+          reflection: reflection || null,
+        };
+
+        const { error: updateError } = await supabase
+          .from('readings')
+          .update({ interpretations: newInterpretations })
+          .eq('id', id);
+        
+        if (updateError) {
+          console.error('❌ Error updating reading:', updateError);
+        } else {
+          console.log('✅ Created new interpretations structure');
+        }
+        return;
+      }
 
       const currentInterpretations = currentReading.interpretations as Record<string, any>;
       
@@ -785,20 +1081,25 @@ Answer the question. If the user asks about previous readings mentioned in the i
       });
 
       // Update metadata
-      if (currentInterpretations._metadata) {
-        currentInterpretations._metadata.interpretation_styles = Object.keys(updatedInterpretations).filter(k => k !== '_metadata');
-        currentInterpretations._metadata.conversation = chatHistory;
-        currentInterpretations._metadata.follow_up_count = chatHistory.filter(m => m.role === 'user').length;
-        currentInterpretations._metadata.reflection = reflection || null;
+      if (!currentInterpretations._metadata) {
+        currentInterpretations._metadata = {};
       }
+      currentInterpretations._metadata.interpretation_styles = Object.keys(updatedInterpretations).filter(k => k !== '_metadata');
+      currentInterpretations._metadata.conversation = chatHistory;
+      currentInterpretations._metadata.follow_up_count = chatHistory.filter(m => m.role === 'user').length;
+      currentInterpretations._metadata.reflection = reflection || null;
 
       // Update the reading
-      await supabase
+      const { error: updateError } = await supabase
         .from('readings')
         .update({ interpretations: currentInterpretations })
-        .eq('id', readingId);
-        
-      console.log('✅ Updated reading with new interpretation styles');
+        .eq('id', id);
+      
+      if (updateError) {
+        console.error('❌ Error updating reading:', updateError);
+      } else {
+        console.log('✅ Updated reading with new interpretation styles');
+      }
     } catch (error) {
       console.error('❌ Error updating interpretations:', error);
     }
@@ -882,19 +1183,76 @@ Answer the question. If the user asks about previous readings mentioned in the i
   };
 
   // Auto-save reading when interpretation is generated (without reflection)
-  const autoSaveReading = async (cardsToSave?: DrawnCard[]) => {
-    if (autoSaved || readingId) return; // Don't auto-save if already saved or if updating
+  // Also called immediately for daily cards when they're drawn
+  // Returns readingId if successful, null otherwise
+  const autoSaveReading = async (cardsToSave?: DrawnCard[]): Promise<string | null> => {
+    // Check both state and ref to avoid race conditions
+    const currentReadingId = readingIdRef.current || readingId;
+    const readingType = type; // Capture type at function start
+    console.log('💾 autoSaveReading called:', { 
+      type: readingType, 
+      autoSaved, 
+      readingId, 
+      readingIdRef: readingIdRef.current, 
+      currentReadingId, 
+      cardsToSave: cardsToSave?.length 
+    });
+    
+    if (!readingType) {
+      console.error('❌ No reading type available! Cannot save.');
+      return null;
+    }
+    
+    // For daily cards, only check readingId (don't check autoSaved - we want to save immediately)
+    // For spread readings, check both autoSaved and readingId
+    if (readingType === 'spread' && (autoSaved || currentReadingId)) {
+      console.log('⏭️ Skipping auto-save for spread (already saved)');
+      return null;
+    }
+    // For daily cards, check if we already have a valid readingId
+    // If we do, verify it exists in the database before skipping
+    if (readingType === 'daily' && currentReadingId) {
+      console.log('💾 Daily card has readingId, verifying it exists:', currentReadingId);
+      try {
+        const { data: existingReading, error: verifyError } = await supabase
+          .from('readings')
+          .select('id')
+          .eq('id', currentReadingId)
+          .maybeSingle();
+        
+        if (existingReading && !verifyError) {
+          console.log('✅ Reading already exists, skipping save:', currentReadingId);
+          return currentReadingId;
+        } else {
+          console.log('⚠️ ReadingId not found in DB, will save new reading');
+          // Continue to save below
+        }
+      } catch (verifyErr) {
+        console.log('⚠️ Error verifying reading, will save new reading:', verifyErr);
+        // Continue to save below
+      }
+    }
+    
+    console.log('✅ Proceeding with auto-save...');
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('❌ Error getting user:', userError);
+        return null;
+      }
+      if (!user) {
+        console.log('⏭️ No user found, skipping auto-save');
+        return null;
+      }
+      console.log('✅ User found:', user.id);
 
       // Use provided cards or fall back to state (for backwards compatibility)
       const cardsToUse = cardsToSave || cards;
       
       if (!cardsToUse || cardsToUse.length === 0) {
         console.error('❌ No cards to save!', { cardsToSave, cardsState: cards });
-        return;
+        return null;
       }
 
       console.log('💾 Auto-saving reading with cards:', cardsToUse.length);
@@ -920,7 +1278,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
           divinationSystemId = fallbackSystem.id;
         } else {
           console.error('❌ No divination systems found');
-          return;
+          return null;
         }
       } else {
         divinationSystemId = tarotSystem.id;
@@ -965,10 +1323,10 @@ Answer the question. If the user asks about previous readings mentioned in the i
       console.log('💾 Total elements to save:', elementsDrawn.length);
       if (elementsDrawn.length === 0) {
         console.error('❌ ERROR: No elements drawn! Cards array was empty or invalid.');
-        return;
+        return null;
       }
 
-      // Format interpretations
+      // Format interpretations - even if empty, we still save the reading
       const formattedInterpretations: Record<string, any> = {};
       Object.keys(interpretations).forEach(key => {
         if (interpretations[key as keyof typeof interpretations]) {
@@ -978,15 +1336,18 @@ Answer the question. If the user asks about previous readings mentioned in the i
         }
       });
 
+      // Always include _metadata, even if interpretations are empty
       formattedInterpretations._metadata = {
-        reading_type: type === 'daily' ? 'daily_card' : 'spread',
-        interpretation_styles: Object.keys(interpretations),
+        reading_type: readingType === 'daily' ? 'daily_card' : 'spread',
+        interpretation_styles: Object.keys(interpretations).filter(k => interpretations[k as keyof typeof interpretations]),
         follow_up_count: followUpCount,
         astro_depth: userTier === 'free' ? 'sun_sign' : userTier === 'adept' ? 'big_three' : 'full_chart',
         conversation: chatHistory,
         reflection: null, // No reflection on auto-save
         tier_at_creation: userTier,
       };
+      
+      console.log('💾 Saving reading with interpretations:', Object.keys(formattedInterpretations).length, 'keys (including _metadata)');
 
       if (spread) {
         formattedInterpretations._metadata.spread_key = spread.spread_key;
@@ -1010,22 +1371,33 @@ Answer the question. If the user asks about previous readings mentioned in the i
         return Math.abs(hash).toString(16);
       };
 
-      const questionText = question || (type === 'daily' 
+      const questionText = question || (readingType === 'daily' 
         ? (locale === 'zh-TW' ? '每日卡牌' : 'Daily guidance')
         : null);
       const questionHash = generateQuestionHash(questionText);
+      
+      console.log('💾 Question text:', questionText, 'Hash:', questionHash, 'readingType:', readingType);
 
       const readingData: Record<string, any> = {
         user_id: user.id,
         divination_system_id: divinationSystemId,
-        reading_type: type === 'daily' ? 'daily_card' : 'spread',
+        reading_type: readingType === 'daily' ? 'daily_card' : 'spread',
         question: questionText,
         question_hash: questionHash,
         elements_drawn: elementsDrawn,
         interpretations: formattedInterpretations,
         language: locale === 'zh-TW' ? 'zh-TW' : 'en',
       };
+      
+      console.log('💾 Saving reading with type:', readingType, '-> reading_type:', readingData.reading_type);
 
+      console.log('💾 Inserting reading data:', {
+        user_id: readingData.user_id,
+        reading_type: readingData.reading_type,
+        elements_drawn_count: readingData.elements_drawn?.length || 0,
+        interpretations_keys: Object.keys(readingData.interpretations || {}),
+      });
+      
       const { data, error } = await supabase
         .from('readings')
         .insert(readingData)
@@ -1034,26 +1406,128 @@ Answer the question. If the user asks about previous readings mentioned in the i
 
       if (error) {
         console.error('❌ Auto-save error:', error);
-        return; // Don't show error for auto-save
+        console.error('❌ Error details:', JSON.stringify(error, null, 2));
+        console.error('❌ Error code:', error.code);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error hint:', error.hint);
+        console.error('❌ Error details object:', error.details);
+        console.error('❌ Reading data attempted:', JSON.stringify(readingData, null, 2));
+        
+        // Check if it's a unique constraint violation (duplicate daily card)
+        if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+          console.log('⚠️ Duplicate reading detected - trying to find existing reading');
+          // Try to fetch the existing reading
+          if (readingType === 'daily') {
+            // For daily cards, search by user_id, reading_type, and question_hash
+            const { data: existingReading, error: fetchError } = await supabase
+              .from('readings')
+              .select('id, reading_type, created_at')
+              .eq('user_id', user.id)
+              .eq('reading_type', 'daily_card')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            if (fetchError) {
+              console.error('❌ Error fetching existing reading:', fetchError);
+            } else if (existingReading?.id) {
+              console.log('✅ Found existing daily card reading:', existingReading.id);
+              setReadingId(existingReading.id);
+              readingIdRef.current = existingReading.id;
+              setAutoSaved(true);
+              return existingReading.id;
+            } else {
+              console.warn('⚠️ Duplicate error but no existing reading found');
+            }
+          } else if (questionHash) {
+            // For spread readings, search by question_hash
+            const { data: existingReading } = await supabase
+              .from('readings')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('question_hash', questionHash)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            if (existingReading?.id) {
+              console.log('✅ Found existing spread reading:', existingReading.id);
+              setReadingId(existingReading.id);
+              readingIdRef.current = existingReading.id;
+              return existingReading.id;
+            }
+          }
+        }
+        
+        return null; // Return null on error
+      }
+
+      if (!data || !data.id) {
+        console.error('❌ Auto-save returned no data! Response:', data);
+        return null;
       }
 
       console.log('✅ Reading auto-saved! ID:', data.id);
+      console.log('✅ Full response data:', JSON.stringify(data, null, 2));
+      
+      // Verify the reading was actually saved by querying it back
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('readings')
+        .select('id, reading_type, created_at')
+        .eq('id', data.id)
+        .single();
+      
+      if (verifyError || !verifyData) {
+        console.error('❌ Verification failed! Reading may not have been saved:', verifyError);
+        console.error('❌ This reading will NOT appear in history!');
+        // Still return the ID - the insert succeeded, verification might just be timing
+        // But log a warning
+      } else {
+        console.log('✅ Verified reading exists in database:', {
+          id: verifyData.id,
+          reading_type: verifyData.reading_type,
+          created_at: verifyData.created_at,
+        });
+        console.log('✅ This reading SHOULD appear in history immediately');
+      }
+      
       setReadingId(data.id);
+      readingIdRef.current = data.id; // Also update ref immediately
       setAutoSaved(true);
+      console.log('✅ State updated: readingId =', data.id, 'autoSaved =', true);
+      console.log('✅ Ref updated: readingIdRef.current =', readingIdRef.current);
+      return data.id; // Return readingId so caller can use it immediately
     } catch (error) {
       console.error('❌ Error auto-saving reading:', error);
       // Silent fail for auto-save
+      return null;
     }
   };
 
   // Save reflection (update existing reading with ALL data)
   const handleSaveReading = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1421',message:'handleSaveReading entry',data:{readingId:readingId,readingIdRef:readingIdRef.current,readingIdParam:readingIdParam,type:type,hasReflection:!!reflection.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+    // #endregion
     if (!readingId) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1424',message:'No readingId, calling autoSaveReading',data:{readingIdParam:readingIdParam},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+      // #endregion
       // If no reading ID, do a full save (shouldn't happen, but fallback)
-      await autoSaveReading();
-      if (readingId) {
+      const savedId = await autoSaveReading();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1427',message:'autoSaveReading returned',data:{savedId:savedId,isNull:savedId===null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+      // #endregion
+      if (savedId) {
+        setReadingId(savedId);
+        readingIdRef.current = savedId;
         // Retry after auto-save
         await handleSaveReading();
+      } else {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1433',message:'autoSaveReading failed, cannot save',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+        // #endregion
+        Alert.alert(t('common.error'), 'Failed to save reading. Please try again.');
       }
       return;
     }
@@ -1090,6 +1564,9 @@ Answer the question. If the user asks about previous readings mentioned in the i
         formattedInterpretations._metadata.spread_card_count = spread.card_count;
       }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1468',message:'Updating reading with interpretations',data:{readingId:readingId,interpretationStyles:Object.keys(formattedInterpretations).filter(k=>k!=='_metadata')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+      // #endregion
       // Update the interpretations field (which contains ALL data)
       const { error } = await supabase
         .from('readings')
@@ -1097,10 +1574,17 @@ Answer the question. If the user asks about previous readings mentioned in the i
         .eq('id', readingId);
 
       if (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1474',message:'Error updating reading',data:{error:error.message,errorCode:error.code,readingId:readingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+        // #endregion
         console.error('❌ Error updating reading:', error);
-        Alert.alert(t('common.error'), 'Failed to save reflection');
+        Alert.alert(t('common.error'), 'Failed to save reading');
         return;
       }
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1480',message:'Reading updated successfully',data:{readingId:readingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+      // #endregion
 
       console.log('✅ Reading updated with all data (reflection, chat, interpretations)!');
       console.log('💾 Reflection saved:', reflection ? `${reflection.length} chars` : 'empty');
@@ -1140,6 +1624,12 @@ Answer the question. If the user asks about previous readings mentioned in the i
   // Format interpretation text with bold/italic for card names, days, and main points
   const formatInterpretationText = (text: string): React.ReactNode => {
     if (!text) return null;
+
+    // Strip markdown bold/italic formatting from text first
+    // This ensures consistent display regardless of AI output format
+    let cleanText = text
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove **bold**
+      .replace(/\*([^*]+)\*/g, '$1');    // Remove *italic*
 
     // Get all card names (both English and Chinese) - sorted by length (longest first)
     const allCardNames: string[] = [];
@@ -1184,10 +1674,10 @@ Answer the question. If the user asks about previous readings mentioned in the i
     // Reset regex lastIndex
     combinedRegex.lastIndex = 0;
     
-    while ((match = combinedRegex.exec(text)) !== null) {
+    while ((match = combinedRegex.exec(cleanText)) !== null) {
       // Add text before match
       if (match.index > lastIndex) {
-        parts.push({ text: text.substring(lastIndex, match.index), type: 'normal' });
+        parts.push({ text: cleanText.substring(lastIndex, match.index), type: 'normal' });
       }
       
       // Determine if it's a card or day
@@ -1205,13 +1695,13 @@ Answer the question. If the user asks about previous readings mentioned in the i
     }
 
     // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push({ text: text.substring(lastIndex), type: 'normal' });
+    if (lastIndex < cleanText.length) {
+      parts.push({ text: cleanText.substring(lastIndex), type: 'normal' });
     }
 
     // If no matches, return plain text
     if (parts.length === 1 && parts[0].type === 'normal') {
-      return <Text style={styles.interpretationText}>{text}</Text>;
+      return <Text style={styles.interpretationText}>{cleanText}</Text>;
     }
 
     // Render formatted text
@@ -1340,7 +1830,24 @@ Answer the question. If the user asks about previous readings mentioned in the i
           headerTitleAlign: 'center',
           headerLeft: () => (
             <TouchableOpacity 
-              onPress={() => router.back()}
+              onPress={() => {
+                // Always navigate back to home for daily cards
+                if (type === 'daily') {
+                  try {
+                    router.back();
+                  } catch (e: any) {
+                    console.error('Back navigation error:', e);
+                    router.push('/(tabs)/home');
+                  }
+                } else {
+                  // For spread readings, try to go back
+                  try {
+                    router.back();
+                  } catch (e) {
+                    router.push('/(tabs)/home');
+                  }
+                }
+              }}
               style={{ marginLeft: 20, padding: 10 }}
             >
               <ThemedText variant="body" style={{ 
@@ -1679,7 +2186,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
             onPress={handleSaveReading}
             variant="primary"
             style={styles.saveButton}
-            disabled={!reflection.trim()}
+            disabled={false}
           />
 
           {/* Success Modal - Auto-dismissing */}

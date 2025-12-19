@@ -101,9 +101,11 @@ export default function RootLayout() {
       const inAuthGroup = segments[0] === '(auth)';
       const inTabsGroup = segments[0] === '(tabs)';
       const isIndexRoute = segments.length === 0;
+      const isResetPasswordRoute = segments.includes('reset-password');
 
       // Only navigate on SIGNED_IN or SIGNED_OUT events, and only if not already on correct route
-      if ((event === 'SIGNED_IN' || event === 'SIGNED_OUT') && !isIndexRoute) {
+      // IMPORTANT: Don't redirect away from reset-password route - user needs to complete password reset
+      if ((event === 'SIGNED_IN' || event === 'SIGNED_OUT') && !isIndexRoute && !isResetPasswordRoute) {
         if (session && !inTabsGroup) {
           // #region agent log
           fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeHome',message:'Auth change - navigating to home',data:{hasSession:true,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
@@ -164,6 +166,18 @@ export default function RootLayout() {
         <Stack.Screen 
           name="tarot-reading" 
           options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="reset-password" 
+          options={{ 
+            headerShown: true,
+            title: 'Reset Password',
+            headerStyle: { 
+              backgroundColor: theme.colors.neutrals.black 
+            },
+            headerTintColor: theme.colors.primary.gold,
+            headerBackTitle: 'Back',
+          }} 
         />
       </Stack>
       </ProfileProvider>

@@ -101,3 +101,7 @@ if ($bluestacksDevice -match "^(\S+)\s+device") {
     Write-Host "`n❌ Could not parse BlueStacks device ID" -ForegroundColor Red
 }
 
+
+
+
+

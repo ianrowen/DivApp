@@ -111,14 +111,14 @@ export default function HistoryScreen() {
     }
   }, []);
 
-  // Reset expanded state when screen comes into focus (but don't reload - useEffect handles initial load)
+  // Reset expanded state and refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       // Collapse all records when tab is focused
       setExpandedIds(new Set());
-      // Don't reload here - let real-time subscription handle updates
-      // Initial load is handled by useEffect on mount
-    }, [])
+      // Reload readings when screen comes into focus to ensure latest data
+      loadReadings();
+    }, [loadReadings])
   );
 
   useEffect(() => {
@@ -274,14 +274,49 @@ export default function HistoryScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(locale === 'zh-TW' ? 'zh-TW' : 'en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    // Supabase returns timestamps in ISO format (e.g., "2025-12-19T09:10:00.000Z")
+    // The 'Z' indicates UTC. JavaScript's Date constructor automatically converts UTC to local timezone.
+    // However, if the string doesn't have 'Z' or timezone offset, we need to ensure it's treated as UTC.
+    let date: Date;
+    
+    // If the string doesn't end with 'Z' or have a timezone offset, append 'Z' to treat it as UTC
+    if (!dateString.includes('Z') && !dateString.match(/[+-]\d{2}:\d{2}$/)) {
+      // Assume it's UTC if no timezone info
+      date = new Date(dateString + 'Z');
+    } else {
+      date = new Date(dateString);
+    }
+    
+    // Verify the date is valid
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date string:', dateString);
+      return dateString;
+    }
+    
+    // Date object now contains the correct local time (converted from UTC)
+    // Use local time methods (getFullYear, getMonth, etc.) which automatically use device timezone
+    
+    if (locale === 'zh-TW') {
+      // Chinese format: 2025年12月19日 17:10
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${year}年${month}月${day}日 ${hours}:${minutes}`;
+    } else {
+      // English format: 19 Dec 2025, 5:10 PM (day abbreviated month year, time)
+      const day = date.getDate();
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+      const hours = date.getHours();
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      return `${day} ${month} ${year}, ${displayHours}:${minutes} ${ampm}`;
+    }
   };
 
   const getCardName = (elementId: string, metadata?: any): string => {

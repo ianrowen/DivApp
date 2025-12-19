@@ -17,3 +17,7 @@ Write-Host "`nOr if you need tunnel mode, disconnect emulator-5554 first:" -Fore
 Write-Host "  adb disconnect emulator-5554" -ForegroundColor White
 Write-Host "  npx expo start --tunnel" -ForegroundColor White
 
+
+
+
+

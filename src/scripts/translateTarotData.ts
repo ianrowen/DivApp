@@ -274,3 +274,7 @@ translateTarotData();
 
 
 
+
+
+
+

@@ -456,7 +456,7 @@ export class PromptBuilder {
         ? (locale === 'zh-TW' ? '（逆位）' : locale === 'ja' ? '（逆位置）' : ' (Reversed)')
         : '';
       
-      section += `${num}. **${cardCtx.position}:** ${cardCtx.title}${reversedLabel}\n`;
+      section += `${num}. ${cardCtx.position}: ${cardCtx.title}${reversedLabel}\n`;
       section += `   ${labels.keywordsLabel}: ${cardCtx.keywords.join(', ')}\n`;
       
       if (tier === 'traditional') {

@@ -460,7 +460,17 @@ export default function ProfileScreen({ navigation }: Props) {
 
   const getSignDisplayName = (sign: string | null): string => {
     if (!sign) return t('profile.notCalculated');
-    return `${sign} ${SIGN_EMOJIS[sign] || ''}`;
+    
+    // Translate sign name to Chinese if locale is zh-TW
+    let displaySign = sign;
+    if (locale === 'zh-TW') {
+      // Convert sign name to lowercase for lookup (e.g., "Scorpio" -> "scorpio")
+      const signKey = sign.toLowerCase();
+      const translatedSign = t(`zodiac.${signKey}`, { defaultValue: sign });
+      displaySign = translatedSign;
+    }
+    
+    return `${displaySign} ${SIGN_EMOJIS[sign] || ''}`;
   };
 
   const getAccuracyText = (): string => {
