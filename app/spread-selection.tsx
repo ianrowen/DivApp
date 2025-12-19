@@ -148,7 +148,6 @@ export default function SpreadSelectionScreen() {
       return;
     }
 
-    console.log('📍 Selected spread:', spread.spread_key);
     router.push({
       pathname: '/reading',
       params: {

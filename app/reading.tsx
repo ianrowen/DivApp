@@ -544,9 +544,6 @@ export default function ReadingScreen() {
       const currentTier = userTier || 'free';
       const currentProfile = userProfile;
       
-      console.log('🎯 Generating interpretation...');
-      console.log('🎴 Cards:', cardsToInterpret.length);
-      console.log('👤 User tier:', currentTier);
 
       // Build detailed card descriptions with explicit reversed indication
       const cardsDetailed = cardsToInterpret.map((c, idx) => {
@@ -598,7 +595,6 @@ export default function ReadingScreen() {
         }
       }
 
-      console.log('⭐ Birth context:', birthContextDetailed ? 'Yes' : 'No');
 
       // Build concise system prompt (optimized for speed)
       let systemPrompt = '';
@@ -640,7 +636,6 @@ export default function ReadingScreen() {
             historyCount,
             includeConversations
           );
-          console.log('📚 Reading history context:', readingsContext ? `${readingsContext.length} chars` : 'None');
         }
       } catch (error) {
         console.error('Error loading reading history:', error);
@@ -715,7 +710,6 @@ ${birthContextDetailed ? `Astrological Context (secondary - use as supporting de
 Write ${wordLimits} words. When referencing past readings, use the day of the week or themes mentioned.`;
       }
 
-      console.log('📝 Prompt length:', prompt.length, 'chars');
 
       const result = await AIProvider.generate({
         prompt,
@@ -726,7 +720,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
 
       // Validate and truncate if too long
       const wordCount = result.text.split(/\s+/).length;
-      console.log(`📊 Generated ${wordCount} words`);
 
       // Define word limits by style (30% longer than before)
       const maxWords = style === 'traditional' ? 156 : style === 'esoteric' ? 234 : 260;
@@ -748,13 +741,8 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           truncatedText = truncatedText.substring(0, lastSentenceEnd + 1);
         }
         finalText = truncatedText;
-        console.log(`✂️ Truncated to ${finalText.split(/\s+/).length} words`);
       }
 
-      console.log('✅ Generated interpretation');
-      console.log('📊 Tokens used:', result.tokensUsed);
-      console.log('📝 Output length:', finalText.length, 'chars');
-      console.log('💬 Word count:', finalText.split(/\s+/).length);
 
       setInterpretations(prev => {
         const updated = {
@@ -775,7 +763,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       if (type === 'daily') {
         // Daily cards are saved immediately when drawn
         if (currentReadingId) {
-          console.log('✅ Daily card already saved (readingId:', currentReadingId, '), updating interpretations only');
           // Update readingId in state and ref if not already set
           if (!readingId) {
             setReadingId(currentReadingId);
@@ -783,7 +770,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           }
         } else {
           // Fallback: if immediate save failed, save now
-          console.log('⚠️ Daily card not saved yet, saving now...');
           const savedId = await autoSaveReading(cardsToInterpret);
           if (savedId) {
             setReadingId(savedId);
@@ -840,7 +826,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           ...interpretations, // Get current state
           [style]: finalText, // Add/update the new interpretation
         };
-        console.log('💾 Updating reading interpretations with readingId:', finalReadingId, 'style:', style);
         await updateReadingInterpretationsWithId(finalReadingId, updatedInterpretations);
       } else {
         console.warn('⚠️ No readingId available to update interpretations');
@@ -1023,7 +1008,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
     }
 
     try {
-      console.log('💾 Updating reading interpretations for readingId:', id);
       
       // Get current reading
       const { data: currentReading, error: fetchError } = await supabase
@@ -1063,8 +1047,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         
         if (updateError) {
           console.error('❌ Error updating reading:', updateError);
-        } else {
-          console.log('✅ Created new interpretations structure');
         }
         return;
       }
@@ -1097,8 +1079,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
       
       if (updateError) {
         console.error('❌ Error updating reading:', updateError);
-      } else {
-        console.log('✅ Updated reading with new interpretation styles');
       }
     } catch (error) {
       console.error('❌ Error updating interpretations:', error);
@@ -1347,7 +1327,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         tier_at_creation: userTier,
       };
       
-      console.log('💾 Saving reading with interpretations:', Object.keys(formattedInterpretations).length, 'keys (including _metadata)');
 
       if (spread) {
         formattedInterpretations._metadata.spread_key = spread.spread_key;
@@ -1586,9 +1565,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
       fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1480',message:'Reading updated successfully',data:{readingId:readingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
       // #endregion
 
-      console.log('✅ Reading updated with all data (reflection, chat, interpretations)!');
-      console.log('💾 Reflection saved:', reflection ? `${reflection.length} chars` : 'empty');
-      console.log('💾 Metadata reflection:', formattedInterpretations._metadata.reflection ? `${formattedInterpretations._metadata.reflection.length} chars` : 'null');
       setSaved(true);
       
       // Show auto-dismissing success modal
