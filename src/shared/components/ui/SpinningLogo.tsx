@@ -33,9 +33,8 @@ export default function SpinningLogo({
     outputRange: ['0deg', '360deg'],
   });
 
-  // Default to the circular Divin8 logo (with 8, Bagua symbols, etc.)
-  // Try the Gemini generated circular logo first, fallback to vertical logo
-  const logoSource = source || require('../../../../assets/images/logo/Gemini_Generated_Image_u35913u35913u359.png');
+  // Default to the circular adaptive icon
+  const logoSource = source || require('../../../../assets/adaptive-icon.png');
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>

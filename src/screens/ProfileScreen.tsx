@@ -13,7 +13,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Platform,
   Switch,
   TouchableOpacity,
@@ -33,6 +32,7 @@ import MysticalBackground from '../shared/components/ui/MysticalBackground';
 import ThemedText from '../shared/components/ui/ThemedText';
 import ThemedButton from '../shared/components/ui/ThemedButton';
 import ThemedCard from '../shared/components/ui/ThemedCard';
+import SpinningLogo from '../shared/components/ui/SpinningLogo';
 import LocationSearch, { LocationSearchResult } from '../shared/components/LocationSearch';
 import { LanguageSelector } from '../shared/components/LanguageSelector';
 import { useTranslation } from '../i18n';
@@ -138,7 +138,8 @@ export default function ProfileScreen({ navigation }: Props) {
   // UI State
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start as true to show spinner on initial load
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false); // Track if initial load is done
   const [calculating, setCalculating] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -209,16 +210,22 @@ export default function ProfileScreen({ navigation }: Props) {
     try {
       setLoading(true);
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:getCurrentUser',message:'Calling getCurrentUser',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:getSession',message:'Calling getSession with retry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
       // #endregion
-      // Add timeout to prevent hanging
-      const userPromise = supabaseHelpers.getCurrentUser();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('getCurrentUser timeout')), 10000)
-      );
-      const user = await Promise.race([userPromise, timeoutPromise]) as any;
+      // Use getSession() - try once immediately, if no session wait briefly and try once more
+      const { data: { session } } = await supabase.auth.getSession();
+      let user = session?.user;
+      let retried = false;
+      
+      // If no session immediately, wait 100ms and try once more (session might still be establishing)
+      if (!user) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const { data: { session: retrySession } } = await supabase.auth.getSession();
+        user = retrySession?.user;
+        retried = true;
+      }
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:getCurrentUserResult',message:'getCurrentUser result',data:{hasUser:!!user,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:getSessionResult',message:'getSession result',data:{hasUser:!!user,userId:user?.id,retried},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
       // #endregion
       if (!user) {
         // #region agent log
@@ -226,15 +233,17 @@ export default function ProfileScreen({ navigation }: Props) {
         // #endregion
         console.warn('No user found');
         setLoading(false);
+        setInitialLoadComplete(true); // Mark as complete even if no user
         return;
       }
 
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:queryProfile',message:'Querying user profile',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
       // #endregion
+      // Optimize query: only select needed fields instead of *
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select('birth_date, birth_time, birth_location, use_birth_data_for_readings')
         .eq('user_id', user.id)
         .single();
 
@@ -244,6 +253,7 @@ export default function ProfileScreen({ navigation }: Props) {
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error('Error loading profile:', error);
         setLoading(false);
+        setInitialLoadComplete(true); // Mark as complete even on error
         return;
       }
 
@@ -267,9 +277,11 @@ export default function ProfileScreen({ navigation }: Props) {
         if (data.birth_location) {
           const savedLocation = data.birth_location as LocationSearchResult;
           setBirthLocation(savedLocation);
-          // Re-fetch location name in current locale
+          // Re-fetch location name in current locale (non-blocking - runs in background)
           if (savedLocation.lat && savedLocation.lng) {
-            updateLocationDisplayName(savedLocation.lat, savedLocation.lng);
+            updateLocationDisplayName(savedLocation.lat, savedLocation.lng).catch(() => {
+              // Silently fail - location display name is not critical
+            });
           }
         }
         if (data.use_birth_data_for_readings !== undefined) {
@@ -285,11 +297,13 @@ export default function ProfileScreen({ navigation }: Props) {
       fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:error',message:'Error loading profile',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
       // #endregion
       console.error('Error loading profile:', error);
+      setInitialLoadComplete(true); // Mark as complete even on error
     } finally {
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:finally',message:'Setting loading to false',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
       // #endregion
       setLoading(false);
+      setInitialLoadComplete(true); // Mark initial load as complete
     }
   };
 
@@ -365,7 +379,9 @@ export default function ProfileScreen({ navigation }: Props) {
 
     try {
       setLoading(true);
-      const user = await supabaseHelpers.getCurrentUser();
+      // Use getSession() instead of getCurrentUser() for faster response
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) {
         Alert.alert(t('common.error'), 'Please sign in to save your profile');
         return;
@@ -486,14 +502,12 @@ export default function ProfileScreen({ navigation }: Props) {
     );
   };
 
-  if (loading && !birthDate) {
+  // Show loading spinner during initial load
+  if (!initialLoadComplete) {
     return (
       <MysticalBackground variant="default">
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary.gold} />
-          <ThemedText variant="body" style={styles.loadingText}>
-            {t('common.loading')}
-          </ThemedText>
+          <SpinningLogo size={120} />
         </View>
       </MysticalBackground>
     );

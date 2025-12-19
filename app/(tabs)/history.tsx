@@ -50,8 +50,8 @@ export default function HistoryScreen() {
       // If session not ready, retry a few times with delays
       let user = null;
       let retries = 0;
-      const maxRetries = 5;
-      const retryDelay = 500; // 500ms between retries
+      const maxRetries = 3; // Reduced from 5 to 3
+      const retryDelay = 300; // Reduced from 500ms to 300ms
       
       while (!user && retries < maxRetries) {
         const { data: { session } } = await supabase.auth.getSession();

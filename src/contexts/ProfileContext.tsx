@@ -71,7 +71,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           .single();
         
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Profile query timeout')), 15000) // Increased to 15s
+          setTimeout(() => reject(new Error('Profile query timeout')), 5000) // Reduced to 5s - faster timeout
         );
         
         const result = await Promise.race([queryPromise, timeoutPromise]) as any;
