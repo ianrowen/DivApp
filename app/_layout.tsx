@@ -104,18 +104,27 @@ export default function RootLayout() {
 
       // Only navigate on SIGNED_IN or SIGNED_OUT events, and only if not already on correct route
       // IMPORTANT: Don't redirect away from reset-password route - user needs to complete password reset
-      if ((event === 'SIGNED_IN' || event === 'SIGNED_OUT') && !isIndexRoute && !isResetPasswordRoute) {
-        if (session && !inTabsGroup) {
+      // IMPORTANT: Don't redirect if already in tabs group (user is navigating between tabs)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeCheck',message:'Checking if should redirect',data:{event,hasSession:!!session,inTabsGroup,isIndexRoute,isResetPasswordRoute,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'R'})}).catch(()=>{});
+      // #endregion
+      
+      if ((event === 'SIGNED_IN' || event === 'SIGNED_OUT') && !isIndexRoute && !isResetPasswordRoute && !inTabsGroup) {
+        if (session) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeHome',message:'Auth change - navigating to home',data:{hasSession:true,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeHome',message:'Auth change - navigating to home',data:{hasSession:true,userId:session?.user?.id,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'R'})}).catch(()=>{});
           // #endregion
           router.replace('/(tabs)/home');
         } else if (!session && !inAuthGroup) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeLogin',message:'Auth change - navigating to login',data:{hasSession:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeLogin',message:'Auth change - navigating to login',data:{hasSession:false,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'R'})}).catch(()=>{});
           // #endregion
           router.replace('/(auth)/login');
         }
+      } else {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeSkipped',message:'Auth change navigation skipped',data:{event,isIndexRoute,isResetPasswordRoute,inTabsGroup,inAuthGroup,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'R'})}).catch(()=>{});
+        // #endregion
       }
     });
 

@@ -557,11 +557,15 @@ export default function ReadingScreen() {
       }).join('\n\n');
 
       // Build birth context with detail (use current profile state)
+      // Only include birth data if user has opted in via use_birth_data_for_readings
       // Beta testers get enhanced astrological context regardless of tier
       const isBeta = isBetaTester || currentProfile?.is_beta_tester;
       let birthContextDetailed = '';
       
-      if (currentProfile?.sun_sign) {
+      // Check if user has opted in to use birth data for readings
+      const useBirthData = currentProfile?.use_birth_data_for_readings !== false; // Default to true if not set
+      
+      if (useBirthData && currentProfile?.sun_sign) {
         if (currentTier === 'free' && !isBeta) {
           // Free tier: Sun sign only
           birthContextDetailed = `Querent's Sun Sign: ${currentProfile.sun_sign}`;
@@ -581,6 +585,10 @@ export default function ReadingScreen() {
           birthContextDetailed = `Querent's Sun Sign: ${currentProfile.sun_sign}`;
         }
       }
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:generateInterpretation:birthContext',message:'Birth context built',data:{useBirthData,hasSunSign:!!currentProfile?.sun_sign,hasMoonSign:!!currentProfile?.moon_sign,hasRisingSign:!!currentProfile?.rising_sign,hasContext:!!birthContextDetailed},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+      // #endregion
 
 
       // Build concise system prompt (optimized for speed)

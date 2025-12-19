@@ -66,7 +66,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       try {
         const queryPromise = supabase
           .from('user_profiles')
-          .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
+          .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
           .eq('user_id', userId)
           .single();
         
@@ -104,7 +104,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
                 onConflict: 'user_id',
                 ignoreDuplicates: false
               })
-              .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
+              .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
               .single();
             
             if (createError) {
@@ -116,7 +116,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
               // Try to fetch the profile again in case it was created by another process
               const { data: fetchedProfile } = await supabase
                 .from('user_profiles')
-                .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
+                .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
                 .eq('user_id', userId)
                 .single();
               if (fetchedProfile) {
@@ -155,7 +155,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
                 onConflict: 'user_id',
                 ignoreDuplicates: false
               })
-              .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
+              .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
               .single();
             
             if (updateError) {
