@@ -117,12 +117,13 @@ const styles = StyleSheet.create({
   },
   dailyCardContainer: {
     alignItems: 'center',
-    marginBottom: theme.spacing.spacing.md,
+    marginBottom: theme.spacing.spacing.xs,
   },
   orContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: theme.spacing.spacing.md,
+    marginTop: theme.spacing.spacing.xs,
+    marginBottom: theme.spacing.spacing.md,
     paddingHorizontal: theme.spacing.spacing.md,
   },
   orLine: {

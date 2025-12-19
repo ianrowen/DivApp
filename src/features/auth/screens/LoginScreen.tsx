@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { supabase, supabaseHelpers } from '../../../core/api/supabase';
 import theme from '../../../theme';
@@ -160,9 +161,11 @@ export default function LoginScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <ThemedText variant="h1" style={styles.logo}>
-              🔮
-            </ThemedText>
+            <Image
+              source={require('../../../../assets/adaptive-icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <ThemedText variant="h1">{t('common.appName')}</ThemedText>
             <View style={styles.subtitleSpacer} />
             <ThemedText variant="body">
@@ -297,7 +300,8 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.spacing.xl,
   },
   logo: {
-    fontSize: 64,
+    width: 120,
+    height: 120,
     marginBottom: theme.spacing.spacing.md,
   },
   subtitleSpacer: {
