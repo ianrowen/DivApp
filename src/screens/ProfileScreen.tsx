@@ -17,6 +17,7 @@ import {
   Switch,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -204,14 +205,8 @@ export default function ProfileScreen({ navigation }: Props) {
   }, [useForReadings, birthDate, birthTime, birthLocation]);
 
   const loadProfileData = async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:loadProfileData',message:'loadProfileData entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-    // #endregion
     try {
       setLoading(true);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:getSession',message:'Calling getSession with retry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
       // Use getSession() - try once immediately, if no session wait briefly and try once more
       const { data: { session } } = await supabase.auth.getSession();
       let user = session?.user;
@@ -224,22 +219,13 @@ export default function ProfileScreen({ navigation }: Props) {
         user = retrySession?.user;
         retried = true;
       }
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:getSessionResult',message:'getSession result',data:{hasUser:!!user,userId:user?.id,retried},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
       if (!user) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:noUser',message:'No user found',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-        // #endregion
         console.warn('No user found');
         setLoading(false);
         setInitialLoadComplete(true); // Mark as complete even if no user
         return;
       }
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:queryProfile',message:'Querying user profile',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
       // Optimize query: only select needed fields instead of *
       const { data, error } = await supabase
         .from('user_profiles')
@@ -247,9 +233,6 @@ export default function ProfileScreen({ navigation }: Props) {
         .eq('user_id', user.id)
         .single();
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:queryResult',message:'Profile query result',data:{hasData:!!data,hasError:!!error,errorCode:error?.code,error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error('Error loading profile:', error);
         setLoading(false);
@@ -289,19 +272,10 @@ export default function ProfileScreen({ navigation }: Props) {
         }
         setHasUnsavedChanges(false);
       }
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:profileLoaded',message:'Profile loaded successfully',data:{hasData:!!data},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:error',message:'Error loading profile',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
       console.error('Error loading profile:', error);
       setInitialLoadComplete(true); // Mark as complete even on error
     } finally {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:finally',message:'Setting loading to false',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
       setLoading(false);
       setInitialLoadComplete(true); // Mark initial load as complete
     }
@@ -326,10 +300,40 @@ export default function ProfileScreen({ navigation }: Props) {
   };
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
-    setShowTimePicker(Platform.OS === 'ios');
-    if (selectedTime && event.type !== 'dismissed') {
-      setBirthTime(selectedTime);
-      setHasUnsavedChanges(true);
+    try {
+      // Handle the selected time first
+      if (event && event.type === 'set' && selectedTime) {
+        setBirthTime(selectedTime);
+        setHasUnsavedChanges(true);
+      } else if (Platform.OS === 'ios' && selectedTime && event.type !== 'dismissed') {
+        // On iOS, if we have a selectedTime and it's not dismissed, use it
+        setBirthTime(selectedTime);
+        setHasUnsavedChanges(true);
+      }
+      
+      // Close the picker after handling the event
+      // Use setTimeout on Android to avoid state update conflicts with modal lifecycle
+      if (Platform.OS === 'android') {
+        setTimeout(() => {
+          setShowTimePicker(false);
+        }, 100);
+      } else {
+        // On iOS, keep picker open (it's inline)
+        // Only close if dismissed
+        if (event && event.type === 'dismissed') {
+          setShowTimePicker(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling time change:', error);
+      // Ensure picker is closed on error, with delay on Android
+      if (Platform.OS === 'android') {
+        setTimeout(() => {
+          setShowTimePicker(false);
+        }, 100);
+      } else {
+        setShowTimePicker(false);
+      }
     }
   };
 
@@ -496,20 +500,11 @@ export default function ProfileScreen({ navigation }: Props) {
           text: t('common.signOut'),
           style: 'destructive',
           onPress: async () => {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:handleSignOut',message:'Sign out button pressed',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-            // #endregion
             setSigningOut(true);
             try {
               await supabaseHelpers.signOut();
-              // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:signOutComplete',message:'Sign out completed successfully',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-              // #endregion
               // Navigation will be handled by auth state change
             } catch (error) {
-              // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:signOutError',message:'Sign out error occurred',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-              // #endregion
               console.error('Sign out error:', error);
               Alert.alert(t('common.error'), 'Failed to sign out. Please try again.');
             } finally {
@@ -710,7 +705,14 @@ export default function ProfileScreen({ navigation }: Props) {
               <View style={styles.timeOptionsContainer}>
                 <TouchableOpacity
                   style={styles.inputButton}
-                  onPress={() => setShowTimePicker(true)}
+                  onPress={() => {
+                    try {
+                      setShowTimePicker(true);
+                    } catch (error) {
+                      console.error('Error opening time picker:', error);
+                      Alert.alert(t('common.error'), 'Failed to open time picker');
+                    }
+                  }}
                 >
                   <ThemedText variant="body" style={styles.inputText}>
                     {t('profile.birthTimePlaceholder')}
@@ -726,14 +728,30 @@ export default function ProfileScreen({ navigation }: Props) {
                 </TouchableOpacity>
               </View>
             )}
-            {showTimePicker && (
-              <DateTimePicker
-                value={birthTime || new Date()}
-                mode="time"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleTimeChange}
-              />
-            )}
+            {showTimePicker && (() => {
+              // Ensure we always have a valid Date object
+              let pickerValue: Date;
+              try {
+                if (birthTime instanceof Date && !isNaN(birthTime.getTime())) {
+                  pickerValue = birthTime;
+                } else {
+                  pickerValue = new Date();
+                }
+              } catch (error) {
+                console.error('Error creating picker value:', error);
+                pickerValue = new Date();
+              }
+              
+              return (
+                <DateTimePicker
+                  value={pickerValue}
+                  mode="time"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleTimeChange}
+                  is24Hour={false}
+                />
+              );
+            })()}
           </View>
 
           {/* Tier 3: Birth Location */}
