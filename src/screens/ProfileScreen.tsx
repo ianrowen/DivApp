@@ -203,22 +203,47 @@ export default function ProfileScreen({ navigation }: Props) {
   }, [useForReadings, birthDate, birthTime, birthLocation]);
 
   const loadProfileData = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:loadProfileData',message:'loadProfileData entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+    // #endregion
     try {
       setLoading(true);
-      const user = await supabaseHelpers.getCurrentUser();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:getCurrentUser',message:'Calling getCurrentUser',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
+      // Add timeout to prevent hanging
+      const userPromise = supabaseHelpers.getCurrentUser();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('getCurrentUser timeout')), 10000)
+      );
+      const user = await Promise.race([userPromise, timeoutPromise]) as any;
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:getCurrentUserResult',message:'getCurrentUser result',data:{hasUser:!!user,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
       if (!user) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:noUser',message:'No user found',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+        // #endregion
         console.warn('No user found');
+        setLoading(false);
         return;
       }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:queryProfile',message:'Querying user profile',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:queryResult',message:'Profile query result',data:{hasData:!!data,hasError:!!error,errorCode:error?.code,error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error('Error loading profile:', error);
+        setLoading(false);
         return;
       }
 
@@ -252,9 +277,18 @@ export default function ProfileScreen({ navigation }: Props) {
         }
         setHasUnsavedChanges(false);
       }
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:profileLoaded',message:'Profile loaded successfully',data:{hasData:!!data},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:error',message:'Error loading profile',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
       console.error('Error loading profile:', error);
     } finally {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileScreen.tsx:finally',message:'Setting loading to false',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
       setLoading(false);
     }
   };

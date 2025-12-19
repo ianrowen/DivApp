@@ -3,8 +3,8 @@
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { TranslationProvider } from '../src/i18n';
 import { ProfileProvider } from '../src/contexts/ProfileContext';
 import { useFonts, Cinzel_400Regular, Cinzel_500Medium, Cinzel_600SemiBold } from '@expo-google-fonts/cinzel';
@@ -14,6 +14,7 @@ import theme from '../src/theme';
 import SpinningLogo from '../src/shared/components/ui/SpinningLogo';
 import AIProvider from '../src/core/api/aiProvider';
 import { geminiProvider } from '../src/core/api/gemini';
+import { supabase } from '../src/core/api/supabase';
 
 // Set up error handler immediately at module load time to catch early errors
 (function setupKeepAwakeErrorHandler() {
@@ -69,6 +70,9 @@ export default function RootLayout() {
     Cinzel_600SemiBold,
     Lato_400Regular,
   });
+  const router = useRouter();
+  const segments = useSegments();
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     // Register Gemini as the AI provider (must be done at root level)
@@ -80,6 +84,42 @@ export default function RootLayout() {
       console.error('❌ Error initializing AI Provider:', error);
     }
   }, []);
+
+  // Handle navigation based on auth state - this runs in the root layout which is always mounted
+  useEffect(() => {
+    if (!fontsLoaded) return;
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChange',message:'Auth state changed in root layout',data:{event,hasSession:!!session,userId:session?.user?.id,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      
+      // Only navigate if we're not already on the correct route
+      const inAuthGroup = segments[0] === '(auth)';
+      const inTabsGroup = segments[0] === '(tabs)';
+      const isIndexRoute = segments.length === 0;
+
+      // Only navigate on SIGNED_IN or SIGNED_OUT events, and only if not already on correct route
+      if ((event === 'SIGNED_IN' || event === 'SIGNED_OUT') && !isIndexRoute) {
+        if (session && !inTabsGroup) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeHome',message:'Auth change - navigating to home',data:{hasSession:true,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
+          router.replace('/(tabs)/home');
+        } else if (!session && !inAuthGroup) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeLogin',message:'Auth change - navigating to login',data:{hasSession:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
+          router.replace('/(auth)/login');
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fontsLoaded, router, segments]);
 
   if (!fontsLoaded) {
     return (

@@ -29,7 +29,13 @@ export default function LoginScreen() {
   // Reset loading state when auth state changes (user signs in or error occurs)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:31',message:'Auth state change in LoginScreen',data:{event,hasSession:!!session,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:33',message:'Resetting loading state',data:{event},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         setLoading(false);
       }
     });
@@ -102,14 +108,23 @@ export default function LoginScreen() {
   }
 
   async function handleGoogleSignIn() {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:104',message:'handleGoogleSignIn entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     setLoading(true);
     try {
       console.log('🔵 Starting Google sign in...');
-      await supabaseHelpers.signInWithGoogle();
+      const session = await supabaseHelpers.signInWithGoogle();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:108',message:'signInWithGoogle returned',data:{hasSession:!!session,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       console.log('🔵 Browser opened, waiting for OAuth callback...');
       // Don't set loading to false here - keep it true while waiting for OAuth callback
       // The loading state will be reset when auth state changes or on error
     } catch (error: any) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:112',message:'Google sign in error',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       setLoading(false);
       console.error('❌ Google sign in error:', error);
       Alert.alert(t('common.error'), error?.message || 'Failed to start Google sign in');

@@ -164,7 +164,13 @@ export const supabaseHelpers = {
 
   // Sign out
   async signOut() {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:166',message:'signOut entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     const { error } = await supabase.auth.signOut();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:168',message:'signOut completed',data:{hasError:!!error,errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     if (error) throw error;
   },
 
@@ -201,6 +207,9 @@ export const supabaseHelpers = {
 
   async signInWithGoogle(): Promise<Session | null> {
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:202',message:'signInWithGoogle entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       const redirectTo = getRedirectUri();
       console.log('[Supabase] Using redirect URI:', redirectTo);
 
@@ -377,6 +386,9 @@ export const supabaseHelpers = {
 
         console.log('[Supabase] Session exchange successful');
         console.log('[Supabase] User ID:', sessionData.session.user?.id);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:380',message:'Session exchange successful',data:{hasSession:!!sessionData?.session,userId:sessionData?.session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         return sessionData.session;
       } catch (error: any) {
         console.error('[Supabase] Exception during code exchange:', error);
@@ -413,6 +425,9 @@ export const supabaseHelpers = {
 
         console.log('[Supabase] Session set successfully with tokens');
         console.log('[Supabase] User ID:', sessionData.session.user?.id);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:416',message:'Session set with tokens',data:{hasSession:!!sessionData?.session,userId:sessionData?.session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         return sessionData.session;
       } catch (error: any) {
         console.error('[Supabase] Exception during session setup:', error);

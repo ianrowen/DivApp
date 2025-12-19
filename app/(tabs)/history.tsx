@@ -26,52 +26,117 @@ export default function HistoryScreen() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
+  const isLoadingRef = React.useRef(false);
 
   const loadReadings = React.useCallback(async () => {
+    // Prevent concurrent loads
+    if (isLoadingRef.current) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings skipped - already loading',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
+      return;
+    }
+    const startTime = Date.now();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings entry',data:{startTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
+    isLoadingRef.current = true;
+    setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSession',message:'Calling getSession',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
+      // Use getSession() which reads from local storage immediately
+      // If session not ready, retry a few times with delays
+      let user = null;
+      let retries = 0;
+      const maxRetries = 5;
+      const retryDelay = 500; // 500ms between retries
+      
+      while (!user && retries < maxRetries) {
+        const { data: { session } } = await supabase.auth.getSession();
+        user = session?.user;
+        if (!user && retries < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          retries++;
+        } else {
+          break;
+        }
+      }
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSessionResult',message:'getSession result',data:{hasUser:!!user,userId:user?.id,retries},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
       if (!user) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:noUser',message:'No user found',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+        // #endregion
+        isLoadingRef.current = false;
         setLoading(false);
         return;
       }
 
+      const queryStart = Date.now();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:queryReadings',message:'Querying readings',data:{userId:user.id,queryStart},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
+      // Optimize query: only select needed fields and limit results
       const { data, error } = await supabase
         .from('readings')
-        .select('*')
+        .select('id, question, reading_type, elements_drawn, interpretations, created_at')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100); // Limit to 100 most recent readings
 
+      const queryDuration = Date.now() - queryStart;
+      const totalDuration = Date.now() - startTime;
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:queryResult',message:'Readings query result',data:{hasData:!!data,dataLength:data?.length,hasError:!!error,error:error?.message,queryDuration,totalDuration},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
       if (error) throw error;
 
       console.log('📚 Loaded readings:', data?.length || 0);
       setReadings(data as any[]);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:setReadings',message:'Set readings',data:{readingsCount:data?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
       // Note: Don't reset expandedIds here - let useFocusEffect handle it
       // This prevents resetting when real-time updates come in
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:error',message:'Error loading readings',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
       console.error('Error loading readings:', error);
     } finally {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:finally',message:'Setting loading to false',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
+      isLoadingRef.current = false;
       setLoading(false);
     }
   }, []);
 
-  // Reset expanded state and reload readings when screen comes into focus
+  // Reset expanded state when screen comes into focus (but don't reload - useEffect handles initial load)
   useFocusEffect(
     React.useCallback(() => {
       // Collapse all records when tab is focused
       setExpandedIds(new Set());
-      // Reload readings to get any new records created while on other tabs
-      loadReadings();
-    }, [loadReadings])
+      // Don't reload here - let real-time subscription handle updates
+      // Initial load is handled by useEffect on mount
+    }, [])
   );
 
   useEffect(() => {
+    // Only load once on mount
     loadReadings();
 
     // Set up real-time subscription for new readings
     let channel: any = null;
+    let debounceTimer: NodeJS.Timeout | null = null;
     
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
 
       channel = supabase
@@ -86,19 +151,29 @@ export default function HistoryScreen() {
           },
           (payload) => {
             console.log('📥 Real-time update:', payload.eventType);
-            // Reload readings when changes occur
-            loadReadings();
+            // Debounce reloads to prevent rapid-fire queries
+            if (debounceTimer) {
+              clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(() => {
+              if (!isLoadingRef.current) {
+                loadReadings();
+              }
+            }, 1000); // Increased to 1s debounce
           }
         )
         .subscribe();
     })();
 
     return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
       if (channel) {
         supabase.removeChannel(channel);
       }
     };
-  }, [loadReadings]);
+  }, [loadReadings]); // Removed 'loading' from dependencies to prevent infinite loop
 
   const toggleExpand = (id: string) => {
     const newExpanded = new Set(expandedIds);

@@ -30,16 +30,23 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   // Load profile from cache or database
   const loadProfile = useCallback(async (userId: string) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:loadProfile',message:'loadProfile entry',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+    // #endregion
     try {
       // Try to load from cache first
       const cached = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
+      let hasCachedProfile = false;
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
           // Check if cache is for current user
           if (parsed.user_id === userId) {
             setProfile(parsed);
-            setIsLoading(false);
+            hasCachedProfile = true;
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:cacheLoaded',message:'Loaded profile from cache',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+            // #endregion
             console.log('✅ Loaded profile from cache');
           }
         } catch (e) {
@@ -47,16 +54,44 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Always fetch fresh data from database
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
-        .eq('user_id', userId)
-        .single();
+      // Set loading to false immediately - don't block app on profile load
+      setIsLoading(false);
+
+      // Fetch fresh data from database in background (non-blocking)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:queryProfile',message:'Querying profile from DB (background)',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      // #endregion
+      // Query profile with timeout - if timeout, just continue without profile (user can still use app)
+      let data, error;
+      try {
+        const queryPromise = supabase
+          .from('user_profiles')
+          .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id')
+          .eq('user_id', userId)
+          .single();
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Profile query timeout')), 15000) // Increased to 15s
+        );
+        
+        const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+        data = result.data;
+        error = result.error;
+      } catch (timeoutError: any) {
+        // Timeout occurred - log but don't fail, user can still use the app
+        console.warn('Profile query timed out, continuing without profile:', timeoutError?.message);
+        error = { code: 'TIMEOUT', message: 'Profile query timeout' };
+      }
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:queryResult',message:'Profile query result',data:{hasData:!!data,hasError:!!error,errorCode:error?.code,error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      // #endregion
 
       if (error) {
-        console.error('Error loading profile:', error);
-        setIsLoading(false);
+        // PGRST116 = no rows returned - this is OK, user just doesn't have a profile yet
+        if (error.code !== 'PGRST116' && error.code !== 'TIMEOUT') {
+          console.error('Error loading profile:', error);
+        }
         return;
       }
 
@@ -64,11 +99,16 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         setProfile(data);
         // Cache the profile
         await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:profileLoaded',message:'Profile loaded and cached',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+        // #endregion
         console.log('✅ Loaded and cached profile');
       }
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:error',message:'Error in loadProfile',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      // #endregion
       console.error('Error in loadProfile:', error);
-    } finally {
       setIsLoading(false);
     }
   }, []);
@@ -107,13 +147,18 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Load profile on mount if user is already signed in
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (user) {
-        await loadProfile(user.id);
+    // Load profile on mount if user is already signed in (non-blocking)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        // Load profile in background - don't await, let it run async
+        loadProfile(session.user.id).catch((err) => {
+          console.warn('Background profile load failed:', err);
+        });
       } else {
         setIsLoading(false);
       }
+    }).catch(() => {
+      setIsLoading(false);
     });
 
     return () => {

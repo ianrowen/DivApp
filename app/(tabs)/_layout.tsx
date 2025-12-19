@@ -1,4 +1,5 @@
 // app/(tabs)/_layout.tsx
+import { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { TouchableOpacity, Platform } from 'react-native';
 import { router } from 'expo-router';
@@ -15,6 +16,12 @@ import ThemedText from '../../src/shared/components/ui/ThemedText';
 export default function TabsLayout() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'(tabs)/_layout.tsx:15',message:'TabsLayout mounted',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+  }, []);
+  // #endregion
 
   return (
     <Tabs
