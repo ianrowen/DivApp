@@ -202,12 +202,10 @@ export default function LoginScreen() {
     // #endregion
     setLoading(true);
     try {
-      console.log('🔵 Starting Google sign in...');
       const session = await supabaseHelpers.signInWithGoogle();
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:108',message:'signInWithGoogle returned',data:{hasSession:!!session,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
-      console.log('🔵 Browser opened, waiting for OAuth callback...');
       // Don't set loading to false here - keep it true while waiting for OAuth callback
       // The loading state will be reset when auth state changes or on error
     } catch (error: any) {

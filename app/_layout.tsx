@@ -79,7 +79,6 @@ export default function RootLayout() {
     try {
       AIProvider.register('gemini', geminiProvider);
       AIProvider.setProvider('gemini');
-      console.log('✅ AI Provider initialized: Gemini');
     } catch (error) {
       console.error('❌ Error initializing AI Provider:', error);
     }

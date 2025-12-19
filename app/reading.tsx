@@ -154,15 +154,12 @@ export default function ReadingScreen() {
           return;
         }
         
-        console.log('✅ Found card:', foundCard.title.en, 'Code:', foundCard.code);
-        
         const drawnCards = [{
           cardCode: foundCard.code,  // Use code, not filename
           reversed: reversed === 'true',
           position: 'Daily Guidance', // Add position for daily cards
         }];
         
-        console.log('📍 Setting cards state:', drawnCards);
         setCards(drawnCards);
         
         // Show cards immediately - don't wait for interpretation
@@ -194,14 +191,9 @@ export default function ReadingScreen() {
               
               if (readingDate.getTime() === today.getTime()) {
                 savedReadingId = existingReading.id;
-                console.log('✅ Found existing daily card reading from today:', savedReadingId);
                 setReadingId(savedReadingId);
                 readingIdRef.current = savedReadingId;
-              } else {
-                console.log('ℹ️ Existing daily card is from a different day, will save new one');
               }
-            } else {
-              console.log('ℹ️ No existing daily card found, will save new one');
             }
           }
         } catch (err: any) {
@@ -212,23 +204,12 @@ export default function ReadingScreen() {
         if (!savedReadingId) {
           // Auto-save daily card immediately (before interpretation)
           // Await the save to ensure readingId is set before interpretation starts
-          console.log('💾 Attempting to auto-save daily card immediately...');
-          console.log('💾 Cards to save:', JSON.stringify(drawnCards, null, 2));
-          console.log('💾 Type:', type, 'Reading type will be:', type === 'daily' ? 'daily_card' : 'spread');
           try {
             savedReadingId = await autoSaveReading(drawnCards);
-            console.log('💾 autoSaveReading returned:', savedReadingId);
             if (savedReadingId) {
-              console.log('✅ Daily card auto-save completed, readingId:', savedReadingId);
               // Set readingId in both state and ref immediately
               setReadingId(savedReadingId);
               readingIdRef.current = savedReadingId;
-              console.log('✅ State and ref updated with readingId:', savedReadingId);
-              console.log('✅ Reading should now appear in history');
-            } else {
-              console.error('❌ Daily card auto-save returned null/undefined - save FAILED');
-              console.error('❌ Check console logs above for error details');
-              console.warn('⚠️ Will retry when interpretation loads');
             }
           } catch (err: any) {
             console.error('❌ Exception auto-saving daily card:', err);
@@ -237,20 +218,13 @@ export default function ReadingScreen() {
             console.error('❌ Error stack:', err?.stack);
             // Continue even if save fails - interpretation will try to save
           }
-        } else {
-          console.log('✅ Using existing daily card reading, skipping duplicate save');
         }
         
         // Generate interpretation in background (non-blocking)
         // Pass readingId directly to avoid state timing issues
         // Only generate if we have a saved readingId, otherwise wait for save to complete
         if (savedReadingId) {
-          generateInterpretation(drawnCards, 'traditional', undefined, savedReadingId).catch(err => {
-            console.error('Error generating interpretation:', err);
-          });
-        } else {
-          console.warn('⚠️ Skipping interpretation generation - daily card save failed');
-          console.warn('⚠️ User can manually generate interpretation later');
+          generateInterpretation(drawnCards, 'traditional', undefined, savedReadingId).catch(() => {});
         }
         
         return;
@@ -1147,14 +1121,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
     // Check both state and ref to avoid race conditions
     const currentReadingId = readingIdRef.current || readingId;
     const readingType = type; // Capture type at function start
-    console.log('💾 autoSaveReading called:', { 
-      type: readingType, 
-      autoSaved, 
-      readingId, 
-      readingIdRef: readingIdRef.current, 
-      currentReadingId, 
-      cardsToSave: cardsToSave?.length 
-    });
     
     if (!readingType) {
       console.error('❌ No reading type available! Cannot save.');
@@ -1164,13 +1130,11 @@ Answer the question. If the user asks about previous readings mentioned in the i
     // For daily cards, only check readingId (don't check autoSaved - we want to save immediately)
     // For spread readings, check both autoSaved and readingId
     if (readingType === 'spread' && (autoSaved || currentReadingId)) {
-      console.log('⏭️ Skipping auto-save for spread (already saved)');
       return null;
     }
     // For daily cards, check if we already have a valid readingId
     // If we do, verify it exists in the database before skipping
     if (readingType === 'daily' && currentReadingId) {
-      console.log('💾 Daily card has readingId, verifying it exists:', currentReadingId);
       try {
         const { data: existingReading, error: verifyError } = await supabase
           .from('readings')
@@ -1179,19 +1143,12 @@ Answer the question. If the user asks about previous readings mentioned in the i
           .maybeSingle();
         
         if (existingReading && !verifyError) {
-          console.log('✅ Reading already exists, skipping save:', currentReadingId);
           return currentReadingId;
-        } else {
-          console.log('⚠️ ReadingId not found in DB, will save new reading');
-          // Continue to save below
         }
       } catch (verifyErr) {
-        console.log('⚠️ Error verifying reading, will save new reading:', verifyErr);
         // Continue to save below
       }
     }
-    
-    console.log('✅ Proceeding with auto-save...');
 
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -1213,7 +1170,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         return null;
       }
 
-      console.log('💾 Auto-saving reading with cards:', cardsToUse.length);
 
       // Get the tarot divination system ID
       let divinationSystemId: string | null = null;
@@ -1265,15 +1221,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
             number: card.code, // Keep code as number reference
           },
         };
-
-        console.log('💾 Saving card element:', {
-          elementId: elementData.elementId,
-          cardCode: elementData.metadata.cardCode,
-          cardTitle: elementData.metadata.cardTitle,
-          reversed: elementData.metadata.reversed,
-          suit: elementData.metadata.suit,
-          arcana: elementData.metadata.arcana,
-        });
 
         return elementData;
       }).filter(Boolean);
@@ -1333,7 +1280,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         : null);
       const questionHash = generateQuestionHash(questionText);
       
-      console.log('💾 Question text:', questionText, 'Hash:', questionHash, 'readingType:', readingType);
 
       const readingData: Record<string, any> = {
         user_id: user.id,
@@ -1346,7 +1292,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         language: locale === 'zh-TW' ? 'zh-TW' : 'en',
       };
       
-      console.log('💾 Saving reading with type:', readingType, '-> reading_type:', readingData.reading_type);
 
       console.log('💾 Inserting reading data:', {
         user_id: readingData.user_id,
@@ -1420,12 +1365,8 @@ Answer the question. If the user asks about previous readings mentioned in the i
       }
 
       if (!data || !data.id) {
-        console.error('❌ Auto-save returned no data! Response:', data);
         return null;
       }
-
-      console.log('✅ Reading auto-saved! ID:', data.id);
-      console.log('✅ Full response data:', JSON.stringify(data, null, 2));
       
       // Verify the reading was actually saved by querying it back
       const { data: verifyData, error: verifyError } = await supabase
@@ -1435,17 +1376,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
         .single();
       
       if (verifyError || !verifyData) {
-        console.error('❌ Verification failed! Reading may not have been saved:', verifyError);
-        console.error('❌ This reading will NOT appear in history!');
-        // Still return the ID - the insert succeeded, verification might just be timing
-        // But log a warning
-      } else {
-        console.log('✅ Verified reading exists in database:', {
-          id: verifyData.id,
-          reading_type: verifyData.reading_type,
-          created_at: verifyData.created_at,
-        });
-        console.log('✅ This reading SHOULD appear in history immediately');
+        // Verification failed - but insert succeeded, might just be timing
       }
       
       setReadingId(data.id);
@@ -1868,13 +1799,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
               } else if (originalKeywords && Array.isArray(originalKeywords) && originalKeywords.length > 0) {
                 displayKeywords = originalKeywords.slice(0, 3);
               } else {
-                // Final fallback - log error but don't break rendering
-                console.error(`❌ No keywords found for card ${cardData.code} (reversed: ${drawnCard.reversed})`, {
-                  localizedKeywords,
-                  originalKeywords,
-                  localizedCardExists: !!localizedCard,
-                  cardDataExists: !!cardData
-                });
+                // Final fallback - don't break rendering
                 displayKeywords = [];
               }
 
@@ -1951,12 +1876,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
                       })()}
                     </View>
                   ) : (
-                    // Debug: Log when keywords are missing - this should not happen for valid cards
                     (() => {
-                      console.error(`❌ ERROR: No keywords to display for card ${cardData.code} (reversed: ${drawnCard.reversed})!`, {
-                        localizedKeywords: localizedCard?.keywords,
-                        originalKeywords: cardData?.keywords,
-                        displayKeywords: displayKeywords,
                         displayKeywordsLength: displayKeywords?.length,
                         locale: locale,
                         cardReversed: drawnCard.reversed

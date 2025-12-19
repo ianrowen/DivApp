@@ -47,8 +47,6 @@ const EXPO_PROJECT_FULL_NAME =
   (expoConfig?.extra as Record<string, unknown> | undefined)?.EXPO_PUBLIC_EXPO_PROJECT_FULL_NAME ||
   deriveFullNameFromConfig();
 
-console.log('[Supabase] Expo ownership:', Constants.appOwnership);
-console.log('[Supabase] Expo project full name resolved to:', EXPO_PROJECT_FULL_NAME);
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   throw new Error('Missing Supabase environment variables');
@@ -211,7 +209,6 @@ export const supabaseHelpers = {
       fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:202',message:'signInWithGoogle entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
       const redirectTo = getRedirectUri();
-      console.log('[Supabase] Using redirect URI:', redirectTo);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -234,28 +231,17 @@ export const supabaseHelpers = {
         throw new Error('Unable to start Google OAuth flow.');
       }
 
-    // Log the OAuth URL for debugging
-    console.log('[Supabase] OAuth URL:', data.url);
     try {
       const urlObj = new URL(data.url);
       // Note: Supabase uses 'redirect_to', not 'redirect_uri'
       const redirectTo = urlObj.searchParams.get('redirect_to');
-      console.log('[Supabase] Redirect to (Supabase param):', redirectTo ? decodeURIComponent(redirectTo) : 'null');
-      
-      // Also check all query params
-      console.log('[Supabase] All OAuth URL params:');
-      urlObj.searchParams.forEach((value, key) => {
-        console.log(`  ${key}: ${value}`);
-      });
     } catch (e) {
-      console.warn('[Supabase] Could not parse OAuth URL:', e);
+      // Ignore parsing errors
     }
 
     let authUrlParams: Record<string, string> | null = null;
     let callbackUrl: string | null = null;
 
-    console.log('[Supabase] Opening auth session with URL:', data.url);
-    console.log('[Supabase] Expected redirect URI:', redirectTo);
     
     // Add a timeout promise to detect if the auth session hangs
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -367,9 +353,6 @@ export const supabaseHelpers = {
     });
 
     if (authUrlParams.code) {
-      console.log('[Supabase] Exchanging code for session...');
-      console.log('[Supabase] Code length:', authUrlParams.code.length);
-      
       try {
         const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(authUrlParams.code);
 
@@ -383,9 +366,6 @@ export const supabaseHelpers = {
           console.error('[Supabase] No session returned from code exchange');
           throw new Error('No session returned from code exchange');
         }
-
-        console.log('[Supabase] Session exchange successful');
-        console.log('[Supabase] User ID:', sessionData.session.user?.id);
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:380',message:'Session exchange successful',data:{hasSession:!!sessionData?.session,userId:sessionData?.session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
@@ -405,7 +385,6 @@ export const supabaseHelpers = {
     }
 
     if (authUrlParams.access_token && authUrlParams.refresh_token && !authUrlParams.type) {
-      console.log('[Supabase] Setting session with access and refresh tokens...');
       try {
         const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
           access_token: authUrlParams.access_token,
@@ -422,9 +401,6 @@ export const supabaseHelpers = {
           console.error('[Supabase] No session returned after setting tokens');
           throw new Error('No session returned after setting tokens');
         }
-
-        console.log('[Supabase] Session set successfully with tokens');
-        console.log('[Supabase] User ID:', sessionData.session.user?.id);
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:416',message:'Session set with tokens',data:{hasSession:!!sessionData?.session,userId:sessionData?.session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
