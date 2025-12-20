@@ -921,7 +921,10 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       const cardsContext = cards.map(c => {
         const card = LOCAL_RWS_CARDS.find(lc => lc.code === c.cardCode);
         if (!card) return '';
-        const name = locale === 'zh-TW' ? card.title.zh : card.title.en;
+        // Safe access to card title with fallbacks
+        const name = locale === 'zh-TW' 
+          ? (card.title?.zh || card.title?.en || card.code || 'Unknown')
+          : (card.title?.en || card.title?.zh || card.code || 'Unknown');
         return `${name}${c.reversed ? ' (R)' : ''}`;
       }).join(', ');
 

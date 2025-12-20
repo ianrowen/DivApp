@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Delete Account - Divin8</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Prevent FOUC - hide content until fonts load */
+        body {
+            visibility: hidden;
+        }
+        body.fonts-loaded {
+            visibility: visible;
+        }
+    </style>
+    <!-- Extract tokens/code BEFORE Supabase SDK loads -->
+    <script>
+        // Extract tokens from URL hash OR code from query params IMMEDIATELY
+        (function() {
+            'use strict';
+            if (window.__DELETE_ACCOUNT_TOKENS_EXTRACTED__) {
+                return;
+            }
+            window.__DELETE_ACCOUNT_TOKENS_EXTRACTED__ = true;
+            
+            var hash = window.location.hash.substring(1);
+            var search = window.location.search.substring(1);
+            
+            var hashParams = hash ? new URLSearchParams(hash) : null;
+            var searchParams = search ? new URLSearchParams(search) : null;
+            
+            // Check for tokens in hash
+            var accessToken = hashParams ? hashParams.get('access_token') : null;
+            var type = hashParams ? hashParams.get('type') : null;
+            var refreshToken = hashParams ? hashParams.get('refresh_token') : null;
+            
+            // Check for code in query params
+            var code = searchParams ? searchParams.get('code') : null;
+            var tokenParam = searchParams ? searchParams.get('token') : null;
+            
+            // Check for error parameters
+            var errorParam = hashParams ? hashParams.get('error') : null;
+            var errorDescription = hashParams ? hashParams.get('error_description') : null;
+            var errorCode = hashParams ? hashParams.get('error_code') : null;
+            
+            if (!errorParam && searchParams) {
+                errorParam = searchParams.get('error');
+                errorDescription = searchParams.get('error_description');
+                errorCode = searchParams.get('error_code');
+            }
+            
+            if (errorParam) {
+                window.__DELETE_ACCOUNT_ERROR__ = {
+                    error: errorParam,
+                    error_description: errorDescription,
+                    error_code: errorCode
+                };
+                window.__DELETE_ACCOUNT_TOKENS__ = null;
+                window.__DELETE_ACCOUNT_CODE__ = null;
+                return;
+            }
+            
+            if (accessToken && type === 'recovery') {
+                // Standard flow: tokens in hash - redirect to app
+                const appDeepLink = `divin8://delete-account?access_token=${encodeURIComponent(accessToken)}&type=recovery${refreshToken ? '&refresh_token=' + encodeURIComponent(refreshToken) : ''}`;
+                console.log('Tokens received, redirecting to app:', appDeepLink);
+                window.location.href = appDeepLink;
+                return;
+            } else if (code) {
+                window.__DELETE_ACCOUNT_CODE__ = code;
+                console.log('Code found in query params - will handle manually');
+            } else {
+                window.__DELETE_ACCOUNT_TOKENS__ = null;
+                window.__DELETE_ACCOUNT_CODE__ = null;
+                console.log('No tokens or code found in URL');
+            }
+        })();
+    </script>
+    <!-- Load Supabase SDK AFTER tokens are extracted -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Mark fonts as loaded to prevent FOUC
+        document.fonts.ready.then(function() {
+            document.body.classList.add('fonts-loaded');
+        });
+        setTimeout(function() {
+            document.body.classList.add('fonts-loaded');
+        }, 100);
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #000000;
+            background-image: linear-gradient(135deg, #0A0A0A 0%, #1A0A14 30%, #2D0A1F 70%, #0A0A0A 100%);
+            color: #C0C0C0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(139, 21, 56, 0.3);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo img {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        
+        .logo h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 32px;
+            color: #D4AF37;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        .logo p {
+            font-family: 'Lato', sans-serif;
+            color: #C0C0C0;
+            font-size: 14px;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status.loading {
+            background: rgba(212, 175, 55, 0.1);
+            color: #d4af37;
+        }
+        
+        .status.warning {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+        
+        .status.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+        }
+        
+        .status.error {
+            background: rgba(107, 15, 15, 0.2);
+            color: #D4AF37;
+            border: 1px solid rgba(107, 15, 15, 0.5);
+        }
+        
+        .spinner {
+            border: 3px solid rgba(212, 175, 55, 0.3);
+            border-top: 3px solid #d4af37;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .warning-box {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .warning-box h3 {
+            color: #f44336;
+            font-family: 'Lato', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .warning-box ul {
+            color: #C0C0C0;
+            font-family: 'Lato', sans-serif;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-left: 20px;
+        }
+        
+        .button {
+            width: 100%;
+            padding: 14px;
+            background: #f44336;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Lato', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .button:hover {
+            background: #d32f2f;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .button-secondary {
+            background: transparent;
+            color: #D4AF37;
+            border: 1px solid #D4AF37;
+            margin-top: 10px;
+        }
+        
+        .button-secondary:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .info {
+            text-align: center;
+            color: #C0C0C0;
+            margin: 20px 0;
+            font-family: 'Lato', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        h2 {
+            font-family: 'Cinzel', serif;
+            color: #D4AF37;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .confirmation-text {
+            color: #C0C0C0;
+            font-family: 'Lato', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="https://divin8.com/assets/images/logo/divin8-card-curtains-horizontal.png" alt="Divin8 Logo" onerror="this.style.display='none';">
+            <h1>Divin8</h1>
+            <p>Mystical Divination</p>
+        </div>
+        
+        <div id="loading" class="status loading">
+            <div class="spinner"></div>
+            <div style="margin-top: 12px;">Processing account deletion request...</div>
+        </div>
+        
+        <div id="confirmForm" class="hidden">
+            <h2>Delete Your Account</h2>
+            <div class="warning-box">
+                <h3>⚠️ Warning: This action cannot be undone</h3>
+                <ul>
+                    <li>All your reading history will be permanently deleted</li>
+                    <li>Your profile data will be permanently deleted</li>
+                    <li>Your account and all associated data will be removed</li>
+                    <li>You will need to create a new account to use Divin8 again</li>
+                </ul>
+            </div>
+            <div class="confirmation-text">
+                Are you sure you want to permanently delete your account? This action cannot be reversed.
+            </div>
+            <button type="button" class="button" id="confirmDeleteButton">Yes, Delete My Account</button>
+            <a href="https://divin8.com" class="button button-secondary" style="display: block; text-align: center; text-decoration: none;">Cancel</a>
+        </div>
+        
+        <div id="success" class="hidden">
+            <div class="status success">
+                ✅ Account deletion initiated
+            </div>
+            <div class="info">
+                Your account deletion request has been processed. Opening Divin8 app to complete the process...
+            </div>
+        </div>
+        
+        <div id="error" class="hidden">
+            <div class="status error">
+                ❌ Invalid or expired deletion link
+            </div>
+            <div class="info">
+                This account deletion link is invalid or has expired. Please request a new deletion link or contact support.
+            </div>
+            <a href="https://divin8.com" class="button button-secondary" style="display: block; text-align: center; text-decoration: none; margin-top: 20px;">Return to Website</a>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+            
+            if (window.__DELETE_ACCOUNT_PROCESSED__) {
+                console.warn('Account deletion script already executed, skipping');
+                return;
+            }
+            window.__DELETE_ACCOUNT_PROCESSED__ = true;
+            
+            const SUPABASE_URL = 'https://bawkzybwbpoxftgawvha.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhd2t6eWJ3YnBveGZ0Z2F3dmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTI3NzcsImV4cCI6MjA3Nzg4ODc3N30.GLRosL14pt3gpYLh8Yde3n_Eh0e_8vyB_8PYlhg2juc';
+            
+            const tokens = window.__DELETE_ACCOUNT_TOKENS__;
+            const code = window.__DELETE_ACCOUNT_CODE__;
+            let error = window.__DELETE_ACCOUNT_ERROR__;
+            
+            if (!error) {
+                const hash = window.location.hash.substring(1);
+                if (hash) {
+                    const hashParams = new URLSearchParams(hash);
+                    const errorParam = hashParams.get('error');
+                    if (errorParam) {
+                        error = {
+                            error: errorParam,
+                            error_description: hashParams.get('error_description'),
+                            error_code: hashParams.get('error_code')
+                        };
+                    }
+                }
+            }
+            
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    detectSessionInUrl: false,
+                    persistSession: false,
+                    autoRefreshToken: false,
+                    storage: {
+                        getItem: function() { return null; },
+                        setItem: function() {},
+                        removeItem: function() {}
+                    }
+                }
+            });
+            
+            console.log('Account deletion page loaded', {
+                hasTokens: !!tokens,
+                hasCode: !!code
+            });
+            
+            if (tokens && tokens.access_token && tokens.type === 'recovery') {
+                supabase.auth.setSession({
+                    access_token: tokens.access_token,
+                    refresh_token: tokens.refresh_token || ''
+                }).then(({ data, error }) => {
+                    document.getElementById('loading').classList.add('hidden');
+                    
+                    if (error) {
+                        console.error('Error setting session:', error);
+                        document.getElementById('error').classList.remove('hidden');
+                    } else if (data.session) {
+                        console.log('Session established successfully');
+                        showConfirmationForm(supabase);
+                    } else {
+                        console.error('No session returned');
+                        document.getElementById('error').classList.remove('hidden');
+                    }
+                }).catch((err) => {
+                    console.error('Exception in setSession:', err);
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('error').classList.remove('hidden');
+                });
+            } else if (code) {
+                const isPkceToken = code && typeof code === 'string' && code.startsWith('pkce_');
+                
+                if (isPkceToken) {
+                    supabase.auth.verifyOtp({
+                        token_hash: code,
+                        type: 'recovery'
+                    }).then(({ data, error }) => {
+                        document.getElementById('loading').classList.add('hidden');
+                        
+                        if (error) {
+                            console.error('verifyOtp error:', error);
+                            document.getElementById('error').classList.remove('hidden');
+                        } else if (data.session) {
+                            console.log('Session established successfully via verifyOtp');
+                            showConfirmationForm(supabase);
+                        } else {
+                            console.error('No session returned from verifyOtp');
+                            document.getElementById('error').classList.remove('hidden');
+                        }
+                    }).catch((err) => {
+                        console.error('Exception in verifyOtp:', err);
+                        document.getElementById('loading').classList.add('hidden');
+                        document.getElementById('error').classList.remove('hidden');
+                    });
+                } else {
+                    const redirectTo = 'https://divin8.com/delete-account.html';
+                    const verifyUrl = `${SUPABASE_URL}/auth/v1/verify?token=${encodeURIComponent(code)}&type=recovery&redirect_to=${encodeURIComponent(redirectTo)}`;
+                    window.location.href = verifyUrl;
+                    return;
+                }
+            } else if (error && error.error) {
+                console.error('Supabase error detected:', error.error, error.error_description);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.remove('hidden');
+                
+                var errorInfo = document.querySelector('#error .info');
+                if (errorInfo && error.error_description) {
+                    var errorMsg = decodeURIComponent(error.error_description.replace(/\+/g, ' '));
+                    errorInfo.textContent = errorMsg + ' Please request a new deletion link.';
+                }
+            } else {
+                console.error('No recovery tokens or code found in URL');
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.remove('hidden');
+            }
+            
+            function showConfirmationForm(supabase) {
+                document.getElementById('success').classList.add('hidden');
+                document.getElementById('error').classList.add('hidden');
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('confirmForm').classList.remove('hidden');
+                
+                const confirmButton = document.getElementById('confirmDeleteButton');
+                if (confirmButton.dataset.listenerAttached === 'true') {
+                    return;
+                }
+                confirmButton.dataset.listenerAttached = 'true';
+                
+                confirmButton.addEventListener('click', async () => {
+                    confirmButton.disabled = true;
+                    confirmButton.textContent = 'Opening app...';
+                    
+                    try {
+                        // Get current session to pass to app
+                        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                        
+                        if (sessionError || !session) {
+                            throw new Error('Unable to verify session');
+                        }
+                        
+                        // Build deep link to app with session token
+                        // App will use this to perform the actual deletion
+                        const deepLink = `divin8://delete-account?access_token=${encodeURIComponent(session.access_token)}&type=recovery${session.refresh_token ? '&refresh_token=' + encodeURIComponent(session.refresh_token) : ''}`;
+                        console.log('Redirecting to app:', deepLink);
+                        
+                        // Show success message briefly
+                        document.getElementById('confirmForm').classList.add('hidden');
+                        document.getElementById('success').classList.remove('hidden');
+                        
+                        // Redirect to app immediately
+                        window.location.href = deepLink;
+                        
+                    } catch (err) {
+                        console.error('Account deletion error:', err);
+                        document.getElementById('confirmForm').classList.remove('hidden');
+                        document.getElementById('error').classList.remove('hidden');
+                        confirmButton.disabled = false;
+                        confirmButton.textContent = 'Yes, Delete My Account';
+                        const errorInfo = document.querySelector('#error .info');
+                        if (errorInfo) {
+                            errorInfo.textContent = err.message || 'Failed to process account deletion. Please try again or contact support.';
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
+

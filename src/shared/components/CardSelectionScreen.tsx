@@ -24,7 +24,7 @@ import type { LocalTarotCard } from '../../systems/tarot/data/localCardData';
 import { getCardImage } from '../../systems/tarot/utils/cardImageLoader';
 import { useTranslation } from '../../i18n';
 
-const CARD_BACK_IMAGE = require('../../../assets/images/logo/divin8-card-curtains-horizontal.png');
+const CARD_BACK_IMAGE = require('../../../assets/images/logo/divin8-card-curtains-horizontal.webp');
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_WIDTH = 90;

@@ -214,9 +214,27 @@ export default function SpreadSelectionScreen() {
         params.question = question.trim();
       }
 
-      router.push({
-        pathname: '/reading',
-        params,
+      // Use requestAnimationFrame to ensure view is ready before navigation
+      requestAnimationFrame(() => {
+        try {
+          router.push({
+            pathname: '/reading',
+            params,
+          });
+        } catch (error) {
+          console.error('Error navigating to reading:', error);
+          // Fallback: try again after a small delay
+          setTimeout(() => {
+            try {
+              router.push({
+                pathname: '/reading',
+                params,
+              });
+            } catch (retryError) {
+              console.error('Retry navigation also failed:', retryError);
+            }
+          }, 100);
+        }
       });
     } catch (error) {
       console.error('Error selecting spread:', error);
@@ -283,6 +301,7 @@ export default function SpreadSelectionScreen() {
           title: t('spreads.selectSpread'),
           headerShown: true,
           presentation: 'card',
+          animation: 'slide_from_right', // Explicit animation for iOS
           headerStyle: { 
             backgroundColor: theme.colors.neutrals.black,
             borderBottomWidth: 1,
@@ -298,43 +317,58 @@ export default function SpreadSelectionScreen() {
             textTransform: 'uppercase',
           },
           headerTitleAlign: 'center',
-          headerLeft: () => (
-            <TouchableOpacity 
-              onPress={() => {
-                try {
-                  if (routerNav && typeof routerNav.back === 'function') {
-                    routerNav.back();
-                  } else if (router && typeof router.back === 'function') {
-                    router.back();
-                  } else {
-                    // Fallback: use router.push to go back
-                    router.push('/(tabs)/home');
-                  }
-                } catch (error) {
-                  console.error('Error navigating back:', error);
-                  // Last resort fallback
+          headerLeft: () => {
+            // Use useCallback-like pattern to prevent re-renders
+            const handleBack = () => {
+              try {
+                // Use requestAnimationFrame to ensure view is ready
+                requestAnimationFrame(() => {
                   try {
-                    router.push('/(tabs)/home');
-                  } catch (fallbackError) {
-                    console.error('Fallback navigation also failed:', fallbackError);
+                    if (routerNav && typeof routerNav.back === 'function') {
+                      routerNav.back();
+                    } else if (router && typeof router.back === 'function') {
+                      router.back();
+                    } else {
+                      router.push('/(tabs)/home');
+                    }
+                  } catch (error) {
+                    console.error('Error navigating back:', error);
+                    try {
+                      router.push('/(tabs)/home');
+                    } catch (fallbackError) {
+                      console.error('Fallback navigation also failed:', fallbackError);
+                    }
                   }
-                }
-              }}
-              style={{ marginLeft: 20, padding: 10 }}
-            >
-              <ThemedText variant="body" style={{ 
-                color: theme.colors.primary.gold, 
-                fontSize: 18,
-                fontFamily: 'Lato_400Regular',
-              }}>
-                ← {t('common.back')}
-              </ThemedText>
-            </TouchableOpacity>
-          ),
+                });
+              } catch (error) {
+                console.error('Error in back handler:', error);
+              }
+            };
+
+            return (
+              <TouchableOpacity 
+                onPress={handleBack}
+                style={{ marginLeft: 20, padding: 10 }}
+                activeOpacity={0.7}
+              >
+                <ThemedText variant="body" style={{ 
+                  color: theme.colors.primary.gold, 
+                  fontSize: 18,
+                  fontFamily: 'Lato_400Regular',
+                }}>
+                  ← {t('common.back')}
+                </ThemedText>
+              </TouchableOpacity>
+            );
+          },
         }}
       />
       <MysticalBackground variant="default">
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView 
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Display Question */}
           {question && (
             <ThemedCard variant="minimal" style={styles.questionCard}>
@@ -386,10 +420,17 @@ export default function SpreadSelectionScreen() {
                 onPress={() => {
                   try {
                     if (suggestedSpread) {
-                      handleSelectSpread(suggestedSpread);
+                      // Use requestAnimationFrame to ensure view is ready before navigation
+                      requestAnimationFrame(() => {
+                        try {
+                          handleSelectSpread(suggestedSpread);
+                        } catch (error) {
+                          console.error('Error selecting suggested spread:', error);
+                        }
+                      });
                     }
                   } catch (error) {
-                    console.error('Error selecting suggested spread:', error);
+                    console.error('Error in suggested spread button:', error);
                   }
                 }}
                 variant="primary"
@@ -417,9 +458,16 @@ export default function SpreadSelectionScreen() {
                 key={spread.id}
                 onPress={() => {
                   try {
-                    handleSelectSpread(spread);
+                    // Use requestAnimationFrame to ensure view is ready before navigation
+                    requestAnimationFrame(() => {
+                      try {
+                        handleSelectSpread(spread);
+                      } catch (error) {
+                        console.error('Error in spread selection press handler:', error);
+                      }
+                    });
                   } catch (error) {
-                    console.error('Error in spread selection press handler:', error);
+                    console.error('Error in spread press handler:', error);
                   }
                 }}
                 activeOpacity={isDisabled ? 1 : 0.7}

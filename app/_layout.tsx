@@ -177,10 +177,10 @@ export default function RootLayout() {
         <Stack.Screen 
           name="spread-selection" 
           options={{ 
-            presentation: 'modal',
+            presentation: 'card', // Changed from 'modal' to 'card' for better iOS compatibility
             headerShown: false,
             gestureEnabled: true,
-            animation: 'slide_from_bottom',
+            animation: 'slide_from_right', // Changed to match spread-selection.tsx
           }} 
         />
         <Stack.Screen 

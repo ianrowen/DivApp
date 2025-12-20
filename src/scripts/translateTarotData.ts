@@ -9,7 +9,12 @@ import path from 'path';
 // Use require for CommonJS compatibility
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const GEMINI_API_KEY = 'AIzaSyDi7F_D4SNoICZtLaJ6wwxT_2vJTLAQ8Fk'; // TODO: Replace with actual key
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+if (!GEMINI_API_KEY) {
+  console.error('❌ Missing GEMINI_API_KEY environment variable.');
+  console.error('   Set it with: export GEMINI_API_KEY=your-key-here');
+  process.exit(1);
+}
 const GEMINI_MODEL = 'gemini-2.5-flash';
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);

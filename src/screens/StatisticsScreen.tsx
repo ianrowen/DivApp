@@ -193,7 +193,11 @@ export default function StatisticsScreen() {
         
         // Method 3: Find by cardTitle from metadata
         if (!card && elem.metadata?.cardTitle) {
-          card = LOCAL_RWS_CARDS.find(c => c.title.en === elem.metadata.cardTitle || c.title.zh === elem.metadata.cardTitle);
+          card = LOCAL_RWS_CARDS.find(c => {
+            const titleEn = typeof c.title === 'string' ? c.title : (c.title?.en || '');
+            const titleZh = typeof c.title === 'object' ? (c.title?.zh || '') : '';
+            return titleEn === elem.metadata.cardTitle || titleZh === elem.metadata.cardTitle;
+          });
         }
         
         // Method 4: Try filename matching (for old data)

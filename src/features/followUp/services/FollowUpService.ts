@@ -115,14 +115,16 @@ Keep responses concise (2-4 sentences) unless the question requires more detail.
     if (context.cards && context.cards.length > 0) {
       context.cards.forEach((card, index) => {
         const reversed = card.reversed ? ' (Reversed)' : '';
-        prompt += `${index + 1}. ${card.position}: ${card.title}${reversed}\n`;
+        const cardTitle = card.title && typeof card.title === 'string' ? card.title : 'Unknown Card';
+        const cardPosition = card.position && typeof card.position === 'string' ? card.position : 'Unknown Position';
+        prompt += `${index + 1}. ${cardPosition}: ${cardTitle}${reversed}\n`;
       });
     } else {
       prompt += `No cards available.\n`;
     }
 
     // Include interpretation style information if available
-    if (context.interpretationStyle) {
+    if (context.interpretationStyle && typeof context.interpretationStyle === 'string') {
       const styleName = context.interpretationStyle.charAt(0).toUpperCase() + context.interpretationStyle.slice(1);
       prompt += `\nThe user is currently viewing the ${styleName} interpretation.\n`;
     }

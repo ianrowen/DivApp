@@ -22,11 +22,39 @@ export default function HomeScreen() {
       return;
     }
     
-    // Navigate to spread selection with question
-    router.push({
-      pathname: '/spread-selection',
-      params: { question: question.trim() }
-    });
+    try {
+      const trimmedQuestion = question.trim();
+      
+      // Use requestAnimationFrame to ensure view is ready before navigation (iOS fix)
+      requestAnimationFrame(() => {
+        try {
+          // Navigate to spread selection with question
+          router.push({
+            pathname: '/spread-selection',
+            params: { 
+              question: trimmedQuestion 
+            }
+          });
+        } catch (error) {
+          console.error('Error navigating to spread selection:', error);
+          // Retry after a small delay
+          setTimeout(() => {
+            try {
+              router.push({
+                pathname: '/spread-selection',
+                params: { 
+                  question: trimmedQuestion 
+                }
+              });
+            } catch (retryError) {
+              console.error('Retry navigation also failed:', retryError);
+            }
+          }, 100);
+        }
+      });
+    } catch (error) {
+      console.error('Error in handleSubmitQuestion:', error);
+    }
   };
 
   return (
