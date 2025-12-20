@@ -7,7 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import sessionUrlProvider from 'expo-auth-session/build/SessionUrlProvider';
-import { debugLog } from '../utils/debugLog';
+import { debugLog } from '../../utils/debugLog';
 
 // Environment variables - set these in your .env file
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
