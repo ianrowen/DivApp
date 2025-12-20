@@ -19,6 +19,7 @@ import SpinningLogo from '../../src/shared/components/ui/SpinningLogo';
 import { useTranslation } from '../../src/i18n';
 import { LOCAL_RWS_CARDS } from '../../src/systems/tarot/data/localCardData';
 import { getLocalizedCard } from '../../src/systems/tarot/utils/cardHelpers';
+import { debugLog } from '../../src/utils/debugLog';
 
 export default function HistoryScreen() {
   const { t, locale } = useTranslation();
@@ -32,19 +33,19 @@ export default function HistoryScreen() {
     // Prevent concurrent loads
     if (isLoadingRef.current) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings skipped - already loading',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      debugLog('history.tsx:loadReadings', 'loadReadings skipped - already loading', {}, 'G');
       // #endregion
       return;
     }
     const startTime = Date.now();
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings entry',data:{startTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+    debugLog('history.tsx:loadReadings', 'loadReadings entry', { startTime }, 'G');
     // #endregion
     isLoadingRef.current = true;
     setLoading(true);
     try {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSession',message:'Calling getSession',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      debugLog('history.tsx:getSession', 'Calling getSession', {}, 'G');
       // #endregion
       // Use getSession() - try once immediately, if no session wait briefly and try once more
       const { data: { session } } = await supabase.auth.getSession();
@@ -60,11 +61,11 @@ export default function HistoryScreen() {
       }
       
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSessionResult',message:'getSession result',data:{hasUser:!!user,userId:user?.id,retried},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      debugLog('history.tsx:getSessionResult', 'getSession result', { hasUser: !!user, userId: user?.id, retried }, 'G');
       // #endregion
       if (!user) {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:noUser',message:'No user found',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+        debugLog('history.tsx:noUser', 'No user found', {}, 'G');
         // #endregion
         isLoadingRef.current = false;
         setLoading(false);
@@ -73,7 +74,7 @@ export default function HistoryScreen() {
 
       const queryStart = Date.now();
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:queryReadings',message:'Querying readings',data:{userId:user.id,queryStart},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      debugLog('history.tsx:queryReadings', 'Querying readings', { userId: user.id, queryStart }, 'G');
       // #endregion
       // Optimize query: only select needed fields and limit results
       const { data, error } = await supabase
@@ -86,25 +87,25 @@ export default function HistoryScreen() {
       const queryDuration = Date.now() - queryStart;
       const totalDuration = Date.now() - startTime;
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:queryResult',message:'Readings query result',data:{hasData:!!data,dataLength:data?.length,hasError:!!error,error:error?.message,queryDuration,totalDuration},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      debugLog('history.tsx:queryResult', 'Readings query result', { hasData: !!data, dataLength: data?.length, hasError: !!error, error: error?.message, queryDuration, totalDuration }, 'G');
       // #endregion
       if (error) throw error;
 
       console.log('📚 Loaded readings:', data?.length || 0);
       setReadings(data as any[]);
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:setReadings',message:'Set readings',data:{readingsCount:data?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      debugLog('history.tsx:setReadings', 'Set readings', { readingsCount: data?.length }, 'G');
       // #endregion
       // Note: Don't reset expandedIds here - let useFocusEffect handle it
       // This prevents resetting when real-time updates come in
     } catch (error) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:error',message:'Error loading readings',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      debugLog('history.tsx:error', 'Error loading readings', { error: error?.message }, 'G');
       // #endregion
       console.error('Error loading readings:', error);
     } finally {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:finally',message:'Setting loading to false',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      debugLog('history.tsx:finally', 'Setting loading to false', {}, 'G');
       // #endregion
       isLoadingRef.current = false;
       setLoading(false);
@@ -340,7 +341,11 @@ export default function HistoryScreen() {
     
     // Fallback: try to find by cardTitle from metadata
     if (metadata?.cardTitle) {
-      const card = LOCAL_RWS_CARDS.find(c => c.title.en === metadata.cardTitle || c.title.zh === metadata.cardTitle);
+      const card = LOCAL_RWS_CARDS.find(c => {
+        const titleEn = typeof c.title === 'string' ? c.title : (c.title?.en || '');
+        const titleZh = typeof c.title === 'object' ? (c.title?.zh || '') : '';
+        return titleEn === metadata.cardTitle || titleZh === metadata.cardTitle;
+      });
       if (card) {
         const localizedCard = getLocalizedCard(card);
         return localizedCard.title;

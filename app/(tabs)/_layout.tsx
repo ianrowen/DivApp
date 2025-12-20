@@ -12,6 +12,7 @@ import { LibraryBook } from '../../src/shared/components/icons/LibraryBook';
 import { useTranslation } from '../../src/i18n';
 import theme from '../../src/theme';
 import ThemedText from '../../src/shared/components/ui/ThemedText';
+import { debugLog } from '../../src/utils/debugLog';
 
 export default function TabsLayout() {
   const { t } = useTranslation();
@@ -19,7 +20,7 @@ export default function TabsLayout() {
 
   // #region agent log
   useEffect(() => {
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'(tabs)/_layout.tsx:15',message:'TabsLayout mounted',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+    debugLog('(tabs)/_layout.tsx:15', 'TabsLayout mounted', {}, 'F');
   }, []);
   // #endregion
 

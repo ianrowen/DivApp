@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../core/api/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { debugLog } from '../utils/debugLog';
 
 const PROFILE_CACHE_KEY = '@divin8_user_profile';
 
@@ -31,7 +32,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   // Load profile from cache or database
   const loadProfile = useCallback(async (userId: string) => {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:loadProfile',message:'loadProfile entry',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+    debugLog('ProfileContext.tsx:loadProfile', 'loadProfile entry', {userId}, 'I');
     // #endregion
     try {
       // Try to load from cache first
@@ -45,7 +46,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
             setProfile(parsed);
             hasCachedProfile = true;
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:cacheLoaded',message:'Loaded profile from cache',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+            debugLog('ProfileContext.tsx:cacheLoaded', 'Loaded profile from cache', {userId}, 'I');
             // #endregion
             console.log('✅ Loaded profile from cache');
           }
@@ -59,7 +60,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
       // Fetch fresh data from database in background (non-blocking)
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:queryProfile',message:'Querying profile from DB (background)',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      debugLog('ProfileContext.tsx:queryProfile', 'Querying profile from DB (background)', {userId}, 'I');
       // #endregion
       // Query profile with timeout - if timeout, just continue without profile (user can still use app)
       let data, error;
@@ -84,7 +85,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       }
 
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:queryResult',message:'Profile query result',data:{hasData:!!data,hasError:!!error,errorCode:error?.code,error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      debugLog('ProfileContext.tsx:queryResult', 'Profile query result', {hasData:!!data,hasError:!!error,errorCode:error?.code,error:error?.message}, 'I');
       // #endregion
 
       if (error) {
@@ -179,13 +180,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         // Cache the profile
         await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:profileLoaded',message:'Profile loaded and cached',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+        debugLog('ProfileContext.tsx:profileLoaded', 'Profile loaded and cached', {userId}, 'I');
         // #endregion
         console.log('✅ Loaded and cached profile');
       }
     } catch (error) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:error',message:'Error in loadProfile',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      debugLog('ProfileContext.tsx:error', 'Error in loadProfile', {error:error?.message}, 'I');
       // #endregion
       console.error('Error in loadProfile:', error);
       setIsLoading(false);

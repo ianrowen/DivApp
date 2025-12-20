@@ -13,7 +13,13 @@
       "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [
-      "**/*"
+      "**/*",
+      "!**/*.backup.*",
+      "!**/*-backup.*",
+      "!**/node_modules/**",
+      "!**/.git/**",
+      "!**/android/**",
+      "!**/ios/**"
     ],
     "ios": {
       "bundleIdentifier": "com.divin8.app",
@@ -28,17 +34,11 @@
             "CFBundleURLSchemes": [
               "divin8"
             ]
-          },
-          {
-            "CFBundleURLSchemes": [
-              "divin8"
-            ]
           }
         ],
         "ITSAppUsesNonExemptEncryption": false
       },
       "associatedDomains": [
-        "applinks:share.divin8.com",
         "applinks:share.divin8.com"
       ]
     },
@@ -80,13 +80,15 @@
         {
           "android": {
             "compileSdkVersion": 35,
-            "targetSdkVersion": 35
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
           },
           "ios": {
             "deploymentTarget": "15.1"
           }
         }
-      ]
+      ],
+      "./plugins/with-disable-lint-extratranslation.js"
     ],
     "experiments": {
       "typedRoutes": true
@@ -102,6 +104,9 @@
     },
     "owner": "irowen",
     "locales": {
+      "en": {
+        "displayName": "Divin8"
+      },
       "zh-TW": {
         "displayName": "Divin8"
       }

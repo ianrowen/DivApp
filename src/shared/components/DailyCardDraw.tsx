@@ -14,8 +14,9 @@ import { useTranslation } from '../../i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../core/api/supabase';
 import { useProfile } from '../../contexts/ProfileContext';
+import { debugLog } from '../../utils/debugLog';
 
-const CARD_BACK_IMAGE = require('../../../assets/images/logo/divin8-card-curtains-horizontal.png');
+const CARD_BACK_IMAGE = require('../../../assets/images/logo/divin8-card-curtains-horizontal.webp');
 
 const DAILY_CARD_STORAGE_KEY = 'divin8_daily_card';
 const DAILY_CARD_DATE_KEY = 'divin8_daily_card_date';
@@ -57,7 +58,7 @@ export default function DailyCardDraw() {
 
   const saveDailyCard = async (cardToSave: any): Promise<string | null> => {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:saveDailyCard:entry',message:'Saving daily card',data:{cardCode:cardToSave?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+    debugLog('DailyCardDraw.tsx:saveDailyCard:entry', 'Saving daily card', {cardCode:cardToSave?.code}, 'N');
     // #endregion
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -188,7 +189,7 @@ export default function DailyCardDraw() {
 
       console.log('✅ Daily card saved! ID:', data.id);
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:saveDailyCard:success',message:'Daily card saved successfully',data:{readingId:data.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+      debugLog('DailyCardDraw.tsx:saveDailyCard:success', 'Daily card saved successfully', {readingId:data.id}, 'N');
       // #endregion
       return data.id;
     } catch (error: any) {
@@ -218,7 +219,7 @@ export default function DailyCardDraw() {
       // Save the daily card immediately when drawn
       const savedId = await saveDailyCard(cardWithReversal);
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:drawNewCard:saveResult',message:'Daily card save result',data:{savedId:savedId,hasId:!!savedId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+      debugLog('DailyCardDraw.tsx:drawNewCard:saveResult', 'Daily card save result', {savedId:savedId,hasId:!!savedId}, 'N');
       // #endregion
       if (savedId) {
         console.log('✅ Daily card saved immediately when drawn, readingId:', savedId);
@@ -244,7 +245,7 @@ export default function DailyCardDraw() {
     if (isFlipped && card) {
       console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed, 'readingId:', savedReadingId);
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:handleFlip:navigate',message:'Navigating to reading screen',data:{hasReadingId:!!savedReadingId,readingId:savedReadingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+      debugLog('DailyCardDraw.tsx:handleFlip:navigate', 'Navigating to reading screen', {hasReadingId:!!savedReadingId,readingId:savedReadingId}, 'N');
       // #endregion
       const params: any = {
         type: 'daily',
@@ -426,7 +427,7 @@ export default function DailyCardDraw() {
           onPress={() => {
             console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed, 'readingId:', savedReadingId);
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:viewFullButton:navigate',message:'Navigating to reading screen from button',data:{hasReadingId:!!savedReadingId,readingId:savedReadingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+            debugLog('DailyCardDraw.tsx:viewFullButton:navigate', 'Navigating to reading screen from button', {hasReadingId:!!savedReadingId,readingId:savedReadingId}, 'N');
             // #endregion
             const params: any = {
               type: 'daily',

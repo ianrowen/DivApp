@@ -18,6 +18,7 @@ import ThemedText from '../../../shared/components/ui/ThemedText';
 import ThemedButton from '../../../shared/components/ui/ThemedButton';
 import ThemedCard from '../../../shared/components/ui/ThemedCard';
 import { useTranslation } from '../../../i18n';
+import { debugLog } from '../../../utils/debugLog';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -32,11 +33,11 @@ export default function LoginScreen() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:31',message:'Auth state change in LoginScreen',data:{event,hasSession:!!session,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      debugLog('LoginScreen.tsx:31', 'Auth state change in LoginScreen', {event,hasSession:!!session,userId:session?.user?.id}, 'D');
       // #endregion
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:33',message:'Resetting loading state',data:{event},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        debugLog('LoginScreen.tsx:33', 'Resetting loading state', {event}, 'D');
         // #endregion
         setLoading(false);
       }
@@ -198,19 +199,19 @@ export default function LoginScreen() {
 
   async function handleGoogleSignIn() {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:104',message:'handleGoogleSignIn entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    debugLog('LoginScreen.tsx:104', 'handleGoogleSignIn entry', {}, 'A');
     // #endregion
     setLoading(true);
     try {
       const session = await supabaseHelpers.signInWithGoogle();
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:108',message:'signInWithGoogle returned',data:{hasSession:!!session,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      debugLog('LoginScreen.tsx:108', 'signInWithGoogle returned', {hasSession:!!session,userId:session?.user?.id}, 'A');
       // #endregion
       // Don't set loading to false here - keep it true while waiting for OAuth callback
       // The loading state will be reset when auth state changes or on error
     } catch (error: any) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginScreen.tsx:112',message:'Google sign in error',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      debugLog('LoginScreen.tsx:112', 'Google sign in error', {error:error?.message}, 'A');
       // #endregion
       setLoading(false);
       console.error('❌ Google sign in error:', error);
@@ -248,7 +249,7 @@ export default function LoginScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Image
-              source={require('../../../../assets/images/logo/divin8-card-curtains-horizontal.png')}
+              source={require('../../../../assets/images/logo/divin8-card-curtains-horizontal.webp')}
               style={styles.logo}
               resizeMode="contain"
             />

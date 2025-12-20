@@ -17,6 +17,7 @@ import {
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../src/core/api/supabase';
+import { debugLog } from '../src/utils/debugLog';
 import theme from '../src/theme';
 import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
 import ThemedText from '../src/shared/components/ui/ThemedText';
@@ -169,7 +170,7 @@ export default function ReadingScreen() {
         // First check if readingId was passed as param (from DailyCardDraw)
         if (readingIdParam) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:initializeReading:daily:useParam',message:'Using readingId from params',data:{readingId:readingIdParam},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+          debugLog('reading.tsx:initializeReading:daily:useParam', 'Using readingId from params', {readingId:readingIdParam}, 'N');
           // #endregion
           savedReadingId = readingIdParam;
           setReadingId(savedReadingId);
@@ -181,7 +182,7 @@ export default function ReadingScreen() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
               // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:initializeReading:daily:checkDB',message:'Checking DB for existing daily card',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+              debugLog('reading.tsx:initializeReading:daily:checkDB', 'Checking DB for existing daily card', {userId:user.id}, 'N');
               // #endregion
               // Check for existing daily card reading from today
               const { data: existingReading, error: fetchError } = await supabase
@@ -204,7 +205,7 @@ export default function ReadingScreen() {
                 
                 if (readingDate.getTime() === today.getTime()) {
                   // #region agent log
-                  fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:initializeReading:daily:foundToday',message:'Found existing daily card from today',data:{readingId:existingReading.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+                  debugLog('reading.tsx:initializeReading:daily:foundToday', 'Found existing daily card from today', {readingId:existingReading.id}, 'N');
                   // #endregion
                   savedReadingId = existingReading.id;
                   setReadingId(savedReadingId);
@@ -220,7 +221,7 @@ export default function ReadingScreen() {
           // Only auto-save if no existing reading was found
           if (!savedReadingId) {
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:initializeReading:daily:autoSave',message:'No existing reading found, auto-saving',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+            debugLog('reading.tsx:initializeReading:daily:autoSave', 'No existing reading found, auto-saving', {}, 'N');
             // #endregion
             // Auto-save daily card immediately (before interpretation)
             // Await the save to ensure readingId is set before interpretation starts
@@ -252,7 +253,7 @@ export default function ReadingScreen() {
         return;
       } else if (type === 'spread' && spreadKey) {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:258',message:'Loading spread reading',data:{spreadKey:spreadKey,readingIdParam:readingIdParam},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+        debugLog('reading.tsx:258', 'Loading spread reading', {spreadKey:spreadKey,readingIdParam:readingIdParam}, 'N');
         // #endregion
         // Spread reading - load spread and draw cards
         const spreadData = await getSpreadByKey(spreadKey);
@@ -266,7 +267,7 @@ export default function ReadingScreen() {
         // If readingId is provided as param (from history), load existing reading
         if (readingIdParam) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:268',message:'Loading existing reading by ID',data:{readingId:readingIdParam},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+          debugLog('reading.tsx:268', 'Loading existing reading by ID', {readingId:readingIdParam}, 'N');
           // #endregion
           try {
             const { data: existingReading, error: loadError } = await supabase
@@ -277,12 +278,12 @@ export default function ReadingScreen() {
             
             if (loadError || !existingReading) {
               // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:275',message:'Failed to load existing reading',data:{error:loadError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+              debugLog('reading.tsx:275', 'Failed to load existing reading', {error:loadError?.message}, 'N');
               // #endregion
               console.warn('⚠️ Failed to load existing reading:', loadError);
             } else {
               // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:279',message:'Loaded existing reading',data:{readingId:existingReading.id,hasInterpretations:!!existingReading.interpretations},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+              debugLog('reading.tsx:279', 'Loaded existing reading', {readingId:existingReading.id,hasInterpretations:!!existingReading.interpretations}, 'N');
               // #endregion
               // Set readingId
               setReadingId(existingReading.id);
@@ -321,7 +322,7 @@ export default function ReadingScreen() {
             }
           } catch (err: any) {
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:305',message:'Exception loading existing reading',data:{error:err?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+            debugLog('reading.tsx:305', 'Exception loading existing reading', {error:err?.message}, 'N');
             // #endregion
             console.error('❌ Exception loading existing reading:', err);
           }
@@ -571,7 +572,10 @@ export default function ReadingScreen() {
         const meaning = meaningObj[lang] || meaningObj.en || '';
         
         // Get keywords (same keywords for both reversed and upright)
-        const keywords = localCard.keywords.slice(0, 3).join(', ');
+        const keywordsArray = Array.isArray(localCard.keywords) && localCard.keywords.length > 0
+          ? localCard.keywords.slice(0, 3)
+          : [];
+        const keywords = keywordsArray.length > 0 ? keywordsArray.join(', ') : '';
         
         return `${position}${localCard.title} ${orientationText}\n  Keywords: ${keywords}\n  Meaning: ${meaning.substring(0, 100)}${meaning.length > 100 ? '...' : ''}`;
       }).join('\n\n');
@@ -608,7 +612,7 @@ export default function ReadingScreen() {
       }
       
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:generateInterpretation:birthContext',message:'Birth context built',data:{useBirthData,hasSunSign:!!currentProfile?.sun_sign,hasMoonSign:!!currentProfile?.moon_sign,hasRisingSign:!!currentProfile?.rising_sign,hasContext:!!birthContextDetailed},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+      debugLog('reading.tsx:generateInterpretation:birthContext', 'Birth context built', {useBirthData,hasSunSign:!!currentProfile?.sun_sign,hasMoonSign:!!currentProfile?.moon_sign,hasRisingSign:!!currentProfile?.rising_sign,hasContext:!!birthContextDetailed}, 'O');
       // #endregion
 
 
@@ -794,26 +798,26 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       } else {
         // Spread readings: save here if not already saved
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:794',message:'Spread reading save check',data:{autoSaved:autoSaved,currentReadingId:currentReadingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+        debugLog('reading.tsx:794', 'Spread reading save check', {autoSaved:autoSaved,currentReadingId:currentReadingId}, 'O');
         // #endregion
         if (!autoSaved && !currentReadingId) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:797',message:'Calling autoSaveReading for spread',data:{cardsCount:cardsToInterpret.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+          debugLog('reading.tsx:797', 'Calling autoSaveReading for spread', {cardsCount:cardsToInterpret.length}, 'O');
           // #endregion
           const savedId = await autoSaveReading(cardsToInterpret);
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:800',message:'autoSaveReading for spread returned',data:{savedId:savedId,isNull:savedId===null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+          debugLog('reading.tsx:800', 'autoSaveReading for spread returned', {savedId:savedId,isNull:savedId===null}, 'O');
           // #endregion
           if (savedId) {
             setReadingId(savedId);
             readingIdRef.current = savedId;
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:804',message:'Spread readingId set',data:{readingId:savedId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+            debugLog('reading.tsx:804', 'Spread readingId set', {readingId:savedId}, 'O');
             // #endregion
           }
         } else {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:808',message:'Skipping spread save - already saved',data:{autoSaved:autoSaved,currentReadingId:currentReadingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+          debugLog('reading.tsx:808', 'Skipping spread save - already saved', {autoSaved:autoSaved,currentReadingId:currentReadingId}, 'O');
           // #endregion
         }
       }
@@ -821,7 +825,7 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       // Update interpretations in the saved reading
       const finalReadingId = existingReadingId || readingIdRef.current || readingId;
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:815',message:'Final readingId for update',data:{finalReadingId:finalReadingId,existingReadingId:existingReadingId,readingIdRef:readingIdRef.current,readingId:readingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+      debugLog('reading.tsx:815', 'Final readingId for update', {finalReadingId:finalReadingId,existingReadingId:existingReadingId,readingIdRef:readingIdRef.current,readingId:readingId}, 'O');
       // #endregion
       if (finalReadingId) {
         // Ensure readingId is set in state and ref
@@ -1257,12 +1261,22 @@ Answer the question. If the user asks about previous readings mentioned in the i
           return null;
         }
 
+        // Safely extract card title (can be string or object with en/zh)
+        const cardTitleEn = typeof card.title === 'string' 
+          ? card.title 
+          : (card.title && typeof card.title === 'object' && card.title.en) 
+            ? card.title.en 
+            : '';
+        const cardTitleZh = (card.title && typeof card.title === 'object' && card.title.zh) 
+          ? card.title.zh 
+          : '';
+
         const elementData = {
           elementId: card.code, // Card code (e.g., "00", "01", "P02")
           position: c.position || 'Guidance',
           metadata: {
-            cardTitle: card.title.en, // English title for lookup
-            cardTitleZh: card.title.zh, // Chinese title for lookup
+            cardTitle: cardTitleEn, // English title for lookup
+            cardTitleZh: cardTitleZh, // Chinese title for lookup
             cardCode: card.code, // Card code for reliable lookup
             positionLabel: c.position || 'Guidance',
             reversed: c.reversed || false,
@@ -1446,16 +1460,16 @@ Answer the question. If the user asks about previous readings mentioned in the i
   // Save reflection (update existing reading with ALL data)
   const handleSaveReading = async () => {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1421',message:'handleSaveReading entry',data:{readingId:readingId,readingIdRef:readingIdRef.current,readingIdParam:readingIdParam,type:type,hasReflection:!!reflection.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+    debugLog('reading.tsx:1421', 'handleSaveReading entry', {readingId:readingId,readingIdRef:readingIdRef.current,readingIdParam:readingIdParam,type:type,hasReflection:!!reflection.trim()}, 'M');
     // #endregion
     if (!readingId) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1424',message:'No readingId, calling autoSaveReading',data:{readingIdParam:readingIdParam},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+      debugLog('reading.tsx:1424', 'No readingId, calling autoSaveReading', {readingIdParam:readingIdParam}, 'M');
       // #endregion
       // If no reading ID, do a full save (shouldn't happen, but fallback)
       const savedId = await autoSaveReading();
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1427',message:'autoSaveReading returned',data:{savedId:savedId,isNull:savedId===null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+      debugLog('reading.tsx:1427', 'autoSaveReading returned', {savedId:savedId,isNull:savedId===null}, 'M');
       // #endregion
       if (savedId) {
         setReadingId(savedId);
@@ -1464,7 +1478,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
         await handleSaveReading();
       } else {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1433',message:'autoSaveReading failed, cannot save',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+        debugLog('reading.tsx:1433', 'autoSaveReading failed, cannot save', {}, 'M');
         // #endregion
         Alert.alert(t('common.error'), 'Failed to save reading. Please try again.');
       }
@@ -1504,7 +1518,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
       }
 
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1468',message:'Updating reading with interpretations',data:{readingId:readingId,interpretationStyles:Object.keys(formattedInterpretations).filter(k=>k!=='_metadata')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+      debugLog('reading.tsx:1468', 'Updating reading with interpretations', {readingId:readingId,interpretationStyles:Object.keys(formattedInterpretations).filter(k=>k!=='_metadata')}, 'M');
       // #endregion
       // Update the interpretations field (which contains ALL data)
       const { error } = await supabase
@@ -1514,7 +1528,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
 
       if (error) {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1474',message:'Error updating reading',data:{error:error.message,errorCode:error.code,readingId:readingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+        debugLog('reading.tsx:1474', 'Error updating reading', {error:error.message,errorCode:error.code,readingId:readingId}, 'M');
         // #endregion
         console.error('❌ Error updating reading:', error);
         Alert.alert(t('common.error'), 'Failed to save reading');
@@ -1522,7 +1536,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
       }
       
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:1480',message:'Reading updated successfully',data:{readingId:readingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+      debugLog('reading.tsx:1480', 'Reading updated successfully', {readingId:readingId}, 'M');
       // #endregion
 
       setSaved(true);
@@ -1552,129 +1566,257 @@ Answer the question. If the user asks about previous readings mentioned in the i
 
   // Format interpretation text with bold/italic for card names, days, and main points
   const formatInterpretationText = (text: string): React.ReactNode => {
-    if (!text) return null;
+    try {
+      if (!text || typeof text !== 'string') return null;
 
-    // Strip markdown bold/italic formatting from text first
-    // This ensures consistent display regardless of AI output format
-    let cleanText = text
-      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove **bold**
-      .replace(/\*([^*]+)\*/g, '$1');    // Remove *italic*
+      // Strip markdown bold/italic formatting from text first
+      // This ensures consistent display regardless of AI output format
+      let cleanText: string;
+      try {
+        cleanText = text
+          .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove **bold**
+          .replace(/\*([^*]+)\*/g, '$1');    // Remove *italic*
+        
+        // Validate cleanText is still a string
+        if (typeof cleanText !== 'string' || cleanText === null || cleanText === undefined) {
+          console.warn('formatInterpretationText: cleanText is invalid after replace operations');
+          return <Text style={styles.interpretationText}>{text}</Text>;
+        }
+      } catch (replaceError) {
+        console.error('formatInterpretationText: Error during text replacement:', replaceError);
+        return <Text style={styles.interpretationText}>{text}</Text>;
+      }
 
-    // Get all card names (both English and Chinese) - sorted by length (longest first)
-    const allCardNames: string[] = [];
-    LOCAL_RWS_CARDS.forEach(card => {
-      const localized = getLocalizedCard(card);
-      if (localized.title) allCardNames.push(localized.title);
-      if (card.title.en) allCardNames.push(card.title.en);
-      if (card.title.zh) allCardNames.push(card.title.zh);
-    });
-    allCardNames.sort((a, b) => b.length - a.length);
+      // Get all card names (both English and Chinese) - sorted by length (longest first)
+      const allCardNames: string[] = [];
+      try {
+        LOCAL_RWS_CARDS.forEach(card => {
+          if (!card) return;
+          try {
+            const localized = getLocalizedCard(card);
+            if (localized?.title && typeof localized.title === 'string') {
+              allCardNames.push(localized.title);
+            }
+            if (card.title?.en && typeof card.title.en === 'string') {
+              allCardNames.push(card.title.en);
+            }
+            if (card.title?.zh && typeof card.title.zh === 'string') {
+              allCardNames.push(card.title.zh);
+            }
+          } catch (cardError) {
+            console.warn('formatInterpretationText: Error processing card:', cardError);
+          }
+        });
+        
+        // Filter out any null/undefined/empty values and sort
+        const validCardNames = allCardNames.filter(name => name && name.length > 0);
+        validCardNames.sort((a, b) => b.length - a.length);
+        allCardNames.length = 0;
+        allCardNames.push(...validCardNames);
+      } catch (cardProcessingError) {
+        console.error('formatInterpretationText: Error processing card names:', cardProcessingError);
+        // Continue with empty card names array
+      }
 
-    // Days and date patterns (sorted by length)
-    const dayPatterns = [
-      'last wednesday', 'last thursday', 'last friday', 'last saturday', 'last sunday', 'last monday', 'last tuesday',
-      'this week', 'next week',
-      'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
-      'today', 'yesterday', 'tomorrow', 'last',
-      '上週三', '上週四', '上週五', '上週六', '上週日', '上週一', '上週二',
-      '本週', '下週',
-      '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日',
-      '今天', '昨天', '明天', '上週', '上個'
-    ];
+      // Days and date patterns (sorted by length)
+      const dayPatterns = [
+        'last wednesday', 'last thursday', 'last friday', 'last saturday', 'last sunday', 'last monday', 'last tuesday',
+        'this week', 'next week',
+        'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+        'today', 'yesterday', 'tomorrow', 'last',
+        '上週三', '上週四', '上週五', '上週六', '上週日', '上週一', '上週二',
+        '本週', '下週',
+        '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日',
+        '今天', '昨天', '明天', '上週', '上個'
+      ];
 
-    // Build regex patterns
-    const cardPattern = allCardNames.map(name => 
-      name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    ).join('|');
-    const dayPattern = dayPatterns.map(day => 
-      day.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    ).join('|');
+      // Build regex patterns with error handling
+      let cardPattern: string;
+      let dayPattern: string;
+      let combinedRegex: RegExp;
+      
+      try {
+        // Filter and escape card names
+        const validCardNames = allCardNames.filter(name => name && typeof name === 'string' && name.length > 0);
+        cardPattern = validCardNames
+          .map(name => {
+            try {
+              return name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            } catch {
+              return '';
+            }
+          })
+          .filter(pattern => pattern.length > 0)
+          .join('|');
+        
+        dayPattern = dayPatterns
+          .map(day => {
+            try {
+              return day.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            } catch {
+              return '';
+            }
+          })
+          .filter(pattern => pattern.length > 0)
+          .join('|');
 
-    // Combined regex to find all matches
-    // For Chinese, use different word boundary handling (Chinese doesn't use spaces)
-    const isChinese = locale === 'zh-TW';
-    const wordBoundary = isChinese ? '' : '\\b';
-    const combinedRegex = new RegExp(`${wordBoundary}(${cardPattern}|${dayPattern})${wordBoundary}`, isChinese ? 'g' : 'gi');
-    
-    const parts: Array<{ text: string; type: 'normal' | 'card' | 'day' }> = [];
-    let lastIndex = 0;
-    let match;
+        // Validate patterns before creating regex
+        if (!cardPattern && !dayPattern) {
+          // No patterns to match, return plain text
+          return <Text style={styles.interpretationText}>{cleanText}</Text>;
+        }
 
-    // Reset regex lastIndex
-    combinedRegex.lastIndex = 0;
-    
-    while ((match = combinedRegex.exec(cleanText)) !== null) {
-      // Add text before match
-      if (match.index > lastIndex) {
-        parts.push({ text: cleanText.substring(lastIndex, match.index), type: 'normal' });
+        // Combined regex to find all matches
+        // For Chinese, use different word boundary handling (Chinese doesn't use spaces)
+        const isChinese = locale === 'zh-TW';
+        const wordBoundary = isChinese ? '' : '\\b';
+        const pattern = cardPattern && dayPattern 
+          ? `${wordBoundary}(${cardPattern}|${dayPattern})${wordBoundary}`
+          : cardPattern 
+            ? `${wordBoundary}(${cardPattern})${wordBoundary}`
+            : `${wordBoundary}(${dayPattern})${wordBoundary}`;
+        
+        combinedRegex = new RegExp(pattern, isChinese ? 'g' : 'gi');
+      } catch (regexError) {
+        console.error('formatInterpretationText: Error creating regex:', regexError);
+        // Fallback to plain text if regex creation fails
+        return <Text style={styles.interpretationText}>{cleanText}</Text>;
       }
       
-      // Determine if it's a card or day
-      const matchedText = match[0];
-      const isCard = allCardNames.some(name => 
-        name.toLowerCase() === matchedText.toLowerCase()
-      );
-      
-      parts.push({ 
-        text: matchedText, 
-        type: isCard ? 'card' : 'day' 
-      });
-      
-      lastIndex = match.index + matchedText.length;
-    }
+      const parts: Array<{ text: string; type: 'normal' | 'card' | 'day' }> = [];
+      let lastIndex = 0;
+      let match;
+      let iterationCount = 0;
+      const MAX_ITERATIONS = 1000; // Safety limit to prevent infinite loops
 
-    // Add remaining text
-    if (lastIndex < cleanText.length) {
-      parts.push({ text: cleanText.substring(lastIndex), type: 'normal' });
-    }
-
-    // If no matches, return plain text
-    if (parts.length === 1 && parts[0].type === 'normal') {
-      return <Text style={styles.interpretationText}>{cleanText}</Text>;
-    }
-
-    // Render formatted text
-    return (
-      <Text style={styles.interpretationText}>
-        {parts.map((part, idx) => {
-          if (part.type === 'card') {
-            return (
-              <Text key={idx} style={styles.cardNameInText}>
-                {part.text}
-              </Text>
-            );
-          } else if (part.type === 'day') {
-            return (
-              <Text key={idx} style={styles.dayReferenceInText}>
-                {part.text}
-              </Text>
-            );
-          } else {
-            // Check for emphasis at start of sentences (both English and Chinese)
-            const sentences = part.text.split(/([.!?。！？]\s*)/);
-            return sentences.map((sentence, sIdx) => {
-              // Bold first sentence of paragraphs or key phrases
-              const isStartOfParagraph = idx === 0 || (parts[idx - 1]?.text.match(/[.!?。！？]\s*$/) !== null);
-              
-              // English emphasis words
-              const hasEnglishEmphasis = /^(This|These|Your|You|The|Today|Now|Remember|Focus|Important|Key|Crucial)/i.test(sentence.trim());
-              
-              // Chinese emphasis words/phrases
-              const hasChineseEmphasis = /^(這|這些|你的|您|這個|今天|現在|記住|記住|專注|重要|關鍵|關鍵的|請|注意)/.test(sentence.trim());
-              
-              if ((isStartOfParagraph || hasEnglishEmphasis || hasChineseEmphasis) && sentence.trim().length > (locale === 'zh-TW' ? 8 : 15)) {
-                return (
-                  <Text key={`${idx}-${sIdx}`} style={styles.emphasisText}>
-                    {sentence}
-                  </Text>
-                );
-              }
-              return <Text key={`${idx}-${sIdx}`}>{sentence}</Text>;
-            });
+      try {
+        // Reset regex lastIndex
+        combinedRegex.lastIndex = 0;
+        
+        while ((match = combinedRegex.exec(cleanText)) !== null) {
+          // Safety check to prevent infinite loops
+          iterationCount++;
+          if (iterationCount > MAX_ITERATIONS) {
+            console.warn('formatInterpretationText: Max iterations reached, breaking loop');
+            break;
           }
-        })}
-      </Text>
-    );
+
+          // Validate match result
+          if (!match || match.index === undefined || !match[0]) {
+            break;
+          }
+
+          // Add text before match
+          if (match.index > lastIndex && match.index < cleanText.length) {
+            parts.push({ text: cleanText.substring(lastIndex, match.index), type: 'normal' });
+          }
+          
+          // Determine if it's a card or day
+          const matchedText = match[0];
+          if (!matchedText || typeof matchedText !== 'string') {
+            break;
+          }
+
+          const isCard = allCardNames.some(name => 
+            name && typeof name === 'string' && name.toLowerCase() === matchedText.toLowerCase()
+          );
+          
+          parts.push({ 
+            text: matchedText, 
+            type: isCard ? 'card' : 'day' 
+          });
+          
+          const newLastIndex = match.index + matchedText.length;
+          // Safety check to prevent infinite loops
+          if (newLastIndex <= lastIndex) {
+            console.warn('formatInterpretationText: Regex not advancing, breaking loop');
+            break;
+          }
+          lastIndex = newLastIndex;
+
+          // Prevent infinite loop if regex is global and not advancing
+          if (!combinedRegex.global) {
+            break;
+          }
+        }
+      } catch (matchError) {
+        console.error('formatInterpretationText: Error during regex matching:', matchError);
+        // Fallback to plain text if matching fails
+        return <Text style={styles.interpretationText}>{cleanText}</Text>;
+      }
+
+      // Add remaining text
+      if (lastIndex < cleanText.length) {
+        parts.push({ text: cleanText.substring(lastIndex), type: 'normal' });
+      }
+
+      // If no matches, return plain text
+      if (parts.length === 0 || (parts.length === 1 && parts[0].type === 'normal')) {
+        return <Text style={styles.interpretationText}>{cleanText}</Text>;
+      }
+
+      // Render formatted text
+      return (
+        <Text style={styles.interpretationText}>
+          {parts.map((part, idx) => {
+            if (!part || !part.text) return null;
+            
+            if (part.type === 'card') {
+              return (
+                <Text key={idx} style={styles.cardNameInText}>
+                  {part.text}
+                </Text>
+              );
+            } else if (part.type === 'day') {
+              return (
+                <Text key={idx} style={styles.dayReferenceInText}>
+                  {part.text}
+                </Text>
+              );
+            } else {
+              // Check for emphasis at start of sentences (both English and Chinese)
+              try {
+                const sentences = part.text.split(/([.!?。！？]\s*)/);
+                return sentences.map((sentence, sIdx) => {
+                  if (!sentence) return null;
+                  
+                  try {
+                    // Bold first sentence of paragraphs or key phrases
+                    const prevText = parts[idx - 1]?.text || '';
+                    const isStartOfParagraph = idx === 0 || (prevText && /[.!?。！？]\s*$/.test(prevText));
+                    
+                    // English emphasis words
+                    const hasEnglishEmphasis = /^(This|These|Your|You|The|Today|Now|Remember|Focus|Important|Key|Crucial)/i.test(sentence.trim());
+                    
+                    // Chinese emphasis words/phrases
+                    const hasChineseEmphasis = /^(這|這些|你的|您|這個|今天|現在|記住|記住|專注|重要|關鍵|關鍵的|請|注意)/.test(sentence.trim());
+                    
+                    if ((isStartOfParagraph || hasEnglishEmphasis || hasChineseEmphasis) && sentence.trim().length > (locale === 'zh-TW' ? 8 : 15)) {
+                      return (
+                        <Text key={`${idx}-${sIdx}`} style={styles.emphasisText}>
+                          {sentence}
+                        </Text>
+                      );
+                    }
+                    return <Text key={`${idx}-${sIdx}`}>{sentence}</Text>;
+                  } catch (sentenceError) {
+                    console.warn('formatInterpretationText: Error processing sentence:', sentenceError);
+                    return <Text key={`${idx}-${sIdx}`}>{sentence}</Text>;
+                  }
+                });
+              } catch (splitError) {
+                console.warn('formatInterpretationText: Error splitting text:', splitError);
+                return <Text key={idx}>{part.text}</Text>;
+              }
+            }
+          })}
+        </Text>
+      );
+    } catch (error) {
+      console.error('formatInterpretationText: Unexpected error:', error);
+      // Ultimate fallback - return plain text
+      return <Text style={styles.interpretationText}>{typeof text === 'string' ? text : ''}</Text>;
+    }
   };
 
   const availableStyles: InterpretationStyle[] = [
