@@ -12,8 +12,9 @@ const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 // Note: This model uses "thinking" tokens. We handle this by ensuring maxTokens is high enough.
 const GEMINI_MODEL = 'gemini-2.5-flash';
 
+// Don't throw immediately - let the provider handle missing keys gracefully
 if (!GEMINI_API_KEY) {
-  throw new Error('Missing EXPO_PUBLIC_GEMINI_API_KEY environment variable');
+  console.error('⚠️ Missing EXPO_PUBLIC_GEMINI_API_KEY environment variable. AI features will not work.');
 }
 
 export class GeminiProvider implements IAIProvider {
@@ -26,6 +27,11 @@ export class GeminiProvider implements IAIProvider {
   }
 
   async generate(params: AIGenerateParams): Promise<AIGenerateResult> {
+    // Check for API key before proceeding
+    if (!this.apiKey || this.apiKey.trim() === '') {
+      throw new Error('Gemini API key is not configured. Please set EXPO_PUBLIC_GEMINI_API_KEY environment variable.');
+    }
+
     let {
       prompt,
       systemPrompt,

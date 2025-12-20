@@ -20,7 +20,9 @@ import { getAvailableSpreads } from '../src/services/spreadService';
 import type { TarotSpread } from '../src/types/spreads';
 
 export default function SpreadSelectionScreen() {
-  const { question } = useLocalSearchParams<{ question: string }>();
+  const { question: questionParam } = useLocalSearchParams<{ question: string | string[] }>();
+  // Normalize question - handle both string and array (iOS can return arrays)
+  const question = Array.isArray(questionParam) ? questionParam[0] : questionParam;
   const { t, locale } = useTranslation();
   const { profile, isLoading: profileLoading } = useProfile();
   const [loading, setLoading] = useState(true);
@@ -42,32 +44,59 @@ export default function SpreadSelectionScreen() {
       setLoading(false);
 
       // Load spreads FIRST (most important, cacheable)
-      const { data: allData } = await supabase
+      const { data: allData, error: spreadsError } = await supabase
         .from('tarot_spreads')
         .select('*')
         .order('card_count', { ascending: true })
         .order('spread_key', { ascending: true });
       
-      const allSpreadsData = (allData as TarotSpread[]) || [];
+      if (spreadsError) {
+        console.error('Error loading spreads:', spreadsError);
+        setAllSpreads([]);
+        setSpreads([]);
+        return;
+      }
+
+      // Validate and filter out invalid spreads
+      const allSpreadsData = ((allData as TarotSpread[]) || []).filter(
+        (spread): spread is TarotSpread => 
+          spread && 
+          typeof spread === 'object' &&
+          spread.id && 
+          spread.spread_key &&
+          spread.name &&
+          typeof spread.name === 'object' &&
+          (spread.name.en || spread.name.zh)
+      );
+      
       setAllSpreads(allSpreadsData);
 
       // Use cached profile from context (loaded at sign-in)
       // Filter available spreads (client-side, fast)
       const availableSpreads = isBetaTester 
         ? allSpreadsData 
-        : allSpreadsData.filter(spread => !spread.is_premium || userTier !== 'free');
+        : allSpreadsData.filter(spread => {
+            // Safety check - ensure spread is valid
+            if (!spread || !spread.id) return false;
+            return !spread.is_premium || userTier !== 'free';
+          });
       
       setSpreads(availableSpreads);
 
       // Defer AI suggestion - don't block UI
-      if (question && question.trim().length > 0) {
+      if (question && typeof question === 'string' && question.trim().length > 0 && availableSpreads.length > 0) {
         // Small delay to let UI render first
         setTimeout(() => {
-          setSuggesting(true);
-          suggestSpreadForQuestion(question.trim(), availableSpreads).catch((error) => {
-            console.error('Suggestion error:', error);
+          try {
+            setSuggesting(true);
+            suggestSpreadForQuestion(question.trim(), availableSpreads).catch((error) => {
+              console.error('Suggestion error:', error);
+              setSuggesting(false);
+            });
+          } catch (error) {
+            console.error('Error starting suggestion process:', error);
             setSuggesting(false);
-          });
+          }
         }, 300);
       }
     } catch (error) {
@@ -81,11 +110,28 @@ export default function SpreadSelectionScreen() {
     availableSpreads: TarotSpread[]
   ) => {
     try {
+      // Validate inputs
+      if (!userQuestion || typeof userQuestion !== 'string' || userQuestion.trim().length === 0) {
+        console.warn('Invalid question provided for suggestion');
+        setSuggesting(false);
+        return;
+      }
+
+      if (!availableSpreads || !Array.isArray(availableSpreads) || availableSpreads.length === 0) {
+        console.warn('No available spreads for suggestion');
+        setSuggesting(false);
+        return;
+      }
+
       // Filter out Celtic Cross (10-card) - shadowed out until tested
-      const testableSpreads = availableSpreads.filter(s => s.spread_key !== 'celtic_cross' && s.card_count !== 10);
+      const testableSpreads = availableSpreads.filter(
+        s => s && s.spread_key && s.spread_key !== 'celtic_cross' && s.card_count !== 10
+      );
       
       if (testableSpreads.length === 0) {
-        setSuggestedSpread(availableSpreads[0]);
+        // Fallback to first valid spread
+        const fallback = availableSpreads.find(s => s && s.id && s.spread_key) || null;
+        setSuggestedSpread(fallback);
         setSuggesting(false);
         return;
       }
@@ -121,17 +167,19 @@ export default function SpreadSelectionScreen() {
       }
 
       // Fallback: prefer 3-card, then 2-card, then single
-      suggested = testableSpreads.find(s => s.card_count === 3)
-        || testableSpreads.find(s => s.card_count === 2)
-        || testableSpreads.find(s => s.spread_key === 'single_card')
-        || testableSpreads[0];
+      suggested = testableSpreads.find(s => s && s.card_count === 3)
+        || testableSpreads.find(s => s && s.card_count === 2)
+        || testableSpreads.find(s => s && s.spread_key === 'single_card')
+        || testableSpreads.find(s => s && s.id && s.spread_key) || null;
 
       setSuggestedSpread(suggested);
       setSuggesting(false);
     } catch (error) {
       console.error('Error getting spread suggestion:', error);
       // Fallback to first available spread (excluding Celtic Cross)
-      const fallback = availableSpreads.find(s => s.spread_key !== 'celtic_cross' && s.card_count !== 10) || availableSpreads[0];
+      const fallback = availableSpreads.find(
+        s => s && s.id && s.spread_key && s.spread_key !== 'celtic_cross' && s.card_count !== 10
+      ) || availableSpreads.find(s => s && s.id && s.spread_key) || null;
       setSuggestedSpread(fallback);
       setSuggesting(false);
     }
@@ -140,35 +188,82 @@ export default function SpreadSelectionScreen() {
   // Auto-save is handled by useEffect above
 
   const handleSelectSpread = (spread: TarotSpread) => {
-    // Check if user has access
-    const hasAccess = spreads.some(s => s.id === spread.id);
-    
-    if (!hasAccess) {
-      // Show upgrade prompt (not pushy)
-      return;
-    }
+    try {
+      // Validate spread object
+      if (!spread || !spread.id || !spread.spread_key) {
+        console.error('Invalid spread object:', spread);
+        return;
+      }
 
-    router.push({
-      pathname: '/reading',
-      params: {
+      // Check if user has access
+      const hasAccess = spreads.some(s => s.id === spread.id);
+      
+      if (!hasAccess) {
+        // Show upgrade prompt (not pushy)
+        return;
+      }
+
+      // Safely build params - ensure question is a string or undefined
+      const params: Record<string, string> = {
         type: 'spread',
-        question: question,
         spreadKey: spread.spread_key,
-      },
-    });
+      };
+
+      // Only add question if it exists and is a valid string
+      if (question && typeof question === 'string' && question.trim().length > 0) {
+        params.question = question.trim();
+      }
+
+      router.push({
+        pathname: '/reading',
+        params,
+      });
+    } catch (error) {
+      console.error('Error selecting spread:', error);
+      // Don't crash - just log the error
+    }
   };
 
   const getLocalizedSpreadName = (spread: TarotSpread) => {
-    return locale === 'zh-TW' ? spread.name.zh : spread.name.en;
+    try {
+      if (!spread || !spread.name) {
+        return 'Unknown Spread';
+      }
+      
+      if (locale === 'zh-TW') {
+        return spread.name?.zh || spread.name?.en || 'Unknown Spread';
+      }
+      return spread.name?.en || spread.name?.zh || 'Unknown Spread';
+    } catch (error) {
+      console.error('Error getting localized spread name:', error);
+      return 'Unknown Spread';
+    }
   };
 
   const getLocalizedSpreadDescription = (spread: TarotSpread) => {
-    if (!spread.description) return '';
-    return locale === 'zh-TW' ? spread.description.zh : spread.description.en;
+    try {
+      if (!spread || !spread.description) return '';
+      
+      if (locale === 'zh-TW') {
+        return spread.description?.zh || spread.description?.en || '';
+      }
+      return spread.description?.en || spread.description?.zh || '';
+    } catch (error) {
+      console.error('Error getting localized spread description:', error);
+      return '';
+    }
   };
 
   const isSpreadLocked = (spread: TarotSpread) => {
-    return !spreads.some(s => s.id === spread.id);
+    try {
+      if (!spread || !spread.id || !spreads || !Array.isArray(spreads)) {
+        return true; // Lock if invalid
+      }
+      return !spreads.some(s => s && s.id === spread.id);
+    } catch (error) {
+      console.error('Error checking if spread is locked:', error);
+      return true; // Default to locked on error
+    }
   };
 
   if (loading) {
@@ -205,7 +300,26 @@ export default function SpreadSelectionScreen() {
           headerTitleAlign: 'center',
           headerLeft: () => (
             <TouchableOpacity 
-              onPress={() => routerNav.back()}
+              onPress={() => {
+                try {
+                  if (routerNav && typeof routerNav.back === 'function') {
+                    routerNav.back();
+                  } else if (router && typeof router.back === 'function') {
+                    router.back();
+                  } else {
+                    // Fallback: use router.push to go back
+                    router.push('/(tabs)/home');
+                  }
+                } catch (error) {
+                  console.error('Error navigating back:', error);
+                  // Last resort fallback
+                  try {
+                    router.push('/(tabs)/home');
+                  } catch (fallbackError) {
+                    console.error('Fallback navigation also failed:', fallbackError);
+                  }
+                }
+              }}
               style={{ marginLeft: 20, padding: 10 }}
             >
               <ThemedText variant="body" style={{ 
@@ -261,7 +375,7 @@ export default function SpreadSelectionScreen() {
                   )}
                 </View>
                 <ThemedText variant="caption" style={styles.cardCount}>
-                  {suggestedSpread.card_count} {t('spreads.cards')}
+                  {suggestedSpread?.card_count || 0} {t('spreads.cards')}
                 </ThemedText>
               </View>
               <ThemedText variant="body" style={styles.spreadDescription}>
@@ -269,7 +383,15 @@ export default function SpreadSelectionScreen() {
               </ThemedText>
               <ThemedButton
                 title={t('spreads.useThisSpread')}
-                onPress={() => handleSelectSpread(suggestedSpread)}
+                onPress={() => {
+                  try {
+                    if (suggestedSpread) {
+                      handleSelectSpread(suggestedSpread);
+                    }
+                  } catch (error) {
+                    console.error('Error selecting suggested spread:', error);
+                  }
+                }}
                 variant="primary"
                 style={styles.selectButton}
               />
@@ -282,19 +404,27 @@ export default function SpreadSelectionScreen() {
           {t('spreads.allSpreads')}
         </ThemedText>
 
-        {allSpreads.map((spread) => {
-          const locked = isSpreadLocked(spread);
-          const isSuggested = spread.id === suggestedSpread?.id;
-          const isCelticCross = spread.spread_key === 'celtic_cross' || spread.card_count === 10;
-          const isDisabled = locked || isCelticCross;
-          
-          return (
-            <TouchableOpacity
-              key={spread.id}
-              onPress={() => handleSelectSpread(spread)}
-              activeOpacity={isDisabled ? 1 : 0.7}
-              disabled={isDisabled}
-            >
+        {allSpreads
+          .filter((spread) => spread && spread.id && spread.spread_key)
+          .map((spread) => {
+            const locked = isSpreadLocked(spread);
+            const isSuggested = suggestedSpread && spread.id === suggestedSpread.id;
+            const isCelticCross = spread.spread_key === 'celtic_cross' || spread.card_count === 10;
+            const isDisabled = locked || isCelticCross;
+            
+            return (
+              <TouchableOpacity
+                key={spread.id}
+                onPress={() => {
+                  try {
+                    handleSelectSpread(spread);
+                  } catch (error) {
+                    console.error('Error in spread selection press handler:', error);
+                  }
+                }}
+                activeOpacity={isDisabled ? 1 : 0.7}
+                disabled={isDisabled}
+              >
                <ThemedCard
                  variant={isSuggested ? 'elevated' : 'default'}
                  style={isDisabled ? [styles.spreadCard, styles.lockedCard, { opacity: 0.5 }] : styles.spreadCard}

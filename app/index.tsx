@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Redirect } from 'expo-router';
 import { supabase } from '../src/core/api/supabase';
+import { debugLog } from '../src/utils/debugLog';
 import theme from '../src/theme';
 import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
 import ThemedText from '../src/shared/components/ui/ThemedText';
@@ -13,34 +14,57 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session - wrap in try-catch to prevent crashes
+    try {
+      supabase.auth.getSession().then(({ data: { session } }) => {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:17',message:'Initial session loaded',data:{hasSession:!!session,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      debugLog('index.tsx:17', 'Initial session loaded', { hasSession: !!session, userId: session?.user?.id }, 'C');
       // #endregion
       setSession(session);
       setLoading(false);
     }).catch((error) => {
       console.error('Error getting session:', error);
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:21',message:'Error getting initial session',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      debugLog('index.tsx:21', 'Error getting initial session', { error: error?.message }, 'C');
       // #endregion
       setLoading(false);
     });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:28',message:'Auth state changed',data:{event,hasSession:!!session,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
-      setSession(session);
-      // Clear loading state when auth state changes (important for OAuth flow)
-      setLoading(false);
-    });
+      // Listen for auth changes
+      let subscription: { unsubscribe: () => void } | null = null;
+      
+      try {
+        const {
+          data: { subscription: authSubscription },
+        } = supabase.auth.onAuthStateChange((event, session) => {
+          try {
+            // #region agent log
+            debugLog('index.tsx:28', 'Auth state changed', { event, hasSession: !!session, userId: session?.user?.id }, 'B');
+            // #endregion
+            setSession(session);
+            // Clear loading state when auth state changes (important for OAuth flow)
+            setLoading(false);
+          } catch (error) {
+            console.error('❌ Error in auth state change handler:', error);
+            setLoading(false);
+          }
+        });
+        subscription = authSubscription;
+      } catch (error) {
+        console.error('❌ Error setting up auth state listener:', error);
+      }
 
-    return () => subscription.unsubscribe();
+      return () => {
+        try {
+          subscription?.unsubscribe();
+        } catch (error) {
+          console.error('❌ Error unsubscribing from auth listener:', error);
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error initializing session check:', error);
+      setLoading(false);
+    }
   }, []);
 
   if (loading) {
@@ -59,12 +83,12 @@ export default function Index() {
   // Redirect based on auth state - using key to force re-render when session changes
   if (session) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:49',message:'Redirecting to home',data:{hasSession:true,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+    debugLog('index.tsx:49', 'Redirecting to home', { hasSession: true, userId: session?.user?.id }, 'F');
     // #endregion
     return <Redirect href="/(tabs)/home" key={`home-${session?.user?.id || 'session'}`} />;
   } else {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:52',message:'Redirecting to login',data:{hasSession:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+    debugLog('index.tsx:52', 'Redirecting to login', { hasSession: false }, 'F');
     // #endregion
     return <Redirect href="/(auth)/login" key="login" />;
   }

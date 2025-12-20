@@ -15,6 +15,7 @@ import SpinningLogo from '../src/shared/components/ui/SpinningLogo';
 import AIProvider from '../src/core/api/aiProvider';
 import { geminiProvider } from '../src/core/api/gemini';
 import { supabase } from '../src/core/api/supabase';
+import { debugLog } from '../src/utils/debugLog';
 
 // Set up error handler immediately at module load time to catch early errors
 (function setupKeepAwakeErrorHandler() {
@@ -88,12 +89,16 @@ export default function RootLayout() {
   useEffect(() => {
     if (!fontsLoaded) return;
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    // Listen for auth changes - wrap in try-catch to prevent crashes
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    try {
+      const {
+        data: { subscription: authSubscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        try {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChange',message:'Auth state changed in root layout',data:{event,hasSession:!!session,userId:session?.user?.id,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      debugLog('_layout.tsx:authChange', 'Auth state changed in root layout', { event, hasSession: !!session, userId: session?.user?.id, currentSegments: segments.join('/') }, 'A');
       // #endregion
       
       // Only navigate if we're not already on the correct route
@@ -103,7 +108,7 @@ export default function RootLayout() {
       const isResetPasswordRoute = segments.includes('reset-password');
 
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:routeCheck',message:'Route check before redirect logic',data:{event,hasSession:!!session,inAuthGroup,inTabsGroup,isIndexRoute,isResetPasswordRoute,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      debugLog('_layout.tsx:routeCheck', 'Route check before redirect logic', { event, hasSession: !!session, inAuthGroup, inTabsGroup, isIndexRoute, isResetPasswordRoute, currentSegments: segments.join('/') }, 'A');
       // #endregion
 
       // Only navigate on SIGNED_IN or SIGNED_OUT events, and only if not already on correct route
@@ -111,13 +116,13 @@ export default function RootLayout() {
       // IMPORTANT: For SIGNED_OUT, always redirect to login (even if in tabs group)
       // IMPORTANT: For SIGNED_IN, don't redirect if already in tabs group (user is navigating between tabs)
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeCheck',message:'Checking if should redirect',data:{event,hasSession:!!session,inTabsGroup,isIndexRoute,isResetPasswordRoute,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      debugLog('_layout.tsx:authChangeCheck', 'Checking if should redirect', { event, hasSession: !!session, inTabsGroup, isIndexRoute, isResetPasswordRoute, currentSegments: segments.join('/') }, 'A');
       // #endregion
       
       // Handle SIGNED_OUT separately - always redirect to login unless already there
       if (event === 'SIGNED_OUT' && !isIndexRoute && !isResetPasswordRoute && !inAuthGroup) {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:signOutRedirect',message:'SIGNED_OUT event - navigating to login',data:{hasSession:false,currentSegments:segments.join('/'),inTabsGroup},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        debugLog('_layout.tsx:signOutRedirect', 'SIGNED_OUT event - navigating to login', { hasSession: false, currentSegments: segments.join('/'), inTabsGroup }, 'A');
         // #endregion
         router.replace('/(auth)/login');
       } 
@@ -125,18 +130,33 @@ export default function RootLayout() {
       else if (event === 'SIGNED_IN' && !isIndexRoute && !isResetPasswordRoute && !inTabsGroup) {
         if (session) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeHome',message:'Auth change - navigating to home',data:{hasSession:true,userId:session?.user?.id,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          debugLog('_layout.tsx:authChangeHome', 'Auth change - navigating to home', { hasSession: true, userId: session?.user?.id, currentSegments: segments.join('/') }, 'A');
           // #endregion
           router.replace('/(tabs)/home');
         }
       } else {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'_layout.tsx:authChangeSkipped',message:'Auth change navigation skipped',data:{event,isIndexRoute,isResetPasswordRoute,inTabsGroup,inAuthGroup,currentSegments:segments.join('/')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        debugLog('_layout.tsx:authChangeSkipped', 'Auth change navigation skipped', { event, isIndexRoute, isResetPasswordRoute, inTabsGroup, inAuthGroup, currentSegments: segments.join('/') }, 'A');
         // #endregion
       }
-    });
+        } catch (error) {
+          console.error('❌ Error in auth state change handler:', error);
+          // Don't crash - just log the error
+        }
+      });
+      subscription = authSubscription;
+    } catch (error) {
+      console.error('❌ Error setting up auth state listener:', error);
+      // Don't crash - app can still function without auth listener
+    }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      try {
+        subscription?.unsubscribe();
+      } catch (error) {
+        console.error('❌ Error unsubscribing from auth listener:', error);
+      }
+    };
   }, [fontsLoaded, router, segments]);
 
   if (!fontsLoaded) {

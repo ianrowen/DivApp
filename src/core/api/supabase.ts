@@ -7,6 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import sessionUrlProvider from 'expo-auth-session/build/SessionUrlProvider';
+import { debugLog } from '../utils/debugLog';
 
 // Environment variables - set these in your .env file
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -48,20 +49,60 @@ const EXPO_PROJECT_FULL_NAME =
   deriveFullNameFromConfig();
 
 
+// Check for environment variables but don't throw immediately - allow app to start
+// The app will handle missing vars gracefully in initialization
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables');
+  console.error('⚠️ Missing Supabase environment variables. App may not function correctly.');
+  console.error('SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Missing');
+  console.error('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Set' : 'Missing');
+  // Don't throw - let the app initialize and handle errors gracefully
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    // CRITICAL FIX: Use AsyncStorage for session persistence in React Native
-    storage: AsyncStorage as any,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-    flowType: 'pkce',
-  },
-});
+// Create Supabase client with error handling
+// Environment variables should be set via EAS build configuration
+// Always create client - if vars are missing, API calls will fail gracefully
+let supabaseClient: ReturnType<typeof createClient>;
+
+try {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('⚠️ Missing Supabase environment variables');
+    console.error('SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Missing');
+    console.error('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Set' : 'Missing');
+    console.error('⚠️ App will not function correctly without these variables');
+  }
+
+  // Create client - use empty strings as fallback to prevent crashes
+  // API calls will fail gracefully if credentials are invalid
+  supabaseClient = createClient(
+    SUPABASE_URL || '',
+    SUPABASE_ANON_KEY || '',
+    {
+      auth: {
+        // CRITICAL FIX: Use AsyncStorage for session persistence in React Native
+        storage: AsyncStorage as any,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+        flowType: 'pkce',
+      },
+    }
+  );
+} catch (error) {
+  console.error('❌ Critical error creating Supabase client:', error);
+  // Don't throw - create a minimal client to prevent app crash
+  // The app will show errors when trying to use Supabase, but won't crash on startup
+  supabaseClient = createClient('', '', {
+    auth: {
+      storage: AsyncStorage as any,
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
+    },
+  });
+}
+
+export const supabase = supabaseClient;
 
 const isExpoGo = Constants.appOwnership === 'expo';
 
@@ -163,11 +204,11 @@ export const supabaseHelpers = {
   // Sign out
   async signOut() {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:166',message:'signOut entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    debugLog('supabase.ts:166', 'signOut entry', {}, 'E');
     // #endregion
     const { error } = await supabase.auth.signOut();
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:168',message:'signOut completed',data:{hasError:!!error,errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    debugLog('supabase.ts:168', 'signOut completed', { hasError: !!error, errorMessage: error?.message }, 'E');
     // #endregion
     if (error) throw error;
   },
@@ -206,7 +247,7 @@ export const supabaseHelpers = {
   async signInWithGoogle(): Promise<Session | null> {
     try {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:202',message:'signInWithGoogle entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      debugLog('supabase.ts:202', 'signInWithGoogle entry', {}, 'A');
       // #endregion
       const redirectTo = getRedirectUri();
 
@@ -367,7 +408,7 @@ export const supabaseHelpers = {
           throw new Error('No session returned from code exchange');
         }
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:380',message:'Session exchange successful',data:{hasSession:!!sessionData?.session,userId:sessionData?.session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        debugLog('supabase.ts:380', 'Session exchange successful', { hasSession: !!sessionData?.session, userId: sessionData?.session?.user?.id }, 'A');
         // #endregion
         return sessionData.session;
       } catch (error: any) {
@@ -402,7 +443,7 @@ export const supabaseHelpers = {
           throw new Error('No session returned after setting tokens');
         }
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:416',message:'Session set with tokens',data:{hasSession:!!sessionData?.session,userId:sessionData?.session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        debugLog('supabase.ts:416', 'Session set with tokens', { hasSession: !!sessionData?.session, userId: sessionData?.session?.user?.id }, 'A');
         // #endregion
         return sessionData.session;
       } catch (error: any) {
