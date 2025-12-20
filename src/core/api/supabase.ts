@@ -61,6 +61,10 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 // Create Supabase client with error handling
 // Environment variables should be set via EAS build configuration
 // Always create client - if vars are missing, API calls will fail gracefully
+// Check if we're in a React Native environment (not static export)
+// During static export, AsyncStorage may not be available, so check for it
+const isReactNative = typeof AsyncStorage !== 'undefined' && AsyncStorage !== null;
+
 let supabaseClient: ReturnType<typeof createClient>;
 
 try {
@@ -73,15 +77,17 @@ try {
 
   // Create client - use empty strings as fallback to prevent crashes
   // API calls will fail gracefully if credentials are invalid
+  // Only use AsyncStorage if we're in React Native (not static export)
   supabaseClient = createClient(
     SUPABASE_URL || '',
     SUPABASE_ANON_KEY || '',
     {
       auth: {
         // CRITICAL FIX: Use AsyncStorage for session persistence in React Native
-        storage: AsyncStorage as any,
-        autoRefreshToken: true,
-        persistSession: true,
+        // Only set storage if AsyncStorage is available (not during static export)
+        ...(isReactNative ? { storage: AsyncStorage as any } : {}),
+        autoRefreshToken: isReactNative,
+        persistSession: isReactNative,
         detectSessionInUrl: false,
         flowType: 'pkce',
       },
@@ -93,7 +99,7 @@ try {
   // The app will show errors when trying to use Supabase, but won't crash on startup
   supabaseClient = createClient('', '', {
     auth: {
-      storage: AsyncStorage as any,
+      ...(isReactNative ? { storage: AsyncStorage as any } : {}),
       autoRefreshToken: false,
       persistSession: false,
       detectSessionInUrl: false,
