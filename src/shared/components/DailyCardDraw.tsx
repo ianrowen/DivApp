@@ -32,15 +32,122 @@ export default function DailyCardDraw() {
   const [savedReadingId, setSavedReadingId] = useState<string | null>(null);
   const flipAnimation = React.useRef(new Animated.Value(0)).current;
 
+  // Check if daily card was already pulled today on mount
   useEffect(() => {
-    // Always start with card back (not flipped)
-    setIsFlipped(false);
-    // Don't load a card automatically - wait for user to tap
+    const checkExistingDailyCard = async () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:entry',message:'Checking for existing daily card on mount',data:{hasCard:!!card},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:noUser',message:'No user found, skipping check',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
+          // No user, start with card back
+          setIsFlipped(false);
+          return;
+        }
+
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:queryStart',message:'Querying database for today daily card',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+
+        // Check for existing daily card reading from today
+        const { data: existingReading, error: fetchError } = await supabase
+          .from('readings')
+          .select('id, created_at, elements_drawn')
+          .eq('user_id', user.id)
+          .eq('reading_type', 'daily_card')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle() as any;
+
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:queryResult',message:'Database query result',data:{hasReading:!!existingReading,hasError:!!fetchError,readingId:existingReading?.id,createdAt:existingReading?.created_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+
+        if (fetchError) {
+          console.warn('⚠️ Error checking for existing daily card:', fetchError);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:queryError',message:'Database query error',data:{error:fetchError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
+          setIsFlipped(false);
+          return;
+        }
+
+        if (existingReading?.id) {
+          // Check if it's from today
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const readingDate = new Date(existingReading.created_at);
+          readingDate.setHours(0, 0, 0, 0);
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:dateCheck',message:'Checking if reading is from today',data:{today:today.toISOString(),readingDate:readingDate.toISOString(),isToday:readingDate.getTime()===today.getTime()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
+
+          if (readingDate.getTime() === today.getTime()) {
+            // Load the card from elements_drawn
+            if (existingReading.elements_drawn && Array.isArray(existingReading.elements_drawn) && existingReading.elements_drawn.length > 0) {
+              const cardElement = existingReading.elements_drawn[0] as any;
+              const cardCode = cardElement.elementId || cardElement.metadata?.cardCode;
+              const reversed = cardElement.metadata?.reversed || false;
+
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:foundCard',message:'Found existing card from today, loading it',data:{cardCode:cardCode,reversed:reversed,readingId:existingReading.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+              // #endregion
+
+              const foundCard = LOCAL_RWS_CARDS.find(c => c.code === cardCode);
+              if (foundCard) {
+                const cardWithReversal = { ...foundCard, reversed };
+                // Set card and flip state simultaneously, then animate immediately after render
+                setCard(cardWithReversal);
+                setSavedReadingId(existingReading.id);
+                setIsFlipped(true);
+                // Use requestAnimationFrame to ensure the card renders before animating
+                requestAnimationFrame(() => {
+                  flipAnimation.setValue(1);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                });
+                console.log('✅ Loaded existing daily card from today:', cardCode, 'reversed:', reversed);
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:cardLoaded',message:'Card loaded successfully, auto-flipping immediately',data:{cardCode:cardCode,reversed:reversed},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
+                return; // Don't reset isFlipped
+              } else {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:cardNotFound',message:'Card not found in LOCAL_RWS_CARDS',data:{cardCode:cardCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
+                console.warn('⚠️ Card not found for code:', cardCode);
+              }
+            }
+          }
+        }
+        
+        // No existing card found for today, start with card back
+        setIsFlipped(false);
+      } catch (error: any) {
+        console.error('❌ Error checking for existing daily card:', error);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:checkExistingDailyCard:exception',message:'Exception checking for existing card',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        setIsFlipped(false);
+      }
+    };
+
+    checkExistingDailyCard();
   }, []);
 
   // Auto-flip when card is drawn and shouldAutoFlip is true
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:autoFlipEffect:check',message:'Auto-flip effect triggered',data:{hasCard:!!card,shouldAutoFlip:shouldAutoFlip,isFlipped:isFlipped},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     if (card && shouldAutoFlip && !isFlipped) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:autoFlipEffect:flipping',message:'Auto-flipping card',data:{cardCode:card.code},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       setShouldAutoFlip(false);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setIsAnimating(true);
@@ -199,6 +306,9 @@ export default function DailyCardDraw() {
   };
 
   const drawNewCard = async (): Promise<void> => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:drawNewCard:entry',message:'drawNewCard called',data:{hasCard:!!card},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     try {
       // Shuffle entire deck using Fisher-Yates for true randomness
       const shuffled = [...LOCAL_RWS_CARDS];
@@ -214,12 +324,16 @@ export default function DailyCardDraw() {
 
       const cardWithReversal = { ...drawnCard, reversed };
       console.log('🎴 Drawing new daily card:', drawnCard.code, 'reversed:', reversed);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:drawNewCard:cardDrawn',message:'Card drawn, setting state',data:{cardCode:drawnCard.code,reversed:reversed},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       setCard(cardWithReversal);
       
       // Save the daily card immediately when drawn
       const savedId = await saveDailyCard(cardWithReversal);
       // #region agent log
       debugLog('DailyCardDraw.tsx:drawNewCard:saveResult', 'Daily card save result', {savedId:savedId,hasId:!!savedId}, 'N');
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:drawNewCard:saveResult',message:'Daily card save result',data:{savedId:savedId,hasId:!!savedId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
       // #endregion
       if (savedId) {
         console.log('✅ Daily card saved immediately when drawn, readingId:', savedId);
@@ -235,6 +349,9 @@ export default function DailyCardDraw() {
       await AsyncStorage.removeItem(DAILY_CARD_REVERSED_KEY);
     } catch (error) {
       console.error('Error drawing daily card:', error);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:drawNewCard:error',message:'Error drawing card',data:{error:error?.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
     }
   };
 
@@ -263,8 +380,74 @@ export default function DailyCardDraw() {
       return;
     }
 
-    // If no card yet, draw a new random one and mark for auto-flip
+    // If no card yet, check if one was already pulled today before drawing
     if (!card) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:handleFlip:noCard',message:'No card in state, checking if already pulled today',data:{hasCard:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      
+      // Check if a card was already pulled today
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (!userError && user) {
+          const { data: existingReading, error: fetchError } = await supabase
+            .from('readings')
+            .select('id, created_at, elements_drawn')
+            .eq('user_id', user.id)
+            .eq('reading_type', 'daily_card')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle() as any;
+
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:handleFlip:checkBeforeDraw',message:'Checking database before drawing new card',data:{hasReading:!!existingReading,hasError:!!fetchError,readingId:existingReading?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
+
+          if (!fetchError && existingReading?.id) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const readingDate = new Date(existingReading.created_at);
+            readingDate.setHours(0, 0, 0, 0);
+
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:handleFlip:dateCheckBeforeDraw',message:'Date check before drawing',data:{isToday:readingDate.getTime()===today.getTime()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+
+            if (readingDate.getTime() === today.getTime()) {
+              // Card already pulled today, load it instead of drawing new
+              if (existingReading.elements_drawn && Array.isArray(existingReading.elements_drawn) && existingReading.elements_drawn.length > 0) {
+                const cardElement = existingReading.elements_drawn[0] as any;
+                const cardCode = cardElement.elementId || cardElement.metadata?.cardCode;
+                const reversed = cardElement.metadata?.reversed || false;
+                const foundCard = LOCAL_RWS_CARDS.find(c => c.code === cardCode);
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:handleFlip:preventDraw',message:'Preventing new draw, loading existing card',data:{cardCode:cardCode,reversed:reversed,readingId:existingReading.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
+
+                if (foundCard) {
+                  const cardWithReversal = { ...foundCard, reversed };
+                  setCard(cardWithReversal);
+                  setSavedReadingId(existingReading.id);
+                  setShouldAutoFlip(true);
+                  console.log('✅ Card already pulled today, loading existing:', cardCode);
+                  return;
+                }
+              }
+            }
+          }
+        }
+      } catch (error: any) {
+        console.error('❌ Error checking before draw:', error);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:handleFlip:checkError',message:'Error checking before draw',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+      }
+
+      // No card found for today, draw a new one
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:handleFlip:drawingNew',message:'No existing card found, drawing new card',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       setShouldAutoFlip(true);
       await drawNewCard();
       return;
