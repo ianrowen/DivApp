@@ -1,11 +1,13 @@
 // app/(tabs)/history.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   FlatList,
   StyleSheet,
   Alert,
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,7 +21,6 @@ import SpinningLogo from '../../src/shared/components/ui/SpinningLogo';
 import { useTranslation } from '../../src/i18n';
 import { LOCAL_RWS_CARDS } from '../../src/systems/tarot/data/localCardData';
 import { getLocalizedCard } from '../../src/systems/tarot/utils/cardHelpers';
-import { debugLog } from '../../src/utils/debugLog';
 
 export default function HistoryScreen() {
   const { t, locale } = useTranslation();
@@ -32,50 +33,28 @@ export default function HistoryScreen() {
   const loadReadings = React.useCallback(async () => {
     // Prevent concurrent loads
     if (isLoadingRef.current) {
-      // #region agent log
-      debugLog('history.tsx:loadReadings', 'loadReadings skipped - already loading', {}, 'G');
-      // #endregion
       return;
     }
-    const startTime = Date.now();
-    // #region agent log
-    debugLog('history.tsx:loadReadings', 'loadReadings entry', { startTime }, 'G');
-    // #endregion
     isLoadingRef.current = true;
     setLoading(true);
     try {
-      // #region agent log
-      debugLog('history.tsx:getSession', 'Calling getSession', {}, 'G');
-      // #endregion
       // Use getSession() - try once immediately, if no session wait briefly and try once more
       const { data: { session } } = await supabase.auth.getSession();
       let user = session?.user;
-      let retried = false;
       
       // If no session immediately, wait 100ms and try once more (session might still be establishing)
       if (!user) {
         await new Promise(resolve => setTimeout(resolve, 100));
         const { data: { session: retrySession } } = await supabase.auth.getSession();
         user = retrySession?.user;
-        retried = true;
       }
       
-      // #region agent log
-      debugLog('history.tsx:getSessionResult', 'getSession result', { hasUser: !!user, userId: user?.id, retried }, 'G');
-      // #endregion
       if (!user) {
-        // #region agent log
-        debugLog('history.tsx:noUser', 'No user found', {}, 'G');
-        // #endregion
         isLoadingRef.current = false;
         setLoading(false);
         return;
       }
 
-      const queryStart = Date.now();
-      // #region agent log
-      debugLog('history.tsx:queryReadings', 'Querying readings', { userId: user.id, queryStart }, 'G');
-      // #endregion
       // Optimize query: only select needed fields and limit results
       const { data, error } = await supabase
         .from('readings')
@@ -84,29 +63,15 @@ export default function HistoryScreen() {
         .order('created_at', { ascending: false })
         .limit(100); // Limit to 100 most recent readings
 
-      const queryDuration = Date.now() - queryStart;
-      const totalDuration = Date.now() - startTime;
-      // #region agent log
-      debugLog('history.tsx:queryResult', 'Readings query result', { hasData: !!data, dataLength: data?.length, hasError: !!error, error: error?.message, queryDuration, totalDuration }, 'G');
-      // #endregion
       if (error) throw error;
 
       console.log('📚 Loaded readings:', data?.length || 0);
       setReadings(data as any[]);
-      // #region agent log
-      debugLog('history.tsx:setReadings', 'Set readings', { readingsCount: data?.length }, 'G');
-      // #endregion
       // Note: Don't reset expandedIds here - let useFocusEffect handle it
       // This prevents resetting when real-time updates come in
     } catch (error) {
-      // #region agent log
-      debugLog('history.tsx:error', 'Error loading readings', { error: error?.message }, 'G');
-      // #endregion
       console.error('Error loading readings:', error);
     } finally {
-      // #region agent log
-      debugLog('history.tsx:finally', 'Setting loading to false', {}, 'G');
-      // #endregion
       isLoadingRef.current = false;
       setLoading(false);
     }
@@ -161,7 +126,16 @@ export default function HistoryScreen() {
         .subscribe();
     })();
 
+    // Listen for app state changes (background/foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App came to foreground - reload data
+        loadReadings();
+      }
+    });
+
     return () => {
+      subscription.remove();
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }

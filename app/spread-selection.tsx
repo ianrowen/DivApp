@@ -5,6 +5,8 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { Stack, router, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../src/core/api/supabase';
@@ -36,6 +38,18 @@ export default function SpreadSelectionScreen() {
 
   useEffect(() => {
     loadUserDataAndSpreads();
+
+    // Listen for app state changes (background/foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App came to foreground - reload data
+        loadUserDataAndSpreads();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   const loadUserDataAndSpreads = async () => {

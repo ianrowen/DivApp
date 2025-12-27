@@ -18,6 +18,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -151,6 +153,18 @@ export default function ProfileScreen({ navigation }: Props) {
   useEffect(() => {
     loadProfileData();
     loadAnimationPreference();
+
+    // Listen for app state changes (background/foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App came to foreground - reload data
+        loadProfileData();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   const loadAnimationPreference = async () => {
@@ -210,15 +224,14 @@ export default function ProfileScreen({ navigation }: Props) {
       // Use getSession() - try once immediately, if no session wait briefly and try once more
       const { data: { session } } = await supabase.auth.getSession();
       let user = session?.user;
-      let retried = false;
       
       // If no session immediately, wait 100ms and try once more (session might still be establishing)
       if (!user) {
         await new Promise(resolve => setTimeout(resolve, 100));
         const { data: { session: retrySession } } = await supabase.auth.getSession();
         user = retrySession?.user;
-        retried = true;
       }
+      
       if (!user) {
         console.warn('No user found');
         setLoading(false);
