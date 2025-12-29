@@ -33,29 +33,66 @@ export default function HistoryScreen() {
   const loadReadings = React.useCallback(async () => {
     // Prevent concurrent loads
     if (isLoadingRef.current) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings skipped - already loading',data:{appState:AppState.currentState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       return;
     }
+    const appState = AppState.currentState;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings entry',data:{appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     isLoadingRef.current = true;
     setLoading(true);
     try {
       // Use getSession() - try once immediately, if no session wait briefly and try once more
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Check if session is expired
+      const isExpired = session?.expires_at ? (session.expires_at * 1000 < Date.now()) : false;
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSession',message:'getSession first attempt',data:{hasSession:!!session,hasError:!!sessionError,error:sessionError?.message,userId:session?.user?.id,isExpired,expiresAt:session?.expires_at,currentTime:Date.now(),appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       let user = session?.user;
       
-      // If no session immediately, wait 100ms and try once more (session might still be establishing)
-      if (!user) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        const { data: { session: retrySession } } = await supabase.auth.getSession();
-        user = retrySession?.user;
+      // If session expired or no session, try refreshing
+      if (!user || isExpired) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:refreshSession',message:'Attempting to refresh session',data:{isExpired,hasSession:!!session,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:refreshSessionResult',message:'Session refresh result',data:{hasSession:!!refreshedSession,hasError:!!refreshError,error:refreshError?.message,userId:refreshedSession?.user?.id,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        if (refreshedSession?.user) {
+          user = refreshedSession.user;
+        } else if (!user) {
+          // Fallback: wait 100ms and try getSession again
+          await new Promise(resolve => setTimeout(resolve, 100));
+          const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSessionRetry',message:'getSession retry attempt',data:{hasSession:!!retrySession,hasError:!!retryError,error:retryError?.message,userId:retrySession?.user?.id,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
+          user = retrySession?.user;
+        }
       }
       
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSessionResult',message:'getSession final result',data:{hasUser:!!user,userId:user?.id,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       if (!user) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:noUser',message:'No user found',data:{appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         isLoadingRef.current = false;
         setLoading(false);
         return;
       }
 
       // Optimize query: only select needed fields and limit results
+      const queryStart = Date.now();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:queryReadings',message:'Querying readings',data:{userId:user.id,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       const { data, error } = await supabase
         .from('readings')
         .select('id, question, reading_type, elements_drawn, interpretations, created_at')
@@ -63,15 +100,28 @@ export default function HistoryScreen() {
         .order('created_at', { ascending: false })
         .limit(100); // Limit to 100 most recent readings
 
+      const queryDuration = Date.now() - queryStart;
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:queryResult',message:'Readings query result',data:{hasData:!!data,dataLength:data?.length,hasError:!!error,error:error?.message,queryDuration,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       if (error) throw error;
 
       console.log('📚 Loaded readings:', data?.length || 0);
       setReadings(data as any[]);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:setReadings',message:'Set readings',data:{readingsCount:data?.length,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       // Note: Don't reset expandedIds here - let useFocusEffect handle it
       // This prevents resetting when real-time updates come in
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:error',message:'Error loading readings',data:{error:error?.message,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       console.error('Error loading readings:', error);
     } finally {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:finally',message:'Setting loading to false',data:{appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       isLoadingRef.current = false;
       setLoading(false);
     }
@@ -128,8 +178,14 @@ export default function HistoryScreen() {
 
     // Listen for app state changes (background/foreground)
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:appStateChange',message:'App state changed',data:{nextAppState,currentState:AppState.currentState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       if (nextAppState === 'active') {
         // App came to foreground - reload data
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:appForeground',message:'App came to foreground, reloading readings',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         loadReadings();
       }
     });

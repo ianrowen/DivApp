@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import InfinityEight from '../../src/shared/components/icons/InfinityEight';
 import { ProfileIcon } from '../../src/shared/components/icons/ProfileIcon';
-import { StatisticsIcon } from '../../src/shared/components/icons/StatisticsIcon';
 import { HistoryScroll } from '../../src/shared/components/icons/HistoryScroll';
 import { LibraryBook } from '../../src/shared/components/icons/LibraryBook';
 import { useTranslation } from '../../src/i18n';
@@ -102,9 +101,6 @@ export default function TabsLayout() {
                 marginRight: 16, 
                 paddingVertical: 8,
                 paddingHorizontal: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 6,
               }}
             >
               <ThemedText variant="body" style={{ 
@@ -117,11 +113,6 @@ export default function TabsLayout() {
               }}>
                 {t('statistics.linkTitle')}
               </ThemedText>
-              <StatisticsIcon 
-                size={22} 
-                color={theme.colors.primary.goldLight} 
-                showLabel={false}
-              />
             </TouchableOpacity>
           ),
           tabBarIcon: ({ focused }) => (
