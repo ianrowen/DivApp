@@ -43,6 +43,7 @@ export async function buildInitialTarotPrompt(
     userProfile,
     userId,
     userTier = 'free',
+    isBetaTester = false,
   } = config;
 
   const userContext = PromptBuilder.buildUserContext(userProfile);
@@ -70,16 +71,19 @@ export async function buildInitialTarotPrompt(
     );
     
     const isRecurring = recurringThemes.length > 0;
-    const historyCount = PromptBuilder.getSmartHistoryCount(userTier, isRecurring);
+    const historyCount = PromptBuilder.getSmartHistoryCount(userTier, isRecurring, isBetaTester);
     const includeConversations = userTier !== 'free';
 
-    console.log(`📊 Loading ${historyCount} past readings (tier: ${userTier}, recurring: ${isRecurring}, conversations: ${includeConversations})`);
+    console.log(`📊 Loading ${historyCount} past readings (tier: ${userTier}, beta: ${isBetaTester}, recurring: ${isRecurring}, conversations: ${includeConversations})`);
 
     const history = await PromptBuilder.loadRecentReadingHistory(
       effectiveUserId,
       locale,
       historyCount,
-      includeConversations
+      includeConversations,
+      false, // excludeDailyCards
+      userTier, // Pass user tier for full history for apex users
+      isBetaTester // Beta testers get full history like expert tier
     );
 
     if (history) {

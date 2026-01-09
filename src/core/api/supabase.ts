@@ -130,11 +130,26 @@ const getRedirectUri = () => {
   }
 
   // For development builds, use custom scheme
+  // Note: makeRedirectUri may use package name on Android in some cases
+  // Force the scheme to ensure consistency
   const redirectUri = makeRedirectUri({
     scheme: 'divin8',
     path: 'supabase-auth',
+    usePath: true,
+    preferLocalhost: false,
   });
   console.log('[Supabase] Generated dev build redirect URI:', redirectUri);
+  console.log('[Supabase] Platform:', Constants.platform?.ios ? 'iOS' : Constants.platform?.android ? 'Android' : 'Unknown');
+  console.log('[Supabase] App ownership:', Constants.appOwnership);
+  console.log('[Supabase] IMPORTANT: Add this exact URI to Supabase Dashboard → Authentication → Providers → Google → Redirect URLs');
+  
+  // On Android, makeRedirectUri might use package name instead of scheme
+  // Log alternative formats for debugging
+  if (Constants.platform?.android) {
+    const altUri = `com.divin8.app://supabase-auth`;
+    console.log('[Supabase] Android alternative redirect URI (if needed):', altUri);
+  }
+  
   return redirectUri;
 };
 
@@ -220,22 +235,34 @@ export const supabaseHelpers = {
   },
 
   // Check user tier (for subscription features)
-  async getUserTier(userId: string): Promise<'free' | 'premium' | 'pro' | 'expert'> {
+  async getUserTier(userId: string): Promise<'free' | 'adept' | 'apex'> {
     const { data, error } = await supabase
-      .from('users')
-      .select('subscription_tier')
-      .eq('id', userId)
+      .from('profiles')
+      .select('subscription_tier, is_beta_tester, beta_access_expires_at')
+      .eq('user_id', userId)
       .single();
     
-    if (error) {
-        console.warn('Could not fetch user tier, defaulting to free:', error.message);
-        return 'free'; 
+    if (error || !data) {
+      console.error('Error fetching user tier:', error);
+      return 'free';
     }
-    return (data?.subscription_tier as 'free' | 'premium' | 'pro' | 'expert') || 'free';
+
+    // Beta testers get apex-level access if beta hasn't expired
+    if (data.is_beta_tester) {
+      const betaExpired = data.beta_access_expires_at && new Date(data.beta_access_expires_at) < new Date();
+      if (!betaExpired) {
+        console.log('✅ Beta tester detected - granting apex access');
+        return 'apex'; // Full access during beta
+      } else {
+        console.log('⚠️ Beta tester access has expired');
+      }
+    }
+
+    return (data.subscription_tier as 'free' | 'adept' | 'apex') || 'free';
   },
 
   // Check if user can access a feature based on tier
-  async canAccessFeature(userId: string, featureName: string, requiredTier: 'free' | 'premium' | 'pro' | 'expert' = 'premium'): Promise<boolean> {
+  async canAccessFeature(userId: string, featureName: string, requiredTier: 'free' | 'adept' | 'apex' = 'adept'): Promise<boolean> {
     const { data, error } = await supabase
       .rpc('check_tier_access', {
         user_uuid: userId,
@@ -256,6 +283,8 @@ export const supabaseHelpers = {
       debugLog('supabase.ts:202', 'signInWithGoogle entry', {}, 'A');
       // #endregion
       const redirectTo = getRedirectUri();
+      console.log('[Supabase] Starting Google OAuth with redirect URI:', redirectTo);
+      console.log('[Supabase] IMPORTANT: Make sure this exact URI is configured in Supabase Dashboard → Authentication → Providers → Google → Redirect URLs');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -401,12 +430,18 @@ export const supabaseHelpers = {
 
     if (authUrlParams.code) {
       try {
+        console.log('[Supabase] Exchanging authorization code for session...');
         const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(authUrlParams.code);
 
         if (exchangeError) {
-          console.error('[Supabase] Error exchanging code for session:', exchangeError);
+          console.error('[Supabase] ❌ Error exchanging code for session:', exchangeError);
           console.error('[Supabase] Error details:', JSON.stringify(exchangeError, null, 2));
-          throw exchangeError;
+          console.error('[Supabase] Error message:', exchangeError.message);
+          console.error('[Supabase] This usually means the redirect URI is not configured correctly in Supabase Dashboard.');
+          console.error('[Supabase] Expected redirect URI:', redirectTo);
+          console.error('[Supabase] Go to: Supabase Dashboard → Authentication → Providers → Google → Redirect URLs');
+          console.error('[Supabase] Add this exact URI:', redirectTo);
+          throw new Error(`Failed to exchange authorization code: ${exchangeError.message}. Make sure the redirect URI "${redirectTo}" is configured in Supabase Dashboard → Authentication → Providers → Google → Redirect URLs.`);
         }
 
         if (!sessionData?.session) {

@@ -1,8 +1,9 @@
 // app/(tabs)/home.tsx
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabaseHelpers } from '../../src/core/api/supabase';
 import theme from '../../src/theme';
 import MysticalBackground from '../../src/shared/components/ui/MysticalBackground';
@@ -16,6 +17,13 @@ export default function HomeScreen() {
   const [question, setQuestion] = useState('');
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+
+  // Clear question when screen comes into focus (user returns from reading)
+  useFocusEffect(
+    useCallback(() => {
+      setQuestion('');
+    }, [])
+  );
 
   const handleSubmitQuestion = () => {
     if (question.trim().length === 0) {
@@ -93,17 +101,30 @@ export default function HomeScreen() {
 
           {/* Fixed Question Input Card at Bottom */}
           <ThemedCard variant="elevated" style={styles.questionCard}>
-            <TextInput
-              style={styles.questionInput}
-              placeholder={t('home.questionPlaceholder')}
-              placeholderTextColor={theme.colors.text.tertiary}
-              value={question}
-              onChangeText={setQuestion}
-              onSubmitEditing={handleSubmitQuestion}
-              returnKeyType="done"
-              multiline
-              maxLength={500}
-            />
+            <View style={styles.questionInputContainer}>
+              <TextInput
+                style={styles.questionInput}
+                placeholder={t('home.questionPlaceholder')}
+                placeholderTextColor={theme.colors.text.tertiary}
+                value={question}
+                onChangeText={setQuestion}
+                onSubmitEditing={handleSubmitQuestion}
+                returnKeyType="done"
+                multiline
+                maxLength={500}
+              />
+              {question.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setQuestion('')}
+                  style={styles.clearButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <ThemedText variant="body" style={styles.clearButtonText}>
+                    ✕
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
             <View style={styles.questionActions}>
               <ThemedText variant="caption" style={styles.charCount}>
                 {question.length}/500
@@ -171,18 +192,39 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.spacing.lg,
     // Fixed at bottom, above tab bar
   },
+  questionInputContainer: {
+    position: 'relative',
+    marginBottom: theme.spacing.spacing.md,
+  },
   questionInput: {
     backgroundColor: theme.colors.neutrals.darkGray,
     borderRadius: theme.spacing.borderRadius.md,
     padding: theme.spacing.spacing.md,
+    paddingRight: 40, // Space for clear button
     color: theme.colors.text.primary,
     fontSize: theme.typography.fontSize.md,
     minHeight: 100,
     maxHeight: 150,
     textAlignVertical: 'top',
-    marginBottom: theme.spacing.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.primary.goldDark,
+  },
+  clearButton: {
+    position: 'absolute',
+    right: theme.spacing.spacing.md,
+    top: theme.spacing.spacing.md,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+    backgroundColor: theme.colors.neutrals.gray,
+  },
+  clearButtonText: {
+    color: theme.colors.text.secondary,
+    fontSize: 16,
+    lineHeight: 16,
+    fontWeight: '600',
   },
   questionActions: {
     flexDirection: 'row',

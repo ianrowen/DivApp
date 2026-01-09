@@ -43,7 +43,7 @@ export default {
     welcome: 'Welcome',
     startReading: 'Start Reading',
     viewHistory: 'View History',
-    statistics: 'Statistics',
+    statistics: 'Analysis',
     profile: 'Profile',
     questionPrompt: 'What is your question?',
     quickAccess: 'Quick Access',
@@ -151,9 +151,9 @@ export default {
     termsOfService: 'Terms of Service',
     privacyPolicy: 'Privacy Policy',
   },
-  statistics: {
-    title: 'Statistics',
-    linkTitle: 'Statistics',
+  analysis: {
+    title: 'Analysis',
+    linkTitle: 'Analysis',
     totalReadings: 'Total Readings',
     favoriteSpread: 'Favorite Spread',
     noStats: 'No statistics yet',

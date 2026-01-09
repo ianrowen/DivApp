@@ -15,7 +15,7 @@ export async function loadUserProfile(
 
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('sun_sign, moon_sign, rising_sign, use_birth_data_for_readings')
       .eq('user_id', userId)
       .single();
@@ -46,6 +46,8 @@ export async function loadUserProfile(
     return null;
   }
 }
+
+
 
 
 

@@ -15,7 +15,7 @@ export interface SystemDefinition {
   capabilities: Record<string, boolean>;
   requirements: Record<string, string>;
   availability: {
-    min_tier: 'free' | 'premium' | 'pro' | 'expert';
+    min_tier: 'free' | 'adept' | 'apex';
     is_enabled: boolean;
   };
   cross_reference: {
@@ -23,15 +23,14 @@ export interface SystemDefinition {
   };
 }
 
-// Maps to the User's tier
-type UserTier = 'free' | 'premium' | 'pro' | 'expert';
+// Maps to the User's tier (unified naming)
+type UserTier = 'free' | 'adept' | 'apex';
 
 // Tier hierarchy for quick comparison (used internally)
 const TIER_ORDER: Record<UserTier, number> = {
   'free': 0,
-  'premium': 1,
-  'pro': 2,
-  'expert': 3,
+  'adept': 1,
+  'apex': 2,
 };
 
 export class SystemRegistry {

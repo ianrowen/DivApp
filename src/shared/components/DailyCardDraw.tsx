@@ -24,6 +24,7 @@ const DAILY_CARD_REVERSED_KEY = 'divin8_daily_card_reversed';
 export default function DailyCardDraw() {
   const { t, locale } = useTranslation();
   const [card, setCard] = useState<any>(null);
+  const cardSetTimeRef = React.useRef<number | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldAutoFlip, setShouldAutoFlip] = useState(false);
@@ -78,6 +79,11 @@ export default function DailyCardDraw() {
               const foundCard = LOCAL_RWS_CARDS.find(c => c.code === cardCode);
               if (foundCard && mounted) {
                 const cardWithReversal = { ...foundCard, reversed };
+                // #region agent log
+                const cardSetTime = Date.now();
+                cardSetTimeRef.current = cardSetTime;
+                fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:83',message:'Card set from existing reading',data:{cardCode:cardWithReversal.code,reversed:cardWithReversal.reversed},timestamp:cardSetTime,sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 // Set card and flip state simultaneously
                 setCard(cardWithReversal);
                 setIsFlipped(true);
@@ -145,6 +151,11 @@ export default function DailyCardDraw() {
 
       const cardWithReversal = { ...drawnCard, reversed };
       console.log('🎴 Drawing new daily card:', drawnCard.code, 'reversed:', reversed);
+      // #region agent log
+      const cardSetTime = Date.now();
+      cardSetTimeRef.current = cardSetTime;
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:152',message:'Card drawn - setting state',data:{cardCode:cardWithReversal.code,reversed:cardWithReversal.reversed},timestamp:cardSetTime,sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       setCard(cardWithReversal);
       
       // Clear any saved card data (no persistence)
@@ -318,6 +329,25 @@ export default function DailyCardDraw() {
                       card.reversed && styles.cardReversedImage,
                     ]}
                     resizeMode="contain"
+                    onLoadStart={() => {
+                      // #region agent log
+                      const loadStartTime = Date.now();
+                      const timeSinceCardSet = cardSetTimeRef.current ? loadStartTime - cardSetTimeRef.current : null;
+                      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:328',message:'Image load started',data:{cardCode:card.code,reversed:card.reversed,timeSinceCardSet},timestamp:loadStartTime,sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                      // #endregion
+                    }}
+                    onLoad={() => {
+                      // #region agent log
+                      const loadEndTime = Date.now();
+                      const timeSinceCardSet = cardSetTimeRef.current ? loadEndTime - cardSetTimeRef.current : null;
+                      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:335',message:'Image load completed',data:{cardCode:card.code,reversed:card.reversed,timeSinceCardSet,totalLoadTime:loadEndTime},timestamp:loadEndTime,sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                      // #endregion
+                    }}
+                    onError={(error) => {
+                      // #region agent log
+                      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:332',message:'Image load error',data:{cardCode:card.code,error:error?.nativeEvent?.error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                      // #endregion
+                    }}
                   />
                   <ThemedText variant="h2" style={styles.cardTitle}>
                     {localizedCard.title}

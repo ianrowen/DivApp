@@ -14,18 +14,17 @@ export interface DeckDefinition {
   tradition: string; // 'rws', 'thoth', 'marseille'
   availability: {
     is_default: boolean;
-    min_tier: 'free' | 'premium' | 'pro' | 'expert';
+    min_tier: 'free' | 'adept' | 'apex';
     is_enabled: boolean;
     is_premium_deck: boolean;
   };
 }
 
-type UserTier = 'free' | 'premium' | 'pro' | 'expert';
+type UserTier = 'free' | 'adept' | 'apex';
 const TIER_ORDER: Record<UserTier, number> = {
   'free': 0,
-  'premium': 1,
-  'pro': 2,
-  'expert': 3,
+  'adept': 1,
+  'apex': 2,
 };
 
 export class DeckRegistry {

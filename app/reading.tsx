@@ -47,8 +47,6 @@ export default function ReadingScreen() {
     readingId?: string;
   }>();
 
-  console.log('📥 Reading screen params:', { type, cardCode, reversed, spreadKey, question });
-
   const { t, locale } = useTranslation();
   const { profile, isLoading: profileLoading } = useProfile();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -96,6 +94,11 @@ export default function ReadingScreen() {
 
   // Card animations - use ref to store animations
   const cardAnimationsRef = useRef<Animated.Value[]>([]);
+
+  // Log params only when they change (not on every render)
+  useEffect(() => {
+    console.log('📥 Reading screen params:', { type, cardCode, reversed, spreadKey, question });
+  }, [type, cardCode, reversed, spreadKey, question]);
 
   useEffect(() => {
     // Prevent multiple initializations for the same params
@@ -631,13 +634,18 @@ export default function ReadingScreen() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           // Use PromptBuilder to get comprehensive history including conversations and reflections
-          const historyCount = PromptBuilder.getSmartHistoryCount(currentTier, false);
-          const includeConversations = currentTier !== 'free'; // Premium+ get conversations
+          // Tiers are now unified: 'free' | 'adept' | 'apex' (no mapping needed)
+          // Beta testers get full history access (same as apex tier)
+          const historyCount = PromptBuilder.getSmartHistoryCount(currentTier, false, isBetaTester);
+          const includeConversations = currentTier !== 'free'; // Adept+ get conversations
           readingsContext = await PromptBuilder.loadRecentReadingHistory(
             user.id,
             locale,
             historyCount,
-            includeConversations
+            includeConversations,
+            false, // excludeDailyCards
+            currentTier, // Pass tier for full history for apex users
+            isBetaTester // Beta testers get full history like apex tier
           );
           console.log('📚 Reading history context:', readingsContext ? `${readingsContext.length} chars` : 'None');
         }
@@ -1814,13 +1822,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
             </ThemedCard>
           )}
 
-          {/* Spread Name */}
-          {spread && (
-            <ThemedText variant="h2" style={styles.spreadName}>
-              {locale === 'zh-TW' ? spread.name.zh : spread.name.en}
-            </ThemedText>
-          )}
-
           {/* Cards Display */}
           <View style={[
             styles.cardsContainer,
@@ -1969,7 +1970,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
           {/* Interpretation Styles */}
           <ThemedCard variant="elevated" style={styles.interpretationCard}>
             <ThemedText variant="h3" style={styles.sectionTitle}>
-              {locale === 'zh-TW' ? '解讀方式' : 'Interpretation Style'}
+              {locale === 'zh-TW' ? '解讀' : 'Interpretation'}
             </ThemedText>
             
             <View style={styles.stylesContainer}>

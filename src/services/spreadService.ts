@@ -25,7 +25,7 @@ export async function loadSpreads(): Promise<TarotSpread[]> {
  * Get spreads available to user based on tier
  */
 export async function getAvailableSpreads(
-  userTier: 'free' | 'premium' | 'pro' | 'expert' = 'free',
+  userTier: 'free' | 'adept' | 'apex' = 'free',
   isBetaTester: boolean = false
 ): Promise<TarotSpread[]> {
   const spreads = await loadSpreads();

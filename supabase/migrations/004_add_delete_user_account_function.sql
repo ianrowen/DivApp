@@ -26,8 +26,10 @@ BEGIN
   DELETE FROM auth.users WHERE id = delete_user_account.user_id;
   
   -- Note: If you have other tables with user data, add DELETE statements here
-  -- Example:
-  -- DELETE FROM public.user_profiles WHERE id = delete_user_account.user_id;
+  -- Example (if profiles table exists):
+  -- DELETE FROM public.profiles WHERE user_id = delete_user_account.user_id;
+  -- Note: This migration was created when the table was named 'user_profiles'
+  -- The table has since been renamed to 'profiles' (see migration 20260105115302)
   
 END;
 $$;
@@ -37,4 +39,6 @@ GRANT EXECUTE ON FUNCTION public.delete_user_account(UUID) TO authenticated;
 
 -- Add comment
 COMMENT ON FUNCTION public.delete_user_account IS 'Allows users to delete their own account and all associated data. Requires SECURITY DEFINER to delete from auth.users.';
+
+
 

@@ -241,7 +241,7 @@ export default function ProfileScreen({ navigation }: Props) {
 
       // Optimize query: only select needed fields instead of *
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('birth_date, birth_time, birth_location, use_birth_data_for_readings')
         .eq('user_id', user.id)
         .single();
@@ -413,7 +413,7 @@ export default function ProfileScreen({ navigation }: Props) {
       };
 
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .upsert({
           user_id: user.id,
           birth_date: birthDate ? birthDate.toISOString().split('T')[0] : null, // Store as date only (YYYY-MM-DD)

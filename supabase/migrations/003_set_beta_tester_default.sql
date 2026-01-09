@@ -26,7 +26,7 @@ END $$;
 -- UPDATE public.user_profiles SET is_beta_tester = true WHERE is_beta_tester IS NULL;
 
 -- Step 3: Create or replace function to handle new user profile creation
--- This ensures that when a user_profiles row is created, is_beta_tester defaults to true
+-- This ensures that when a profiles row is created, is_beta_tester defaults to true
 CREATE OR REPLACE FUNCTION public.handle_new_user_profile()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -45,11 +45,11 @@ CREATE TRIGGER set_beta_tester_default
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user_profile();
 
--- Step 5: If user_profiles are created via a trigger from auth.users, update that trigger
--- Check if there's a trigger that creates user_profiles from auth.users
+-- Step 5: If profiles are created via a trigger from auth.users, update that trigger
+-- Check if there's a trigger that creates profiles from auth.users
 -- This is a common pattern - if you have such a trigger, update it to include is_beta_tester = true
 
--- Example: If you have a trigger that creates user_profiles when auth.users is created,
+-- Example: If you have a trigger that creates profiles when auth.users is created,
 -- you would update it like this (uncomment and modify if needed):
 /*
 CREATE OR REPLACE FUNCTION public.handle_new_user_from_auth()
@@ -64,7 +64,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 */
 
 -- Add comment
+-- Note: This migration was run when the table was named 'user_profiles'
+-- The table has since been renamed to 'profiles' (see migration 20260105115302)
 COMMENT ON COLUMN public.user_profiles.is_beta_tester IS 'Beta tester flag - defaults to true for all new users. Set to false to disable beta features.';
+
+
 
 
 

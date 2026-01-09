@@ -15,6 +15,9 @@ const GEMINI_MODEL = 'gemini-2.5-flash';
 // Don't throw immediately - let the provider handle missing keys gracefully
 if (!GEMINI_API_KEY) {
   console.error('⚠️ Missing EXPO_PUBLIC_GEMINI_API_KEY environment variable. AI features will not work.');
+  console.error('⚠️ Check that the secret is set in EAS and available to your build profile.');
+} else {
+  console.log('✅ EXPO_PUBLIC_GEMINI_API_KEY is configured (length:', GEMINI_API_KEY.length, ')');
 }
 
 export class GeminiProvider implements IAIProvider {

@@ -66,7 +66,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       let data, error;
       try {
         const queryPromise = supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
           .eq('user_id', userId)
           .single();
@@ -96,7 +96,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           try {
             // Use upsert to handle race conditions (if profile gets created between check and insert)
             const { data: newProfile, error: createError } = await supabase
-              .from('user_profiles')
+              .from('profiles')
               .upsert({
                 user_id: userId,
                 subscription_tier: 'free',
@@ -116,7 +116,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
               console.error('❌ Create error hint:', createError.hint);
               // Try to fetch the profile again in case it was created by another process
               const { data: fetchedProfile } = await supabase
-                .from('user_profiles')
+                .from('profiles')
                 .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
                 .eq('user_id', userId)
                 .single();
@@ -147,7 +147,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           try {
             // Use upsert to ensure the update happens even if there's a race condition
             const { data: updatedProfile, error: updateError } = await supabase
-              .from('user_profiles')
+              .from('profiles')
               .upsert({
                 user_id: userId,
                 is_beta_tester: true,

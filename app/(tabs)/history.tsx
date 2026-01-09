@@ -402,9 +402,7 @@ export default function HistoryScreen() {
     const metadata = interpretations._metadata || {};
     const spreadName = metadata.spread_name 
       ? (locale === 'zh-TW' ? metadata.spread_name.zh : metadata.spread_name.en)
-      : (item.reading_type === 'daily_card' 
-          ? (locale === 'zh-TW' ? '每日卡牌' : 'Daily Card')
-          : null);
+      : null; // Don't show "Daily Card" label - question text ("Daily Guidance") is sufficient
 
     return (
       <View style={styles.readingCard}>
@@ -593,8 +591,8 @@ export default function HistoryScreen() {
               </ThemedText>
               <View style={styles.statsLinkContainer}>
                 <ThemedButton
-                  title={t('statistics.title') || 'Statistics'}
-                  onPress={() => router.push('/statistics')}
+                  title={t('analysis.title') || 'Analysis'}
+                  onPress={() => router.push('/analysis')}
                   variant="primary"
                   style={styles.statsLinkButton}
                 />

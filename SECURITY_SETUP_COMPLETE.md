@@ -109,3 +109,5 @@ npm run build:ios:production
 eas env:create --name EXPO_PUBLIC_GEMINI_API_KEY --value "your-new-key" --scope project --force
 ```
 
+
+

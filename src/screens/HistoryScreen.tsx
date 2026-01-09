@@ -276,8 +276,8 @@ export default function HistoryScreen({ navigation }: Props) {
         ListFooterComponent={
           <View style={styles.footerContainer}>
             <ThemedButton
-              title={t('statistics.title')}
-              onPress={() => navigation.navigate('Statistics')}
+              title={t('analysis.title')}
+              onPress={() => navigation.navigate('Analysis')}
               variant="primary"
               style={styles.statsButton}
             />

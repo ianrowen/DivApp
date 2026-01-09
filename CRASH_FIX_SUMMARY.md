@@ -68,3 +68,5 @@ Added comprehensive error handling and safety checks to `formatInterpretationTex
 - Error logging is added for debugging but won't crash the app
 - The function gracefully degrades to plain text rendering if formatting fails
 
+
+

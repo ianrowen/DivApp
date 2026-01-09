@@ -78,8 +78,16 @@ export default function RootLayout() {
   useEffect(() => {
     // Register Gemini as the AI provider (must be done at root level)
     try {
+      // Check if API key is available before registering
+      const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) {
+        console.error('❌ EXPO_PUBLIC_GEMINI_API_KEY not found at app startup. AI features will not work.');
+        console.error('❌ This usually means the EAS secret is not available to your build profile.');
+      }
+      
       AIProvider.register('gemini', geminiProvider);
       AIProvider.setProvider('gemini');
+      console.log('✅ AI Provider (Gemini) initialized successfully');
     } catch (error) {
       console.error('❌ Error initializing AI Provider:', error);
     }
@@ -196,7 +204,7 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
-          name="statistics" 
+          name="analysis" 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 

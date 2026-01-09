@@ -149,3 +149,5 @@ If readings and profile are deleted but auth user remains:
 - Consider adding a "soft delete" option if you want to allow account recovery
 - You may want to add a grace period (e.g., 30 days) before permanent deletion
 
+
+

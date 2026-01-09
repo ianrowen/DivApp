@@ -39,7 +39,7 @@ export default {
     "welcome": "歡迎",
     "startReading": "開始占卜",
     "viewHistory": "查看歷史",
-    "statistics": "統計",
+    "statistics": "分析",
     "profile": "個人資料",
     "questionPrompt": "您想探索什麼問題？",
     "quickAccess": "快速存取",
@@ -135,9 +135,9 @@ export default {
     "privacyPolicy": "隱私權政策",
     "signOutConfirm": "您確定要登出嗎？"
   },
-  "statistics": {
-    "title": "統計數據",
-    "linkTitle": "統計數據",
+  "analysis": {
+    "title": "分析",
+    "linkTitle": "分析",
     "totalReadings": "總占卜次數",
     "favoriteSpread": "最愛牌陣",
     "noStats": "尚無統計資料",

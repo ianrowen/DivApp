@@ -54,8 +54,10 @@ export type InterpretationTier = 'traditional' | 'esoteric' | 'jungian';
 
 /**
  * User subscription tiers
+ * Unified naming: matches database and UI
+ * Display names: free→"Apprentice", adept→"Adept", apex→"Apex"
  */
-export type UserTier = 'free' | 'premium' | 'pro' | 'expert';
+export type UserTier = 'free' | 'adept' | 'apex';
 
 /**
  * Drawn card with position and orientation
@@ -87,6 +89,20 @@ export interface ReadingPromptConfig {
   userProfile: UserProfile | null;
   userId?: string; // For loading reflections
   userTier?: UserTier; // For smart reflection count
+}
+
+/**
+ * Configuration for Tarot reading prompt (used by tarotPrompts.ts)
+ */
+export interface TarotPromptConfig {
+  question: string | null;
+  drawnCards: DrawnCardData[];
+  tier: InterpretationTier;
+  locale: SupportedLocale;
+  userProfile: UserProfile | null;
+  userId?: string;
+  userTier?: UserTier;
+  isBetaTester?: boolean; // Beta testers get full history like expert tier
 }
 
 /**

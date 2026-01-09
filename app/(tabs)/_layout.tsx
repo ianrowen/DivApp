@@ -96,7 +96,7 @@ export default function TabsLayout() {
           headerShown: true,
           headerRight: () => (
             <TouchableOpacity 
-              onPress={() => router.push('/statistics')}
+              onPress={() => router.push('/analysis')}
               style={{ 
                 marginRight: 16, 
                 paddingVertical: 8,
@@ -111,7 +111,7 @@ export default function TabsLayout() {
                 textDecorationLine: 'underline',
                 textDecorationColor: theme.colors.primary.goldLight,
               }}>
-                {t('statistics.linkTitle')}
+                {t('analysis.linkTitle')}
               </ThemedText>
             </TouchableOpacity>
           ),

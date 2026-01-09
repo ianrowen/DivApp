@@ -43,7 +43,7 @@ export async function logQuestionAnalytics(
   question: string | null,
   tier: 'traditional' | 'esoteric' | 'jungian',
   locale: 'en' | 'zh-TW',
-  userTier: 'free' | 'premium' | 'expert' = 'free'
+  userTier: 'free' | 'adept' | 'apex' = 'free'
 ): Promise<void> {
   // Fire-and-forget wrapper
   (async () => {

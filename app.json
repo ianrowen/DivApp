@@ -16,16 +16,25 @@
       "**/*",
       "!**/*.backup.*",
       "!**/*-backup.*",
+      "!**/*.old",
+      "!**/*.zip",
+      "!**/*.log",
+      "!**/*.md",
       "!**/node_modules/**",
       "!**/.git/**",
       "!**/android/**",
-      "!**/ios/**"
+      "!**/ios/**",
+      "!**/DivApp/**",
+      "!**/dist/**",
+      "!**/scripts/**",
+      "!**/*.ps1",
+      "!**/*.sh",
+      "!**/supabase/migrations/**"
     ],
     "ios": {
       "bundleIdentifier": "com.divin8.app",
       "buildNumber": "1",
       "supportsTablet": true,
-      "deploymentTarget": "15.1",
       "infoPlist": {
         "CFBundleDisplayName": "Divin8",
         "CFBundleAllowMixedLocalizations": true,
@@ -88,7 +97,8 @@
           }
         }
       ],
-      "./plugins/with-disable-lint-extratranslation.js"
+      "./plugins/with-disable-lint-extratranslation.js",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
@@ -110,6 +120,10 @@
       "zh-TW": {
         "displayName": "Divin8"
       }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/b3361d2b-b33f-4918-8442-cd6b2bdb7c9a"
     }
   }
 }

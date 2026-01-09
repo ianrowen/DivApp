@@ -10,16 +10,23 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://bawkzybwbpoxftgawvha.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhd2t6eWJ3YnBveGZ0Z2F3dmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTI3NzcsImV4cCI6MjA3Nzg4ODc3N30.GLRosL14pt3gpYLh8Yde3n_Eh0e_8vyB_8PYlhg2juc"
+      },
+      "cache": {
+        "disabled": false
       }
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "android": {
         "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://bawkzybwbpoxftgawvha.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhd2t6eWJ3YnBveGZ0Z2F3dmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTI3NzcsImV4cCI6MjA3Nzg4ODc3N30.GLRosL14pt3gpYLh8Yde3n_Eh0e_8vyB_8PYlhg2juc"
+      },
+      "cache": {
+        "disabled": false
       }
     },
     "simulator": {
@@ -30,12 +37,16 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://bawkzybwbpoxftgawvha.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhd2t6eWJ3YnBveGZ0Z2F3dmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTI3NzcsImV4cCI6MjA3Nzg4ODc3N30.GLRosL14pt3gpYLh8Yde3n_Eh0e_8vyB_8PYlhg2juc"
+      },
+      "cache": {
+        "disabled": false
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle",
-        "autoIncrement": true
+        "autoIncrement": true,
+        "gradleCommand": ":app:bundleRelease"
       },
       "ios": {
         "autoIncrement": true,
@@ -44,31 +55,22 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://bawkzybwbpoxftgawvha.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhd2t6eWJ3YnBveGZ0Z2F3dmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTI3NzcsImV4cCI6MjA3Nzg4ODc3N30.GLRosL14pt3gpYLh8Yde3n_Eh0e_8vyB_8PYlhg2juc"
+      },
+      "cache": {
+        "disabled": false
       }
     }
   },
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./google-service-account.json",
-        "track": "internal",
-        "changesNotSentForReview": false,
-        "releaseStatus": "completed"
+        "track": "internal"
       },
       "ios": {
         "appleId": "irowen@gmail.com",
         "ascAppId": "6756152597",
-        "appleTeamId": "WYP8PZFD4J",
-        "ascAppIdentifier": "6756152597"
+        "appleTeamId": "WYP8PZFD4J"
       }
-    }
-  },
-  "update": {
-    "production": {
-      "channel": "production"
-    },
-    "preview": {
-      "channel": "preview"
     }
   }
 }

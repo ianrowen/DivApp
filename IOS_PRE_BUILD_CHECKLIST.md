@@ -121,3 +121,5 @@ npm run build:ios:production
 - App size should be optimized with current configuration
 - Consider using EAS Secrets for API keys in future (currently in eas.json)
 
+
+

@@ -32,7 +32,7 @@ export default function SpreadSelectionScreen() {
   const [spreads, setSpreads] = useState<TarotSpread[]>([]);
   const [allSpreads, setAllSpreads] = useState<TarotSpread[]>([]);
   const [suggestedSpread, setSuggestedSpread] = useState<TarotSpread | null>(null);
-  const userTier = (profile?.subscription_tier || 'free') as 'free' | 'premium';
+  const userTier = (profile?.subscription_tier || 'free') as 'free' | 'adept' | 'apex';
   const isBetaTester = profile?.is_beta_tester || false;
   const routerNav = useRouter();
 
