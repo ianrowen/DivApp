@@ -35,6 +35,9 @@ import { getCardImage } from '../src/systems/tarot/utils/cardImageLoader';
 import { getSpreadByKey } from '../src/services/spreadService';
 import AIProvider from '../src/core/api/aiProvider';
 import { PromptBuilder } from '../src/core/ai/prompts/promptBuilder';
+import { getSystemPrompt } from '../src/core/ai/prompts/systemPrompts';
+import type { InterpretationTier, SupportedLocale } from '../src/core/ai/prompts/types';
+import FormattedText from '../src/shared/components/FormattedText';
 import type { TarotSpread } from '../src/types/spreads';
 import type { DrawnCard, ChatMessage, InterpretationStyle } from '../src/types/reading';
 import type { LocalTarotCard } from '../src/systems/tarot/data/localCardData';
@@ -595,31 +598,14 @@ export default function ReadingScreen() {
       }
 
 
-      // Build concise system prompt (optimized for speed)
-      let systemPrompt = '';
-      const astroInstruction = birthContextDetailed 
-        ? (locale === 'zh-TW' 
-            ? ' 當提供占星背景時，自然地融入太陽、月亮和上升星座的影響（如適用）。'
-            : ' When astrological context is provided, naturally incorporate Sun, Moon, and Rising sign influences (where applicable).')
-        : '';
-      
-      const formatInstruction = locale === 'zh-TW'
-        ? ' 使用純文字格式，不要使用任何標記格式（如 **粗體** 或 *斜體*）。'
-        : ' Use plain text format only. Do NOT use markdown formatting (like **bold** or *italic*).';
-      
-      if (style === 'traditional') {
-        systemPrompt = locale === 'zh-TW' 
-          ? `專業塔羅解讀。130-156字。${formatInstruction}${astroInstruction}`
-          : `Expert tarot reader. 130-156 words.${formatInstruction}${astroInstruction}`;
-      } else if (style === 'esoteric') {
-        systemPrompt = locale === 'zh-TW'
-          ? `神秘學專家。195-234字。${formatInstruction}${astroInstruction}`
-          : `Esoteric expert. 195-234 words.${formatInstruction}${astroInstruction}`;
-      } else {
-        systemPrompt = locale === 'zh-TW'
-          ? `榮格心理學家。234-260字。${formatInstruction}${astroInstruction}`
-          : `Jungian analyst. 234-260 words.${formatInstruction}${astroInstruction}`;
-      }
+      // Build comprehensive system prompt using centralized prompts
+      const userContext = PromptBuilder.buildUserContext(currentProfile);
+      const systemPrompt = getSystemPrompt(
+        'tarot',
+        style as InterpretationTier,
+        locale as SupportedLocale,
+        userContext
+      );
 
       // Load reading history with conversations and reflections for ALL readings
       let readingsContext = '';
@@ -667,16 +653,12 @@ export default function ReadingScreen() {
         ? '重要：過去解讀、對話和反思的內容比占星背景更優先。優先考慮用戶的歷史問題、洞察和反思，然後才融入占星元素。'
         : 'PRIORITY: Past readings, conversations, and reflections are MORE IMPORTANT than astrology. Prioritize the user\'s historical questions, insights, and reflections, then weave in astrological elements as secondary context.';
       
-      const formattingInstruction = locale === 'zh-TW'
-        ? '重要：請使用純文字格式，不要使用任何標記格式（如 **粗體** 或 *斜體*）。直接寫出卡牌名稱即可。'
-        : 'IMPORTANT: Use plain text format only. Do NOT use any markdown formatting (like **bold** or *italic*). Write card names directly without any formatting.';
-      
-      // Define word limits by style (30% longer than before)
+      // Define word limits by style (matching system prompts)
       const wordLimits = style === 'traditional' 
-        ? (locale === 'zh-TW' ? '130-156' : '130-156')
+        ? (locale === 'zh-TW' ? '100-120' : '100-120')
         : style === 'esoteric'
-        ? (locale === 'zh-TW' ? '195-234' : '195-234')
-        : (locale === 'zh-TW' ? '234-260' : '234-260');
+        ? (locale === 'zh-TW' ? '150-180' : '150-180')
+        : (locale === 'zh-TW' ? '180-200' : '180-200');
       
       if (spreadData) {
         // SPREAD READING - prioritize context over astrology
@@ -692,8 +674,6 @@ ${readingsContext}
 
 ` : ''}${contextPriorityInstruction}
 
-${formattingInstruction}
-
 ${birthContextDetailed ? `Astrological Context (secondary - use as supporting detail): ${birthContextDetailed}\n` : ''}${astroGuidance}
 Write ${wordLimits} words. Consider patterns from past readings as primary guidance.`;
       } else {
@@ -708,15 +688,14 @@ ${readingsContext}
 
 ` : ''}${contextPriorityInstruction}
 
-${formattingInstruction}
-
 ${birthContextDetailed ? `Astrological Context (secondary - use as supporting detail): ${birthContextDetailed}\n` : ''}${astroGuidance}
 Write ${wordLimits} words. When referencing past readings, use the day of the week or themes mentioned.`;
       }
 
 
       // Use non-streaming API for better performance
-      const maxWords = style === 'traditional' ? 156 : style === 'esoteric' ? 234 : 260;
+      // Word limits match system prompts: traditional 100-120, esoteric 150-180, jungian 180-200
+      const maxWords = style === 'traditional' ? 120 : style === 'esoteric' ? 180 : 200;
       
       const result = await AIProvider.generate({
         prompt,
@@ -913,6 +892,10 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       const readingsContext = await fetchLast10Readings();
 
       // Build prompt with previous readings context and astrological context
+      const formattingNote = locale === 'zh-TW'
+        ? '\n格式說明：使用**粗體**標記關鍵見解（每段最多1-2處），使用*斜體*標記強調內容。這些標記會自動渲染為粗體和斜體文字。不要對卡牌名稱使用任何格式 - 卡牌名稱應以純文字呈現。'
+        : '\nFORMATTING: Use **bold** markdown for key insights (<2 per paragraph), use *italic* markdown for emphasis. These will be rendered as actual bold and italic text. Do NOT format card names - card names should appear as plain text.';
+      
       let prompt = `Current Reading: ${cardsContext}
 Original question: ${question || 'General guidance'}
 
@@ -921,11 +904,16 @@ ${readingsContext}
 
 ` : ''}User asks: ${userMessage.content}
 
-Answer the question. If the user asks about previous readings mentioned in the interpretation, you can reference the reading history above. Use day references (e.g., "last Tuesday's reading") or themes to help the user recall. ${birthContextDetailed ? 'You can also incorporate astrological context (Sun, Moon, Rising signs) when relevant to the question.' : ''} Keep it concise (100-150 words).`;
+Answer the question. If the user asks about previous readings mentioned in the interpretation, you can reference the reading history above. Use day references (e.g., "last Tuesday's reading") or themes to help the user recall. ${birthContextDetailed ? 'You can also incorporate astrological context (Sun, Moon, Rising signs) when relevant to the question.' : ''} Keep it concise (100-150 words).${formattingNote}`;
 
-      const systemPrompt = locale === 'zh-TW'
-        ? `你是塔羅解讀師。可以參考過去的占卜記錄和占星背景來回答問題。簡潔回答。${birthContextDetailed ? '當問題相關時，可以自然地融入太陽、月亮和上升星座的影響。' : ''}`
-        : `You are a tarot reader. You can reference past reading history${birthContextDetailed ? ' and astrological context' : ''} to answer questions. Answer concisely.${birthContextDetailed ? ' When relevant, naturally incorporate Sun, Moon, and Rising sign influences.' : ''}`;
+      // Use the same comprehensive system prompt as interpretations for consistency
+      const userContext = PromptBuilder.buildUserContext(userProfile);
+      const systemPrompt = getSystemPrompt(
+        'tarot',
+        selectedStyle as InterpretationTier,
+        locale as SupportedLocale,
+        userContext
+      );
 
       const result = await AIProvider.generate({
         prompt,
@@ -1940,9 +1928,16 @@ Answer the question. If the user asks about previous readings mentioned in the i
                   msg.role === 'user' ? styles.chatMessageUser : styles.chatMessageAssistant,
                 ]}
               >
-                <ThemedText variant="body" style={styles.chatText}>
-                  {msg.content}
-                </ThemedText>
+                {msg.role === 'assistant' ? (
+                  <FormattedText 
+                    text={msg.content} 
+                    style={styles.chatText} 
+                  />
+                ) : (
+                  <ThemedText variant="body" style={styles.chatText}>
+                    {msg.content}
+                  </ThemedText>
+                )}
               </View>
             ))}
 

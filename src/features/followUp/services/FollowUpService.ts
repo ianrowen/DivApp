@@ -5,6 +5,9 @@
  */
 
 import AIProvider from '../../../core/api/aiProvider';
+import { getSystemPrompt } from '../../../core/ai/prompts/systemPrompts';
+import { PromptBuilder } from '../../../core/ai/prompts/promptBuilder';
+import type { InterpretationTier, SupportedLocale, UserProfile } from '../../../core/ai/prompts/types';
 
 export interface FollowUpMessage {
   id: string;
@@ -25,6 +28,8 @@ export interface FollowUpContext {
   interpretationStyle?: 'traditional' | 'esoteric' | 'jungian';
   currentInterpretation?: string;
   messages: FollowUpMessage[];
+  userProfile?: UserProfile | null;
+  locale?: SupportedLocale;
 }
 
 export class FollowUpService {
@@ -35,7 +40,16 @@ export class FollowUpService {
     context: FollowUpContext,
     userQuestion: string
   ): Promise<string> {
-    const systemPrompt = this.buildSystemPrompt();
+    // Use comprehensive system prompt for consistency with interpretations
+    const style = context.interpretationStyle || 'traditional';
+    const locale = context.locale || 'en';
+    const userContext = PromptBuilder.buildUserContext(context.userProfile || null);
+    const systemPrompt = getSystemPrompt(
+      'tarot',
+      style as InterpretationTier,
+      locale,
+      userContext
+    );
     const prompt = this.buildPrompt(context, userQuestion);
 
     // Debug logging: Log prompt details before AI call
@@ -77,18 +91,7 @@ export class FollowUpService {
     }
   }
 
-  private static buildSystemPrompt(): string {
-    return `You are a helpful Tarot reading assistant. The user has just received a Tarot reading and wants to ask follow-up questions about it.
-
-Your role:
-- Answer questions about the cards drawn and their meanings
-- Provide deeper insights into the reading
-- Help clarify confusing aspects
-- Be supportive and encouraging
-- Stay within the context of the reading provided
-
-Keep responses concise (2-4 sentences) unless the question requires more detail.`;
-  }
+  // Removed buildSystemPrompt - now using getSystemPrompt from systemPrompts.ts for consistency
 
   private static buildPrompt(
     context: FollowUpContext,
@@ -151,7 +154,11 @@ Keep responses concise (2-4 sentences) unless the question requires more detail.
       prompt += `\n`;
     }
 
-    prompt += `User's new question: ${userQuestion}\n\nPlease provide a helpful answer that is relevant to the current interpretation style the user is viewing.`;
+    const formattingNote = context.locale === 'zh-TW'
+      ? '\n格式說明：使用**粗體**標記關鍵見解（每段最多1-2處），使用*斜體*標記強調內容。這些標記會自動渲染為粗體和斜體文字。不要對卡牌名稱使用任何格式 - 卡牌名稱應以純文字呈現。'
+      : '\nFORMATTING: Use **bold** markdown for key insights (<2 per paragraph), use *italic* markdown for emphasis. These will be rendered as actual bold and italic text. Do NOT format card names - card names should appear as plain text.';
+    
+    prompt += `User's new question: ${userQuestion}\n\nPlease provide a helpful answer that is relevant to the current interpretation style the user is viewing.${formattingNote}`;
 
     return prompt;
   }

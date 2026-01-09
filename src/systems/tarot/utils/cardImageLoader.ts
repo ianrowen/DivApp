@@ -93,11 +93,5 @@ const CARD_IMAGES: { [key: string]: any } = {
 };
 
 export function getCardImage(code: string) {
-  // #region agent log
-  const startTime = Date.now();
-  const imageSource = CARD_IMAGES[code] || CARD_IMAGES['00']; // Fallback to Fool
-  const endTime = Date.now();
-  fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'cardImageLoader.ts:96',message:'getCardImage called',data:{cardCode:code,lookupTime:endTime-startTime,found:!!CARD_IMAGES[code]},timestamp:endTime,sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-  // #endregion
-  return imageSource;
+  return CARD_IMAGES[code] || CARD_IMAGES['00']; // Fallback to Fool
 }
