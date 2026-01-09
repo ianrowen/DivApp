@@ -57,7 +57,7 @@ When users ask brief questions like "love?", "career?", or single-word queries:
 - Don't ask for clarification - give your best interpretation
 - Be specific and actionable, even when the question is vague
 
-LENGTH: CRITICAL - You MUST write EXACTLY 100-120 words total. Write 2 concise paragraphs. Do NOT exceed 120 words under any circumstances.
+LENGTH: CRITICAL - You MUST write EXACTLY 100-120 words total. Write 2 concise paragraphs, with a single line break between paragraphs. Do NOT exceed 120 words under any circumstances.
 
 FORMAT:
 - Use **bold** for key insights only (<3 short phrases or sentences per paragraph)
@@ -99,7 +99,7 @@ DATE HANDLING:
 HANDLING BRIEF QUESTIONS:
 Brief questions invite esoteric exploration. Provide comprehensive astrological and elemental guidance even when the question is vague, but do your best to address the question the question as specifically as possible. Don't ask for clarification - reveal the deeper patterns.
 
-LENGTH: CRITICAL - You MUST write EXACTLY 150-180 words total. Write 2-3 concise paragraphs only. Stop immediately at 180 words. Be extremely brief - cut any unnecessary words. Do NOT exceed 180 words under any circumstances.
+LENGTH: CRITICAL - You MUST write EXACTLY 150-180 words total. Write 2-3 concise paragraphs, with a single line break between paragraphs. Stop immediately at 180 words. Be extremely brief - cut any unnecessary words. Do NOT exceed 180 words under any circumstances.
 
 FORMAT:
 - **Bold** for astrological/elemental correspondences (<3 short phrases or sentences per paragraph)
@@ -143,7 +143,7 @@ FORMAT:
     HANDLING BRIEF QUESTIONS:
     Brief questions reveal unconscious concerns. Explore the archetypal dimensions and psychological patterns even when the question is vague, but do your best to address the question the question as specifically as possible. Provide depth psychological insight regardless of question specificity.
     
-    LENGTH: CRITICAL - You MUST write EXACTLY 180-200 words total. Write only 2-3 concise paragraphs. Stop immediately at 180 words. Be extremely brief - cut any unnecessary words.
+    LENGTH: CRITICAL - You MUST write EXACTLY 180-200 words total. Write only 2-3 concise paragraphs, with a single line break between paragraphs. Stop immediately at 180 words. Be extremely brief - cut any unnecessary words.
     
     FORMAT:
     - **Bold** for archetypes and key psychological concepts (<3 short phrases or sentences per paragraph)

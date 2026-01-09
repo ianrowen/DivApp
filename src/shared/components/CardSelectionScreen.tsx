@@ -18,7 +18,6 @@ import * as Haptics from 'expo-haptics';
 import theme from '../../theme';
 import MysticalBackground from './ui/MysticalBackground';
 import ThemedText from './ui/ThemedText';
-import ThemedButton from './ui/ThemedButton';
 import { LOCAL_RWS_CARDS } from '../../systems/tarot/data/localCardData';
 import type { LocalTarotCard } from '../../systems/tarot/data/localCardData';
 import { getCardImage } from '../../systems/tarot/utils/cardImageLoader';
@@ -34,7 +33,6 @@ const FAN_CARD_COUNT = 15;
 interface CardSelectionScreenProps {
   cardCount: number;
   onCardsSelected: (selectedCards: LocalTarotCard[]) => void;
-  onCancel: () => void;
 }
 
 interface CardState {
@@ -55,7 +53,6 @@ interface CardState {
 function CardSelectionScreen({
   cardCount,
   onCardsSelected,
-  onCancel,
 }: CardSelectionScreenProps) {
   const { locale } = useTranslation();
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
@@ -347,16 +344,6 @@ function CardSelectionScreen({
             );
           })}
         </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <ThemedButton
-            title="Cancel"
-            onPress={onCancel}
-            variant="secondary"
-            style={styles.cancelButton}
-          />
-        </View>
       </View>
     </MysticalBackground>
   );
@@ -422,20 +409,6 @@ const styles = StyleSheet.create({
   },
   cardReversed: {
     transform: [{ rotate: '180deg' }],
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: theme.spacing.spacing.lg,
-    paddingBottom: 40,
-    paddingTop: theme.spacing.spacing.lg,
-    zIndex: 100,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    minWidth: 120,
   },
 });
 

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  Text,
 } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../core/api/supabase';
@@ -883,28 +884,9 @@ export default function AnalysisScreen() {
                 key={`low-${idx}`}
                 style={[styles.insightCard, styles.insightCardLow]}
               >
-                <View style={styles.insightHeader}>
-                  <View style={[styles.insightBadge, styles.insightBadgeLow]}>
-                    <ThemedText variant="caption" style={styles.insightBadgeText}>
-                      {pattern.type === 'recurring_theme' 
-                        ? (locale === 'zh-TW' ? '重複' : 'RECURRING')
-                        : pattern.type === 'anomaly'
-                        ? (locale === 'zh-TW' ? '異常' : 'ANOMALY')
-                        : (locale === 'zh-TW' ? '趨勢' : 'TREND')}
-                    </ThemedText>
-                  </View>
-                  {/* Show flame badge only if pattern is high severity */}
-                  {pattern.severity === 'high' && (
-                    <View style={styles.insightSeverity}>
-                      <ThemedText variant="caption" style={styles.severityText}>
-                        🔥 {locale === 'zh-TW' ? '高' : 'HIGH'}
-                      </ThemedText>
-                    </View>
-                  )}
-                </View>
-                <ThemedText variant="h3" style={styles.insightTitle}>
+                <Text style={styles.insightTitle}>
                   {pattern.title}
-                </ThemedText>
+                </Text>
                 <View>
                   {formatDescriptionWithBold(pattern.description, locale)}
                 </View>
@@ -938,15 +920,15 @@ export default function AnalysisScreen() {
                     const themeNames = interpretation?.themeNames;
                     if (themeNames && themeNames.trim()) {
                       return (
-                        <ThemedText variant="caption" style={styles.themesLabel} includeFontPadding={false}>
-                          <ThemedText variant="caption" style={styles.themesLabel}>{locale === 'zh-TW' ? '主題' : 'THEMES'}</ThemedText>
-                          <ThemedText variant="caption" style={styles.themesLabel}>{': '}</ThemedText>
-                          <ThemedText variant="body" style={styles.themesSubheading}>{themeNames}</ThemedText>
-                        </ThemedText>
+                        <View style={{ width: '100%', marginBottom: theme.spacing.spacing.xs }}>
+                          <ThemedText variant="h2" style={{ fontSize: theme.typography.fontSize.lg, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 0 }}>
+                            {locale === 'zh-TW' ? '主題' : 'THEMES'}: <ThemedText variant="h3" style={{ color: theme.colors.text.secondary, fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.medium, letterSpacing: 0.5, textTransform: 'none' }}>{themeNames}</ThemedText>
+                          </ThemedText>
+                        </View>
                       );
                     }
                     return (
-                      <ThemedText variant="caption" style={styles.themesLabel} includeFontPadding={false}>
+                      <ThemedText variant="h2" style={{ fontSize: theme.typography.fontSize.lg, letterSpacing: 1, textTransform: 'uppercase', marginBottom: theme.spacing.spacing.xs }} includeFontPadding={false}>
                         {locale === 'zh-TW' ? '主題' : 'THEMES'}
                       </ThemedText>
                     );
@@ -1215,7 +1197,7 @@ export default function AnalysisScreen() {
           ? (locale === 'zh-TW' ? '生成中...' : 'Generating...')
           : (locale === 'zh-TW' ? '🔄 重新生成主題' : '🔄 Regenerate Themes')}
         onPress={async () => {
-          if (!user?.id || !stats) {
+          if (!user?.id) {
             return;
           }
           
@@ -1258,22 +1240,75 @@ export default function AnalysisScreen() {
             // Delay to ensure delete completes before regeneration
             await new Promise(resolve => setTimeout(resolve, 300));
             
-            // Regenerate interpretations
-            const detectedPatterns = detectPatterns(stats);
+            // Reload readings to get fresh data for recalculation
+            const { data: readings, error: readingsError } = await supabase
+              .from('readings')
+              .select('elements_drawn, created_at')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: true });
+              
+            if (readingsError) {
+              throw readingsError;
+            }
             
+            // Recalculate statistics, patterns, and recurring cards
+            const processedStats = processReadings(readings || []);
+            setStats(processedStats);
+            
+            const detectedPatterns = detectPatterns(processedStats);
+            setPatterns(detectedPatterns);
+            
+            // Recalculate recurring cards
+            const sortedCards = Array.from(processedStats.cardCounts.entries())
+              .sort((a, b) => b[1] - a[1]);
+            
+            const calculateRecurrenceProbability = (count: number, totalCards: number): number => {
+              const p = 1 / 78;
+              const n = totalCards;
+              let probability = 0;
+              for (let k = count; k <= n; k++) {
+                const binomialCoeff = factorial(n) / (factorial(k) * factorial(n - k));
+                probability += binomialCoeff * Math.pow(p, k) * Math.pow(1 - p, n - k);
+              }
+              return probability;
+            };
+            
+            const factorial = (n: number): number => {
+              if (n <= 1) return 1;
+              if (n > 20) return Infinity;
+              let result = 1;
+              for (let i = 2; i <= n; i++) {
+                result *= i;
+              }
+              return result;
+            };
+            
+            const anomalousCards = sortedCards
+              .filter(([_, count]) => {
+                if (count < 3 || processedStats.totalCards < 10) return false;
+                const probability = calculateRecurrenceProbability(count, processedStats.totalCards);
+                return probability < 0.25;
+              })
+              .slice(0, 3)
+              .map(([name, count]) => {
+                const actualPercent = (count / processedStats.totalCards) * 100;
+                const expectedPercent = (1 / 78) * 100;
+                const probability = calculateRecurrenceProbability(count, processedStats.totalCards);
+                return {
+                  name: getCardName(name),
+                  count,
+                  actualPercent,
+                  expectedPercent,
+                  probability: probability * 100,
+                };
+              });
+            
+            setRecurringCards(anomalousCards);
+            
+            // Regenerate interpretations with fresh patterns
             if (detectedPatterns.length > 0) {
               // Build card occurrence timeline
               const cardOccurrences = new Map<string, string[]>();
-              const { data: readings, error: readingsError } = await supabase
-                .from('readings')
-                .select('elements_drawn, created_at')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: true });
-              
-              if (readingsError) {
-                throw readingsError;
-              }
-              
               readings?.forEach((reading: any) => {
                 if (!reading.created_at) return;
                 reading.elements_drawn?.forEach((elem: any) => {
@@ -1353,13 +1388,13 @@ export default function AnalysisScreen() {
                   middle: calculatePeriodStats(middle),
                   late: calculatePeriodStats(late),
                   overall: {
-                    major: stats.majorArcana / stats.totalCards * 100,
-                    minor: stats.minorArcana / stats.totalCards * 100,
-                    court: stats.courtCards / stats.totalCards * 100,
-                    wands: stats.wands / stats.totalCards * 100,
-                    cups: stats.cups / stats.totalCards * 100,
-                    swords: stats.swords / stats.totalCards * 100,
-                    pentacles: stats.pentacles / stats.totalCards * 100,
+                    major: processedStats.majorArcana / processedStats.totalCards * 100,
+                    minor: processedStats.minorArcana / processedStats.totalCards * 100,
+                    court: processedStats.courtCards / processedStats.totalCards * 100,
+                    wands: processedStats.wands / processedStats.totalCards * 100,
+                    cups: processedStats.cups / processedStats.totalCards * 100,
+                    swords: processedStats.swords / processedStats.totalCards * 100,
+                    pentacles: processedStats.pentacles / processedStats.totalCards * 100,
                   },
                 };
               };
@@ -1368,11 +1403,10 @@ export default function AnalysisScreen() {
 
               const themes = detectedPatterns
                 .filter(p => {
+                  // Exclude single recurring card patterns (they're shown in RECURRING CARD(S) section)
                   const isSingleRecurring = p.type === 'recurring_theme' && p.cards && p.cards.length === 1;
-                  const isMultipleThemes = p.title === (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes');
-                  const isHighSeverity = p.severity === 'high';
-                  const shouldInclude = !isSingleRecurring && (isMultipleThemes || isHighSeverity);
-                  return shouldInclude;
+                  // Include all patterns that can have interpretations (high, medium, low severity, and Multiple Recurring Themes)
+                  return !isSingleRecurring;
                 })
                 .map(p => {
                   const cardTimeline: Record<string, string[]> = {};
@@ -1386,8 +1420,8 @@ export default function AnalysisScreen() {
                     description: p.description,
                     severity: p.severity,
                     cardTimeline,
-                    structuralStatsOverTime, // Add structural statistics over time
-                    totalCards: stats.totalCards,
+                    structuralStatsOverTime,
+                    totalCards: processedStats.totalCards,
                     totalReadings: readings?.length || 0,
                   };
                   
@@ -1417,7 +1451,7 @@ export default function AnalysisScreen() {
         }}
         variant="secondary"
         style={styles.regenerateButton}
-        disabled={generatingInterpretations || !stats}
+        disabled={generatingInterpretations || !user?.id}
       />
       
       {/* Subtitle moved to bottom - card count and dates */}
@@ -1641,6 +1675,7 @@ const styles = StyleSheet.create({
   insightBadgeText: {
     color: theme.colors.neutrals.black,
     fontSize: theme.typography.fontSize.xs,
+    fontFamily: theme.typography.fontFamily.heading,
     fontWeight: theme.typography.fontWeight.bold,
     letterSpacing: 0.5,
   },
@@ -1661,7 +1696,8 @@ const styles = StyleSheet.create({
   insightTitle: {
     color: theme.colors.primary.gold,
     fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontFamily: 'Cinzel_600SemiBold',
+    fontWeight: '600',
     marginBottom: theme.spacing.spacing.sm,
   },
   insightDescription: {
@@ -1861,16 +1897,19 @@ const styles = StyleSheet.create({
   themesLabel: {
     color: theme.colors.primary.gold,
     fontSize: theme.typography.fontSize.lg,
+    fontFamily: theme.typography.fontFamily.heading,
     fontWeight: theme.typography.fontWeight.bold,
     letterSpacing: 1,
     textTransform: 'uppercase',
-    lineHeight: theme.typography.fontSize.lg * 1.4,
+    marginBottom: theme.spacing.spacing.xs,
   },
   themesSubheading: {
     color: theme.colors.text.secondary,
     fontSize: theme.typography.fontSize.lg,
-    fontStyle: 'italic',
-    lineHeight: theme.typography.fontSize.lg * 1.4,
+    fontFamily: theme.typography.fontFamily.headingMedium,
+    fontWeight: theme.typography.fontWeight.medium,
+    letterSpacing: 0.5,
+    lineHeight: theme.typography.lineHeight.normal * theme.typography.fontSize.lg,
   },
   interpretationContainer: {
     marginTop: theme.spacing.spacing.md,

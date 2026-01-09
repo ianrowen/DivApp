@@ -715,25 +715,22 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       }
 
 
+      // Use non-streaming API for better performance
+      const maxWords = style === 'traditional' ? 156 : style === 'esoteric' ? 234 : 260;
+      
       const result = await AIProvider.generate({
         prompt,
         systemPrompt,
         temperature: 0.7,
-        maxTokens: 1200, // Increased to allow for Gemini 2.5 thinking tokens + output
+        maxTokens: 1200,
       });
 
-      // Validate and truncate if too long
       const wordCount = result.text.split(/\s+/).length;
-
-      // Define word limits by style (30% longer than before)
-      const maxWords = style === 'traditional' ? 156 : style === 'esoteric' ? 234 : 260;
-      
       let finalText = result.text;
+      
       if (wordCount > maxWords) {
-        // Truncate to max words, preserving sentence boundaries
         const words = result.text.split(/\s+/);
         const truncatedWords = words.slice(0, maxWords);
-        // Try to end at a sentence boundary
         let truncatedText = truncatedWords.join(' ');
         const lastSentenceEnd = Math.max(
           truncatedText.lastIndexOf('.'),
@@ -746,19 +743,16 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
         finalText = truncatedText;
       }
 
-      setInterpretations(prev => {
-        const updated = {
-          ...prev,
-          [style]: finalText,
-        };
-        
-        // Don't update here - we'll update after ensuring readingId is set
-        // This prevents race conditions
-        
-        return updated;
-      });
+      setInterpretations(prev => ({
+        ...prev,
+        [style]: finalText,
+      }));
+      
+      // Clear generating state immediately after interpretation completes
+      setGenerating(false);
 
       // Auto-save reading after first interpretation is generated - pass cards directly
+      // Do this asynchronously so it doesn't block UI updates
       // Use existingReadingId parameter (from immediate save) or check state/ref
       const currentReadingId = existingReadingId || readingIdRef.current || readingId;
       
@@ -809,7 +803,10 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           ...interpretations, // Get current state
           [style]: finalText, // Add/update the new interpretation
         };
-        await updateReadingInterpretationsWithId(finalReadingId, updatedInterpretations);
+        // Update database asynchronously (don't block UI)
+        updateReadingInterpretationsWithId(finalReadingId, updatedInterpretations).catch(err => {
+          console.warn('Failed to update reading interpretations:', err);
+        });
       } else {
         console.warn('⚠️ No readingId available to update interpretations');
       }
@@ -824,9 +821,10 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
         console.error('Error stack:', error.stack);
       }
       Alert.alert(t('common.error'), 'Failed to generate interpretation');
-    } finally {
       setGenerating(false);
     }
+    // Note: setGenerating(false) is now called immediately after streaming/non-streaming completes
+    // No need for finally block since we handle it in both success paths
   };
 
   const handleStyleChange = async (style: 'traditional' | 'esoteric' | 'jungian') => {
@@ -1634,7 +1632,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         key={`card-selection-${spread.spread_key}`} // Stable key to prevent remounting
         cardCount={spread.card_count}
         onCardsSelected={handleCardsSelected}
-        onCancel={() => router.back()}
       />
     );
   }

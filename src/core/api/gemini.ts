@@ -177,9 +177,319 @@ export class GeminiProvider implements IAIProvider {
     throw new Error(`AI generation failed after ${maxRetries} attempts: ${lastError.message}`);
   }
 
-  // Optional: Streaming support for follow-up questions
+  // Streaming support for progressive interpretation display
+  // Uses XMLHttpRequest for React Native compatibility (supports POST + streaming)
   async *generateStream(params: AIGenerateParams): AsyncGenerator<string> {
-    throw new Error('Streaming not yet implemented for Gemini');
+    // Check for API key before proceeding
+    if (!this.apiKey || this.apiKey.trim() === '') {
+      throw new Error('Gemini API key is not configured. Please set EXPO_PUBLIC_GEMINI_API_KEY environment variable.');
+    }
+
+    let {
+      prompt,
+      systemPrompt,
+      maxTokens = 2500,
+      temperature = 0.7,
+      language = 'en',
+    } = params;
+    
+    // --- SAFETY PATCH FOR GEMINI 2.5 ---
+    if (this.model.includes('2.5') && maxTokens < 4000) {
+        maxTokens = 4000;
+    }
+    // -----------------------------------
+
+    // Build language instruction for system prompt
+    const languageInstruction = this.getLanguageInstruction(language);
+    
+    // For Gemini 2.5, add instruction to reduce thinking time and be direct
+    const thinkingInstruction = this.model.includes('2.5')
+      ? 'Be direct and concise. Minimize internal reasoning. Focus on generating the response quickly.\n\n'
+      : '';
+    
+    // Combine language instruction with existing system prompt
+    const enhancedSystemPrompt = systemPrompt
+      ? `${languageInstruction}\n\n${thinkingInstruction}${systemPrompt}`
+      : `${languageInstruction}\n\n${thinkingInstruction}`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
+    const requestBody = JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+          ],
+        },
+      ],
+      systemInstruction: enhancedSystemPrompt ? {
+        parts: [{ text: enhancedSystemPrompt }]
+      } : undefined,
+      
+      generationConfig: {
+        temperature,
+        maxOutputTokens: maxTokens,
+        candidateCount: 1,
+        responseMimeType: 'text/plain',
+      },
+    });
+
+    // Try fetch with ReadableStream first (works on web)
+    // Fall back to XMLHttpRequest for React Native
+    const isWeb = typeof window !== 'undefined' && typeof ReadableStream !== 'undefined';
+    
+    if (isWeb) {
+      // Use fetch with ReadableStream on web
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': this.apiKey,
+          },
+          body: requestBody,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+          throw new Error(
+            `Gemini API error (${response.status}): ${errorData.error?.message || response.statusText}`
+          );
+        }
+
+        if (!response.body || typeof response.body.getReader !== 'function') {
+          throw new Error('Streaming not supported with fetch');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            
+            if (done) {
+              break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6).trim();
+                if (!data || data === '[DONE]') continue;
+
+                try {
+                  const json = JSON.parse(data);
+                  const candidate = json.candidates?.[0];
+                  const delta = candidate?.content?.parts?.[0]?.text;
+                  
+                  if (delta) {
+                    yield delta;
+                  }
+
+                  if (candidate?.finishReason) {
+                    const finishReason = candidate.finishReason;
+                    if (finishReason === 'SAFETY') {
+                      throw new Error('Content was blocked by safety filters. Please try rephrasing your question.');
+                    }
+                    if (finishReason === 'STOP' || finishReason === 'MAX_TOKENS') {
+                      return;
+                    }
+                  }
+
+                  if (json.error) {
+                    throw new Error(`Gemini API error: ${json.error.message || JSON.stringify(json.error)}`);
+                  }
+                } catch (parseError: any) {
+                  if (parseError.name !== 'SyntaxError') {
+                    console.warn('Error parsing SSE data:', parseError);
+                  }
+                }
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+        return; // Successfully streamed with fetch
+      } catch (fetchError: any) {
+        // Fall through to XMLHttpRequest if fetch fails
+        if (!fetchError.message?.includes('not supported')) {
+          console.warn('Fetch streaming failed, trying XMLHttpRequest:', fetchError);
+        }
+      }
+    }
+
+    // Use XMLHttpRequest for React Native (supports POST + streaming via onprogress)
+    yield* this.streamWithXHR(url, requestBody);
+  }
+
+  // XMLHttpRequest-based streaming for React Native
+  private async *streamWithXHR(url: string, body: string): AsyncGenerator<string> {
+    const chunks: string[] = [];
+    let isComplete = false;
+    let error: Error | null = null;
+    let buffer = '';
+    let lastProcessedLength = 0;
+    let pollInterval: NodeJS.Timeout | null = null;
+
+    const processResponseText = (responseText: string) => {
+      if (responseText.length <= lastProcessedLength) {
+        return; // No new data
+      }
+
+      const newData = responseText.slice(lastProcessedLength);
+      buffer += newData;
+      lastProcessedLength = responseText.length;
+
+      // Process complete SSE events
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (!data || data === '[DONE]') continue;
+
+          try {
+            const json = JSON.parse(data);
+            const candidate = json.candidates?.[0];
+            const delta = candidate?.content?.parts?.[0]?.text;
+            
+            if (delta) {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'gemini.ts:364',message:'Chunk received from API',data:{chunkSize:delta.length,chunkPreview:delta.substring(0,30),timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+              // #endregion
+              chunks.push(delta);
+            }
+
+            if (candidate?.finishReason) {
+              const finishReason = candidate.finishReason;
+              if (finishReason === 'SAFETY') {
+                error = new Error('Content was blocked by safety filters. Please try rephrasing your question.');
+                return;
+              }
+              if (finishReason === 'STOP' || finishReason === 'MAX_TOKENS') {
+                // Stream is complete
+                isComplete = true;
+              }
+            }
+
+            if (json.error) {
+              error = new Error(`Gemini API error: ${json.error.message || JSON.stringify(json.error)}`);
+              return;
+            }
+          } catch (parseError: any) {
+            // Skip parsing errors for non-JSON SSE events
+            if (parseError.name !== 'SyntaxError') {
+              console.warn('Error parsing SSE data:', parseError, 'Line:', line);
+            }
+          }
+        }
+      }
+    };
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('x-goog-api-key', this.apiKey);
+    
+    // Enable response streaming (if supported)
+    if ('responseType' in xhr) {
+      // Keep default responseType for text streaming
+    }
+
+    xhr.onprogress = () => {
+      if (xhr.readyState === XMLHttpRequest.LOADING && xhr.responseText) {
+        processResponseText(xhr.responseText);
+      }
+    };
+
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === XMLHttpRequest.LOADING && xhr.responseText) {
+        processResponseText(xhr.responseText);
+      }
+    };
+
+    xhr.onload = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // Process any remaining data
+        if (xhr.responseText && xhr.responseText.length > lastProcessedLength) {
+          processResponseText(xhr.responseText);
+        }
+        isComplete = true;
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText);
+          error = new Error(`Gemini API error (${xhr.status}): ${errorData.error?.message || xhr.statusText}`);
+        } catch {
+          error = new Error(`Gemini API error (${xhr.status}): ${xhr.statusText}`);
+        }
+        isComplete = true;
+      }
+    };
+
+    xhr.onerror = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+      error = new Error('Network error while streaming from Gemini API');
+      isComplete = true;
+    };
+
+    xhr.send(body);
+
+    // Poll for updates if onprogress doesn't fire (some React Native versions buffer responses)
+    // Check responseText periodically
+    pollInterval = setInterval(() => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'gemini.ts:450',message:'Poll interval fired',data:{readyState:xhr.readyState,responseTextLength:xhr.responseText?.length||0,timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+      if (xhr.readyState === XMLHttpRequest.LOADING && xhr.responseText) {
+        processResponseText(xhr.responseText);
+      } else if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      }
+    }, 16); // Check every 16ms (~60fps) for faster chunk detection
+
+    // Yield chunks as they arrive
+    try {
+      while (!isComplete || chunks.length > 0) {
+        if (error) {
+          throw error;
+        }
+        
+        if (chunks.length > 0) {
+          const chunk = chunks.shift()!;
+          yield chunk;
+        } else if (!isComplete) {
+          // Wait a bit before checking again
+          await new Promise(resolve => setTimeout(resolve, 20));
+        } else {
+          break;
+        }
+      }
+    } finally {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+      if (xhr.readyState !== XMLHttpRequest.DONE && xhr.readyState !== XMLHttpRequest.UNSENT) {
+        xhr.abort();
+      }
+    }
   }
   
   /**
