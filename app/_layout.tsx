@@ -5,11 +5,13 @@ import 'react-native-reanimated';
 
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { Platform } from 'react-native';
 import { TranslationProvider } from '../src/i18n';
 import { ProfileProvider } from '../src/contexts/ProfileContext';
 import { useFonts, Cinzel_400Regular, Cinzel_500Medium, Cinzel_600SemiBold } from '@expo-google-fonts/cinzel';
 import { Lato_400Regular } from '@expo-google-fonts/lato';
 import { View } from 'react-native';
+import * as SystemUI from 'expo-system-ui';
 import theme from '../src/theme';
 import SpinningLogo from '../src/shared/components/ui/SpinningLogo';
 import AIProvider from '../src/core/api/aiProvider';
@@ -89,6 +91,13 @@ export default function RootLayout() {
       AIProvider.setProvider('gemini');
     } catch (error) {
       // Error initializing AI Provider - silently fail
+    }
+
+    // Configure Android system UI for edge-to-edge mode and proper navigation bar styling
+    if (Platform.OS === 'android') {
+      SystemUI.setBackgroundColorAsync(theme.colors.neutrals.black).catch(() => {
+        // Silently fail if system UI configuration fails
+      });
     }
   }, []);
 

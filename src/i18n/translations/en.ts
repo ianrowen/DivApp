@@ -98,7 +98,7 @@ export default {
     questionsUsed: 'questions used',
     reflection: 'Reflection (Optional)',
     reflectionPlaceholder: 'Record your thoughts...',
-    generatingInterpretation: 'Generating interpretation...',
+    generatingInterpretation: 'Interpreting...',
     askFollowUp: 'Ask a question...',
     more: 'More',
   },

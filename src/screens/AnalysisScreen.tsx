@@ -962,7 +962,7 @@ export default function AnalysisScreen() {
                   <View style={styles.generatingContainer}>
                     <ActivityIndicator size="small" color={theme.colors.primary.gold} />
                     <ThemedText variant="caption" style={styles.generatingText}>
-                      {locale === 'zh-TW' ? '正在生成解讀...' : 'Generating interpretation...'}
+                      {locale === 'zh-TW' ? '解讀中...' : 'Interpreting...'}
                     </ThemedText>
                   </View>
                 )}
@@ -1031,7 +1031,7 @@ export default function AnalysisScreen() {
                       <View style={styles.generatingContainer}>
                         <ActivityIndicator size="small" color={theme.colors.primary.gold} />
                         <ThemedText variant="caption" style={styles.generatingText}>
-                          {locale === 'zh-TW' ? '正在生成解讀...' : 'Generating interpretation...'}
+                          {locale === 'zh-TW' ? '解讀中...' : 'Interpreting...'}
                         </ThemedText>
                       </View>
                     )}

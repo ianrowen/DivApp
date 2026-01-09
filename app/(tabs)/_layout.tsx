@@ -19,8 +19,29 @@ export default function TabsLayout() {
 
   // #region agent log
   useEffect(() => {
-    debugLog('(tabs)/_layout.tsx:15', 'TabsLayout mounted', {}, 'F');
-  }, []);
+    debugLog('(tabs)/_layout.tsx:insets', 'Safe area insets measured', {
+      platform: Platform.OS,
+      insetsTop: insets.top,
+      insetsBottom: insets.bottom,
+      insetsLeft: insets.left,
+      insetsRight: insets.right,
+    }, 'A');
+    const calculatedHeight = Platform.select({
+      ios: 105 + insets.bottom,
+      android: 95 + Math.max(insets.bottom, 0),
+    });
+    const calculatedPaddingBottom = Platform.select({
+      ios: insets.bottom + 24,
+      android: Math.max(insets.bottom, 0) + 24,
+    });
+    debugLog('(tabs)/_layout.tsx:tabBarConfig', 'Tab bar configuration calculated', {
+      platform: Platform.OS,
+      calculatedHeight,
+      calculatedPaddingBottom,
+      androidInsetsBottom: insets.bottom,
+      androidInsetsBottomUsed: Math.max(insets.bottom, 0),
+    }, 'A');
+  }, [insets]);
   // #endregion
 
   return (
@@ -47,11 +68,11 @@ export default function TabsLayout() {
           borderTopWidth: 1,
           height: Platform.select({
             ios: 105 + insets.bottom,
-            android: 95,
+            android: 95 + Math.max(insets.bottom, 0),
           }),
           paddingBottom: Platform.select({
             ios: insets.bottom + 24,
-            android: 32,
+            android: Math.max(insets.bottom, 0) + 24,
           }),
           paddingTop: 12,
           paddingHorizontal: 16,

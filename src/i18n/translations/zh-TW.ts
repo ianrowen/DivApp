@@ -82,7 +82,7 @@ export default {
     "questionsUsed": "已用提問",
     "reflection": "省思 (選填)",
     "reflectionPlaceholder": "記錄你的心得。",
-    "generatingInterpretation": "正在進行詮釋…",
+    "generatingInterpretation": "詮釋中…",
     "askFollowUp": "提出疑問...",
     "more": "更多"
   },

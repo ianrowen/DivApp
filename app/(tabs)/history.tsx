@@ -30,18 +30,20 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
   const isLoadingRef = React.useRef(false);
+  const loadReadingsCallCountRef = React.useRef(0);
 
   const loadReadings = React.useCallback(async () => {
     // Prevent concurrent loads
     if (isLoadingRef.current) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings skipped - already loading',data:{appState:AppState.currentState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings skipped - already loading',data:{appState:AppState.currentState,isLoadingRef:isLoadingRef.current,loading},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
       // #endregion
       return;
     }
     const appState = AppState.currentState;
+    const callStack = new Error().stack;
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings entry',data:{appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings entry',data:{appState,isLoadingRef:isLoadingRef.current,loading,callStack:callStack?.split('\n').slice(0,5).join('|')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
     isLoadingRef.current = true;
     setLoading(true);
@@ -127,9 +129,20 @@ export default function HistoryScreen() {
     }
   }, []);
 
+  // Track when loadReadings callback is recreated
+  React.useEffect(() => {
+    loadReadingsCallCountRef.current += 1;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadingsCallback',message:'loadReadings callback recreated',data:{callCount:loadReadingsCallCountRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+  }, [loadReadings]);
+
   // Reset expanded state and refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:useFocusEffect',message:'useFocusEffect callback executing',data:{isLoadingRef:isLoadingRef.current,loading},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       // Collapse all records when tab is focused
       setExpandedIds(new Set());
       // Reload readings when screen comes into focus to ensure latest data
@@ -138,6 +151,9 @@ export default function HistoryScreen() {
   );
 
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:useEffect',message:'useEffect executing',data:{isLoadingRef:isLoadingRef.current,loading},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     // Only load once on mount
     loadReadings();
 
@@ -148,8 +164,16 @@ export default function HistoryScreen() {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
-      if (!user) return;
+      if (!user) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:subscriptionSetup',message:'No user for subscription setup',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
+        return;
+      }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:subscriptionSetup',message:'Setting up real-time subscription',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
       channel = supabase
         .channel('readings-changes')
         .on(
@@ -162,13 +186,23 @@ export default function HistoryScreen() {
           },
           (payload) => {
             console.log('📥 Real-time update:', payload.eventType);
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:realtimeUpdate',message:'Real-time update received',data:{eventType:payload.eventType,isLoadingRef:isLoadingRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+            // #endregion
             // Debounce reloads to prevent rapid-fire queries
             if (debounceTimer) {
               clearTimeout(debounceTimer);
             }
             debounceTimer = setTimeout(() => {
               if (!isLoadingRef.current) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:realtimeDebounced',message:'Calling loadReadings from real-time debounce',data:{isLoadingRef:isLoadingRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+                // #endregion
                 loadReadings();
+              } else {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:realtimeSkipped',message:'Skipped loadReadings from real-time - already loading',data:{isLoadingRef:isLoadingRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+                // #endregion
               }
             }, 1000); // Increased to 1s debounce
           }
@@ -179,18 +213,21 @@ export default function HistoryScreen() {
     // Listen for app state changes (background/foreground)
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:appStateChange',message:'App state changed',data:{nextAppState,currentState:AppState.currentState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:appStateChange',message:'App state changed',data:{nextAppState,currentState:AppState.currentState,isLoadingRef:isLoadingRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
       // #endregion
       if (nextAppState === 'active') {
         // App came to foreground - reload data
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:appForeground',message:'App came to foreground, reloading readings',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:appForeground',message:'App came to foreground, reloading readings',data:{isLoadingRef:isLoadingRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
         // #endregion
         loadReadings();
       }
     });
 
     return () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:useEffectCleanup',message:'useEffect cleanup executing',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       subscription.remove();
       if (debounceTimer) {
         clearTimeout(debounceTimer);

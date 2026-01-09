@@ -1914,7 +1914,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
               <View style={styles.generatingContainer}>
                 <SpinningLogo size={24} />
                 <ThemedText variant="body" style={styles.generatingText}>
-                  {locale === 'zh-TW' ? '生成解讀中...' : 'Generating interpretation...'}
+                  {locale === 'zh-TW' ? '解讀中...' : 'Interpreting...'}
                 </ThemedText>
               </View>
             ) : interpretations[selectedStyle] ? (
