@@ -36,6 +36,7 @@ export default function SpreadSelectionScreen() {
   const userTier = (profile?.subscription_tier || 'free') as 'free' | 'adept' | 'apex';
   const isBetaTester = profile?.is_beta_tester || false;
   const routerNav = useRouter();
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use useCallback to ensure loadUserDataAndSpreads always uses latest profile values
   // This prevents stale closures when profile loads asynchronously
@@ -88,8 +89,12 @@ export default function SpreadSelectionScreen() {
 
       // Defer AI suggestion - don't block UI
       if (question && typeof question === 'string' && question.trim().length > 0 && availableSpreads.length > 0) {
+        // Clear any existing timeout
+        if (suggestionTimeoutRef.current) {
+          clearTimeout(suggestionTimeoutRef.current);
+        }
         // Small delay to let UI render first
-        setTimeout(() => {
+        suggestionTimeoutRef.current = setTimeout(() => {
           try {
             setSuggesting(true);
             suggestSpreadForQuestion(question.trim(), availableSpreads).catch((error) => {
@@ -100,6 +105,7 @@ export default function SpreadSelectionScreen() {
             console.error('Error starting suggestion process:', error);
             setSuggesting(false);
           }
+          suggestionTimeoutRef.current = null;
         }, 300);
       }
     } catch (error) {
@@ -122,6 +128,11 @@ export default function SpreadSelectionScreen() {
 
     return () => {
       subscription.remove();
+      // Clean up suggestion timeout
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+        suggestionTimeoutRef.current = null;
+      }
     };
   }, [loadUserDataAndSpreads]); // Now depends on loadUserDataAndSpreads which updates when profile/question changes
 

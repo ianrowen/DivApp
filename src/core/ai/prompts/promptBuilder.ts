@@ -251,8 +251,6 @@ export class PromptBuilder {
         return '';
       }
 
-      console.log(`📊 Loading ${effectiveCount} past readings (user has ${totalReadings} total)`);
-
       const { data, error } = await supabase
         .from('readings')
         .select('question, interpretations, conversation, reflection, created_at, elements_drawn, reading_type')
@@ -481,8 +479,6 @@ export class PromptBuilder {
           console.log(`📊 History truncated: ${historyText.length} → ${truncatedText.length} chars`);
           return truncatedText;
         }
-      } else {
-        console.log(`📊 Full history loaded for ${isBetaTester ? 'beta tester' : 'apex tier'}: ${historyText.length} chars`);
       }
 
       return historyText;

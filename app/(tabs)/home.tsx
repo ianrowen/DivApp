@@ -17,11 +17,19 @@ export default function HomeScreen() {
   const [question, setQuestion] = useState('');
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const navigationRetryTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Clear question when screen comes into focus (user returns from reading)
   useFocusEffect(
     useCallback(() => {
       setQuestion('');
+      // Clean up any pending navigation retry timeout
+      return () => {
+        if (navigationRetryTimeoutRef.current) {
+          clearTimeout(navigationRetryTimeoutRef.current);
+          navigationRetryTimeoutRef.current = null;
+        }
+      };
     }, [])
   );
 
@@ -45,8 +53,12 @@ export default function HomeScreen() {
           });
         } catch (error) {
           console.error('Error navigating to spread selection:', error);
+          // Clear any existing retry timeout
+          if (navigationRetryTimeoutRef.current) {
+            clearTimeout(navigationRetryTimeoutRef.current);
+          }
           // Retry after a small delay
-          setTimeout(() => {
+          navigationRetryTimeoutRef.current = setTimeout(() => {
             try {
               router.push({
                 pathname: '/spread-selection',
@@ -57,6 +69,7 @@ export default function HomeScreen() {
             } catch (retryError) {
               console.error('Retry navigation also failed:', retryError);
             }
+            navigationRetryTimeoutRef.current = null;
           }, 100);
         }
       });

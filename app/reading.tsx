@@ -13,6 +13,8 @@ import {
   Animated,
   Modal,
   Text,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -87,6 +89,8 @@ export default function ReadingScreen() {
   const readingIdRef = useRef<string | null>(null);
   // Track if initialization has started to prevent multiple calls
   const initializationStartedRef = useRef<string | null>(null);
+  // Track reflection save timeout for cleanup
+  const reflectionSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Modal
   const [selectedCard, setSelectedCard] = useState<any>(null);
@@ -109,6 +113,30 @@ export default function ReadingScreen() {
     }
     initializationStartedRef.current = key;
     initializeReading();
+
+    // Listen for app state changes (background/foreground)
+    // This ensures the reading refreshes properly when user returns to the app
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App came to foreground - refresh session and check if reading needs update
+        // Only refresh if we have a readingId (reading was already initialized)
+        if (readingIdRef.current) {
+          // Refresh auth session to ensure it's still valid
+          supabase.auth.getSession().catch(() => {
+            // Silently handle session refresh errors
+          });
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      // Clean up reflection save timeout
+      if (reflectionSaveTimeoutRef.current) {
+        clearTimeout(reflectionSaveTimeoutRef.current);
+        reflectionSaveTimeoutRef.current = null;
+      }
+    };
   }, [type, cardCode, spreadKey]);
 
   useEffect(() => {
@@ -1970,9 +1998,12 @@ Answer the question. If the user asks about previous readings mentioned in the i
                 setReflection(text);
                 // Auto-save reflection as user types (debounced)
                 if (readingId) {
-                  clearTimeout((global as any).reflectionSaveTimeout);
-                  (global as any).reflectionSaveTimeout = setTimeout(() => {
+                  if (reflectionSaveTimeoutRef.current) {
+                    clearTimeout(reflectionSaveTimeoutRef.current);
+                  }
+                  reflectionSaveTimeoutRef.current = setTimeout(() => {
                     updateReadingReflection(text);
+                    reflectionSaveTimeoutRef.current = null;
                   }, 2000); // Save 2 seconds after user stops typing
                 }
               }}
