@@ -39,15 +39,20 @@ export class PromptBuilder {
     const lang = locale === 'zh-TW' ? 'zh' : locale === 'ja' ? 'ja' : 'en';
 
     const meaningObj = reversed ? card.reversed_meaning : card.upright_meaning;
-    let meaning = meaningObj[lang] || meaningObj.en || '';
+    // Handle case where lang might be 'ja' but meaningObj only has 'en' and 'zh'
+    let meaning = (lang === 'ja' ? meaningObj.en : meaningObj[lang as 'en' | 'zh']) || meaningObj.en || '';
 
     if (tier === 'traditional') {
       const clauses = meaning.split(/[,;]/);
       meaning = clauses.slice(0, 2).join(', ');
     }
 
+    // Handle title: if it's an object, use lang (fallback to en for ja), otherwise use string
+    const titleLang = lang === 'ja' ? 'en' : lang as 'en' | 'zh';
+    const title = typeof card.title === 'string' ? card.title : (card.title[titleLang] || card.title.en);
+
     return {
-      title: typeof card.title === 'string' ? card.title : (card.title[lang] || card.title.en),
+      title,
       position,
       reversed,
       keywords: card.keywords.slice(0, 3),
@@ -266,10 +271,20 @@ export class PromptBuilder {
 
       // Filter out daily cards - only include one per day, and exclude if excludeDailyCards is true
       // Group daily cards by date and only keep the most recent one per day
-      const dailyCardsByDate = new Map<string, any>();
-      const spreadReadings: any[] = [];
+      type ReadingData = {
+        question: string | null;
+        interpretations: any;
+        conversation: any;
+        reflection: string | null;
+        created_at: string;
+        elements_drawn: any;
+        reading_type: string | null;
+      };
       
-      data.forEach((reading) => {
+      const dailyCardsByDate = new Map<string, ReadingData>();
+      const spreadReadings: ReadingData[] = [];
+      
+      (data as ReadingData[]).forEach((reading) => {
         if (reading.reading_type === 'daily_card') {
           if (excludeDailyCards) {
             // Skip all daily cards if excludeDailyCards is true
@@ -502,10 +517,15 @@ export class PromptBuilder {
         return '';
       }
 
+      type RecurringReadingData = {
+        created_at: string;
+        question: string | null;
+      };
+
       const labels = getLocaleLabels(locale);
       const count = data.length;
       const timeframe = this.getTimeframeSummary(
-        data.map(r => r.created_at),
+        (data as RecurringReadingData[]).map(r => r.created_at),
         locale
       );
 
