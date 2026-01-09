@@ -8,8 +8,6 @@ ios/
 dist/
 web-build/
 
-
-
 # Development files
 .vscode/
 .idea/
@@ -91,5 +89,7 @@ project-structure.txt
 src_structure.txt
 
 # Supabase migrations (not needed in app bundle)
-supabase/migrations/# Public HTML files (web-only, not needed in mobile app)
+supabase/migrations/
+
+# Public HTML files (web-only, not needed in mobile app)
 public/*.html
