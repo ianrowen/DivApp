@@ -89,7 +89,6 @@ export default function DailyCardDraw() {
                 setIsFlipped(true);
                 // Set animation value immediately (no need for requestAnimationFrame)
                 flipAnimation.setValue(1);
-                console.log('✅ Loaded existing daily card from today:', cardCode, 'reversed:', reversed);
                 return; // Don't reset isFlipped
               } else if (!mounted) {
                 return;
@@ -150,7 +149,6 @@ export default function DailyCardDraw() {
       const reversed = Math.random() < 0.3; // 30% chance of reversal
 
       const cardWithReversal = { ...drawnCard, reversed };
-      console.log('🎴 Drawing new daily card:', drawnCard.code, 'reversed:', reversed);
       // #region agent log
       const cardSetTime = Date.now();
       cardSetTimeRef.current = cardSetTime;
@@ -209,7 +207,6 @@ export default function DailyCardDraw() {
                   const cardWithReversal = { ...foundCard, reversed };
                   setCard(cardWithReversal);
                   setShouldAutoFlip(true);
-                  console.log('✅ Card already pulled today, loading existing:', cardCode);
                   return;
                 }
               }
@@ -274,8 +271,6 @@ export default function DailyCardDraw() {
         JSON.stringify(prev.original) !== JSON.stringify(originalKeywords);
       
       if (keywordsChanged) {
-        console.log(`🌐 Daily card keywords (locale: ${locale}):`, localizedKeywords);
-        console.log(`🌐 Original keywords:`, originalKeywords);
         prevKeywordsRef.current = { localized: localizedKeywords, original: originalKeywords };
       }
     } else {
@@ -414,7 +409,6 @@ export default function DailyCardDraw() {
         <ThemedButton
           title={locale === 'zh-TW' ? '查看完整解讀' : 'View Full Reading'}
           onPress={() => {
-            console.log('📍 Navigating with card:', card.code, 'reversed:', card.reversed);
             router.push({
               pathname: '/reading',
               params: {

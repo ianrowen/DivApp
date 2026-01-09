@@ -95,9 +95,9 @@ export default function ReadingScreen() {
   // Card animations - use ref to store animations
   const cardAnimationsRef = useRef<Animated.Value[]>([]);
 
-  // Log params only when they change (not on every render)
+  // Track params changes
   useEffect(() => {
-    console.log('📥 Reading screen params:', { type, cardCode, reversed, spreadKey, question });
+    // Params tracked for initialization
   }, [type, cardCode, reversed, spreadKey, question]);
 
   useEffect(() => {
@@ -147,10 +147,7 @@ export default function ReadingScreen() {
       
       // Now start reading initialization
       if (type === 'daily') {
-        console.log('📍 Daily card - cardCode:', cardCode);
-        
         if (!cardCode) {
-          console.error('❌ No cardCode provided for daily card!');
           Alert.alert('Error', 'Card code missing');
           router.back();
           return;
@@ -158,13 +155,10 @@ export default function ReadingScreen() {
         
         const foundCard = LOCAL_RWS_CARDS.find(c => c.code === cardCode);
         if (!foundCard) {
-          console.error('❌ Card not found:', cardCode);
           Alert.alert('Error', 'Card not found');
           router.back();
           return;
         }
-        
-        console.log('✅ Found card:', foundCard.title.en, 'Code:', foundCard.code);
         
         const drawnCards = [{
           cardCode: foundCard.code,  // Use code, not filename
@@ -172,7 +166,6 @@ export default function ReadingScreen() {
           position: 'Daily Guidance', // Add position for daily cards
         }];
         
-        console.log('📍 Setting cards state:', drawnCards);
         setCards(drawnCards);
         
         // Show cards immediately - don't wait for interpretation
@@ -184,7 +177,6 @@ export default function ReadingScreen() {
         
         // First check if readingId was passed as param (from DailyCardDraw)
         if (readingIdParam) {
-          console.log('✅ Using readingId from params:', readingIdParam);
           savedReadingId = readingIdParam;
           setReadingId(savedReadingId);
           readingIdRef.current = savedReadingId;
@@ -204,7 +196,7 @@ export default function ReadingScreen() {
                 .limit(10);
               
               if (fetchError) {
-                console.warn('⚠️ Error checking for existing daily card:', fetchError);
+                // Error checking for existing daily card
               } else if (existingReadings && existingReadings.length > 0) {
                 // Find today's reading that matches this card
                 const today = new Date();
@@ -222,7 +214,6 @@ export default function ReadingScreen() {
                       const existingReversed = cardElement.metadata?.reversed || false;
                       
                       if (existingCardCode === cardCode && existingReversed === (reversed === 'true')) {
-                        console.log('✅ Found existing daily card from today matching this card:', existingReading.id);
                         savedReadingId = existingReading.id;
                         setReadingId(savedReadingId);
                         readingIdRef.current = savedReadingId;
@@ -235,34 +226,24 @@ export default function ReadingScreen() {
               }
             }
           } catch (err: any) {
-            console.warn('⚠️ Exception checking for existing daily card:', err);
+            // Exception checking for existing daily card
           }
           
           // Only auto-save if no existing reading was found
           if (!savedReadingId) {
-            console.log('💾 No existing reading found, auto-saving...');
             // Auto-save daily card immediately (before interpretation)
             // Await the save to ensure readingId is set before interpretation starts
             try {
               savedReadingId = await autoSaveReading(drawnCards);
-              console.log('💾 autoSaveReading returned:', savedReadingId);
               if (savedReadingId) {
-                console.log('✅ Daily card auto-save completed, readingId:', savedReadingId);
                 // Set readingId in both state and ref immediately
                 setReadingId(savedReadingId);
                 readingIdRef.current = savedReadingId;
                 setAutoSaved(true);
-                console.log('✅ State and ref updated with readingId:', savedReadingId);
-              } else {
-                console.warn('⚠️ Daily card auto-save returned null/undefined - save may have failed');
-                console.warn('⚠️ Will retry when interpretation loads');
               }
             } catch (err: any) {
-              console.error('❌ Error auto-saving daily card:', err);
-              console.error('❌ Error type:', typeof err);
-              console.error('❌ Error message:', err?.message);
-              console.error('❌ Error stack:', err?.stack);
-              // Continue even if save fails - interpretation will try to save
+              // Error auto-saving daily card - continue even if save fails
+              // Interpretation will try to save
             }
           }
         }
@@ -283,7 +264,6 @@ export default function ReadingScreen() {
               if (interps.traditional?.content || interps.esoteric?.content || interps.jungian?.content) {
                 hasExistingInterpretations = true;
                 
-                console.log('✅ Loading existing interpretations from cache');
                 
                 // Load existing interpretations
                 const loadedInterpretations: typeof interpretations = {};
@@ -303,25 +283,20 @@ export default function ReadingScreen() {
                   setReflection(interps._metadata.reflection);
                 }
                 
-                console.log('✅ Loaded existing daily card interpretations from cache');
               }
             }
           } catch (err: any) {
-            console.warn('⚠️ Error loading existing interpretations:', err);
-            // Continue to generate if load fails
+            // Error loading existing interpretations - continue to generate if load fails
           }
         }
         
         // Only generate interpretation if it doesn't already exist
         if (savedReadingId && !hasExistingInterpretations) {
-          console.log('📝 No existing interpretations found, generating new...');
           // Generate interpretation in background (non-blocking)
           // Pass readingId directly to avoid state timing issues
-          generateInterpretation(drawnCards, 'traditional', undefined, savedReadingId).catch(err => {
-            console.error('Error generating interpretation:', err);
+          generateInterpretation(drawnCards, 'traditional', undefined, savedReadingId).catch(() => {
+            // Error generating interpretation
           });
-        } else if (hasExistingInterpretations) {
-          console.log('✅ Skipping interpretation generation - using cached interpretations');
         }
         
         return;
@@ -359,7 +334,6 @@ export default function ReadingScreen() {
   const handleCardsSelected = (selectedCards: LocalTarotCard[]) => {
     if (!spread) return;
 
-    console.log('🎴 Cards selected:', selectedCards.map(c => c.title.en));
 
     // Convert selected cards to DrawnCard format
     // IMPORTANT: Use the reversed state that was already determined during card selection animation
@@ -386,8 +360,6 @@ export default function ReadingScreen() {
   };
 
   const drawCardsForSpread = async (spreadData: TarotSpread) => {
-    console.log('🎴 Drawing cards for spread:', spreadData.spread_key);
-    
     // Shuffle deck
     const shuffled = [...LOCAL_RWS_CARDS];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -402,8 +374,6 @@ export default function ReadingScreen() {
       const position = spreadData.positions[i];
       const reversed = Math.random() < 0.3;
 
-      console.log(`  Card ${i + 1}:`, card.title.en, reversed ? '(R)' : '');
-
       drawnCards.push({
         cardCode: card.code,
         position: locale === 'zh-TW' ? position.label.zh : position.label.en,
@@ -412,7 +382,6 @@ export default function ReadingScreen() {
     }
 
     setCards(drawnCards);
-    console.log('✅ Cards drawn:', drawnCards.length);
     
     // Show cards immediately - don't wait for interpretation
     setLoading(false);
@@ -546,9 +515,6 @@ export default function ReadingScreen() {
       const currentTier = userTier || 'free';
       const currentProfile = userProfile;
       
-      console.log('🎯 Generating interpretation...');
-      console.log('🎴 Cards:', cardsToInterpret.length);
-      console.log('👤 User tier:', currentTier);
 
       // Build detailed card descriptions with explicit reversed indication
       const cardsDetailed = cardsToInterpret.map((c, idx) => {
@@ -600,7 +566,6 @@ export default function ReadingScreen() {
         }
       }
 
-      console.log('⭐ Birth context:', birthContextDetailed ? 'Yes' : 'No');
 
       // Build concise system prompt (optimized for speed)
       let systemPrompt = '';
@@ -647,7 +612,6 @@ export default function ReadingScreen() {
             currentTier, // Pass tier for full history for apex users
             isBetaTester // Beta testers get full history like apex tier
           );
-          console.log('📚 Reading history context:', readingsContext ? `${readingsContext.length} chars` : 'None');
         }
       } catch (error) {
         console.error('Error loading reading history:', error);
@@ -722,7 +686,6 @@ ${birthContextDetailed ? `Astrological Context (secondary - use as supporting de
 Write ${wordLimits} words. When referencing past readings, use the day of the week or themes mentioned.`;
       }
 
-      console.log('📝 Prompt length:', prompt.length, 'chars');
 
       const result = await AIProvider.generate({
         prompt,
@@ -733,14 +696,12 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
 
       // Validate and truncate if too long
       const wordCount = result.text.split(/\s+/).length;
-      console.log(`📊 Generated ${wordCount} words`);
 
       // Define word limits by style (30% longer than before)
       const maxWords = style === 'traditional' ? 156 : style === 'esoteric' ? 234 : 260;
       
       let finalText = result.text;
       if (wordCount > maxWords) {
-        console.warn(`⚠️ Response too long (${wordCount} words), truncating to ${maxWords} words...`);
         // Truncate to max words, preserving sentence boundaries
         const words = result.text.split(/\s+/);
         const truncatedWords = words.slice(0, maxWords);
@@ -755,13 +716,7 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           truncatedText = truncatedText.substring(0, lastSentenceEnd + 1);
         }
         finalText = truncatedText;
-        console.log(`✂️ Truncated to ${finalText.split(/\s+/).length} words`);
       }
-
-      console.log('✅ Generated interpretation');
-      console.log('📊 Tokens used:', result.tokensUsed);
-      console.log('📝 Output length:', finalText.length, 'chars');
-      console.log('💬 Word count:', finalText.split(/\s+/).length);
 
       setInterpretations(prev => {
         const updated = {
@@ -782,7 +737,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       if (type === 'daily') {
         // Daily cards are saved immediately when drawn
         if (currentReadingId) {
-          console.log('✅ Daily card already saved (readingId:', currentReadingId, '), updating interpretations only');
           // Update readingId in state and ref if not already set
           if (!readingId) {
             setReadingId(currentReadingId);
@@ -790,7 +744,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           }
         } else {
           // Fallback: if immediate save failed, save now
-          console.log('⚠️ Daily card not saved yet, saving now...');
           const savedId = await autoSaveReading(cardsToInterpret);
           if (savedId) {
             setReadingId(savedId);
@@ -828,7 +781,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
           ...interpretations, // Get current state
           [style]: finalText, // Add/update the new interpretation
         };
-        console.log('💾 Updating reading interpretations with readingId:', finalReadingId, 'style:', style);
         await updateReadingInterpretationsWithId(finalReadingId, updatedInterpretations);
       } else {
         console.warn('⚠️ No readingId available to update interpretations');
@@ -872,16 +824,13 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
   };
 
   const handleFollowUpQuestion = async () => {
-    console.log('📍 Follow-up question:', chatInput);
     
     if (!chatInput.trim()) {
-      console.log('❌ Empty input');
       return;
     }
 
     // Check follow-up limit for free users (bypass for beta testers)
     if (!isBetaTester && userTier === 'free' && followUpCount >= 3) {
-      console.log('❌ Hit free tier limit');
       Alert.alert(
         t('tiers.upgrade.title'),
         locale === 'zh-TW' 
@@ -901,7 +850,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       timestamp: new Date().toISOString(),
     };
 
-    console.log('✅ Adding user message to chat');
     setChatHistory(prev => [...prev, userMessage]);
     setChatInput('');
     setChatLoading(true);
@@ -937,7 +885,6 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
 
       // Fetch previous readings context for Q&A
       const readingsContext = await fetchLast10Readings();
-      console.log('📚 Previous readings context for Q&A:', readingsContext ? `${readingsContext.length} chars` : 'None');
 
       // Build prompt with previous readings context and astrological context
       let prompt = `Current Reading: ${cardsContext}
@@ -954,16 +901,12 @@ Answer the question. If the user asks about previous readings mentioned in the i
         ? `你是塔羅解讀師。可以參考過去的占卜記錄和占星背景來回答問題。簡潔回答。${birthContextDetailed ? '當問題相關時，可以自然地融入太陽、月亮和上升星座的影響。' : ''}`
         : `You are a tarot reader. You can reference past reading history${birthContextDetailed ? ' and astrological context' : ''} to answer questions. Answer concisely.${birthContextDetailed ? ' When relevant, naturally incorporate Sun, Moon, and Rising sign influences.' : ''}`;
 
-      console.log('🤖 Calling AI for follow-up...');
-      
       const result = await AIProvider.generate({
         prompt,
         systemPrompt,
         temperature: 0.7,
         maxTokens: 800,
       });
-
-      console.log('✅ Got AI response');
 
       const assistantMessage: ChatMessage = {
         role: 'assistant',
@@ -1011,7 +954,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
     }
 
     try {
-      console.log('💾 Updating reading interpretations for readingId:', id);
       
       // Get current reading
       const { data: currentReading, error: fetchError } = await supabase
@@ -1052,7 +994,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         if (updateError) {
           console.error('❌ Error updating reading:', updateError);
         } else {
-          console.log('✅ Created new interpretations structure');
         }
         return;
       }
@@ -1086,7 +1027,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
       if (updateError) {
         console.error('❌ Error updating reading:', updateError);
       } else {
-        console.log('✅ Updated reading with new interpretation styles');
       }
     } catch (error) {
       console.error('❌ Error updating interpretations:', error);
@@ -1129,7 +1069,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         return;
       }
       
-      console.log('✅ Updated reading reflection:', newReflection ? `${newReflection.length} chars` : 'cleared');
     } catch (error) {
       console.error('❌ Error updating reflection:', error);
     }
@@ -1162,7 +1101,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
           .update({ interpretations: currentInterpretations })
           .eq('id', readingId);
           
-        console.log('✅ Updated reading chat history');
       }
     } catch (error) {
       console.error('❌ Error updating chat history:', error);
@@ -1177,14 +1115,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
     // Check both state and ref to avoid race conditions
     const currentReadingId = readingIdRef.current || readingId;
     const readingType = type; // Capture type at function start
-    console.log('💾 autoSaveReading called:', { 
-      type: readingType, 
-      autoSaved, 
-      readingId, 
-      readingIdRef: readingIdRef.current, 
-      currentReadingId, 
-      cardsToSave: cardsToSave?.length 
-    });
     
     if (!readingType) {
       console.error('❌ No reading type available! Cannot save.');
@@ -1194,7 +1124,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
     // For daily cards, check if reading already exists in database before saving
     if (readingType === 'daily') {
       if (currentReadingId) {
-        console.log('⏭️ Skipping auto-save for daily (already has readingId:', currentReadingId, ')');
         return null;
       }
       
@@ -1228,7 +1157,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
                   const existingReversed = cardElement.metadata?.reversed || false;
                   
                   if (existingCardCode === cardCode && existingReversed === reversed) {
-                    console.log('⏭️ Skipping auto-save for daily - existing reading found:', existingReading.id);
                     // Update refs and state with existing readingId
                     readingIdRef.current = existingReading.id;
                     setReadingId(existingReading.id);
@@ -1248,11 +1176,9 @@ Answer the question. If the user asks about previous readings mentioned in the i
     
     // For spread readings, check both autoSaved and readingId
     if (readingType === 'spread' && (autoSaved || currentReadingId)) {
-      console.log('⏭️ Skipping auto-save for spread (already saved)');
       return null;
     }
     
-    console.log('✅ Proceeding with auto-save...');
 
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -1261,10 +1187,8 @@ Answer the question. If the user asks about previous readings mentioned in the i
         return null;
       }
       if (!user) {
-        console.log('⏭️ No user found, skipping auto-save');
         return null;
       }
-      console.log('✅ User found:', user.id);
 
       // Use provided cards or fall back to state (for backwards compatibility)
       const cardsToUse = cardsToSave || cards;
@@ -1274,7 +1198,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         return null;
       }
 
-      console.log('💾 Auto-saving reading with cards:', cardsToUse.length);
 
       // Get the tarot divination system ID
       let divinationSystemId: string | null = null;
@@ -1327,19 +1250,10 @@ Answer the question. If the user asks about previous readings mentioned in the i
           },
         };
 
-        console.log('💾 Saving card element:', {
-          elementId: elementData.elementId,
-          cardCode: elementData.metadata.cardCode,
-          cardTitle: elementData.metadata.cardTitle,
-          reversed: elementData.metadata.reversed,
-          suit: elementData.metadata.suit,
-          arcana: elementData.metadata.arcana,
-        });
 
         return elementData;
       }).filter(Boolean);
 
-      console.log('💾 Total elements to save:', elementsDrawn.length);
       if (elementsDrawn.length === 0) {
         console.error('❌ ERROR: No elements drawn! Cards array was empty or invalid.');
         return null;
@@ -1366,7 +1280,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         tier_at_creation: userTier,
       };
       
-      console.log('💾 Saving reading with interpretations:', Object.keys(formattedInterpretations).length, 'keys (including _metadata)');
 
       if (spread) {
         formattedInterpretations._metadata.spread_key = spread.spread_key;
@@ -1406,14 +1319,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         language: locale === 'zh-TW' ? 'zh-TW' : 'en',
       };
       
-      console.log('💾 Saving reading with type:', readingType, '-> reading_type:', readingData.reading_type);
-
-      console.log('💾 Inserting reading data:', {
-        user_id: readingData.user_id,
-        reading_type: readingData.reading_type,
-        elements_drawn_count: readingData.elements_drawn?.length || 0,
-        interpretations_keys: Object.keys(readingData.interpretations || {}),
-      });
       
       const { data, error } = await supabase
         .from('readings')
@@ -1435,8 +1340,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         return null;
       }
 
-      console.log('✅ Reading auto-saved! ID:', data.id);
-      console.log('✅ Full response data:', JSON.stringify(data, null, 2));
       
       // Verify the reading was actually saved by querying it back
       const { data: verifyData, error: verifyError } = await supabase
@@ -1451,19 +1354,11 @@ Answer the question. If the user asks about previous readings mentioned in the i
         // Still return the ID - the insert succeeded, verification might just be timing
         // But log a warning
       } else {
-        console.log('✅ Verified reading exists in database:', {
-          id: verifyData.id,
-          reading_type: verifyData.reading_type,
-          created_at: verifyData.created_at,
-        });
-        console.log('✅ This reading SHOULD appear in history immediately');
       }
       
       setReadingId(data.id);
       readingIdRef.current = data.id; // Also update ref immediately
       setAutoSaved(true);
-      console.log('✅ State updated: readingId =', data.id, 'autoSaved =', true);
-      console.log('✅ Ref updated: readingIdRef.current =', readingIdRef.current);
       return data.id; // Return readingId so caller can use it immediately
     } catch (error) {
       console.error('❌ Error auto-saving reading:', error);
@@ -1528,9 +1423,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         return;
       }
 
-      console.log('✅ Reading updated with all data (reflection, chat, interpretations)!');
-      console.log('💾 Reflection saved:', reflection ? `${reflection.length} chars` : 'empty');
-      console.log('💾 Metadata reflection:', formattedInterpretations._metadata.reflection ? `${formattedInterpretations._metadata.reflection.length} chars` : 'null');
       setSaved(true);
       
       // Show auto-dismissing success modal
@@ -1546,20 +1438,11 @@ Answer the question. If the user asks about previous readings mentioned in the i
   };
 
   const handleCardPress = (cardCode: string, reversed: boolean) => {
-    console.log('📍 handleCardPress called');
-    console.log('📍 cardCode:', cardCode);
-    console.log('📍 reversed:', reversed);
-    console.log('📍 LOCAL_RWS_CARDS length:', LOCAL_RWS_CARDS.length);
-    
     const card = LOCAL_RWS_CARDS.find(c => c.code === cardCode);
     
     if (card) {
-      console.log('✅ Card found:', card.title.en);
       setSelectedCard({ ...card, reversed });
       setModalVisible(true);
-    } else {
-      console.error('❌ Card NOT found for code:', cardCode);
-      console.log('📍 Available codes:', LOCAL_RWS_CARDS.slice(0, 5).map(c => c.code));
     }
   };
 
@@ -1829,7 +1712,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
             cards.length === 2 && styles.cardsContainerTwo,
           ]}>
             {cards.map((drawnCard, idx) => {
-              console.log('🎴 Rendering card:', drawnCard.cardCode);
               
               const cardData = LOCAL_RWS_CARDS.find(c => c.code === drawnCard.cardCode);
               if (!cardData) {
@@ -1837,7 +1719,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
                 return null;
               }
 
-              console.log('✅ Card data found:', cardData.title.en, 'Loading image for code:', cardData.code);
 
               const localizedCard = getLocalizedCard(cardData);
               
@@ -1865,14 +1746,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
                 displayKeywords = [];
               }
               
-              console.log(`🔑 Keywords for ${cardData.code} (reversed: ${drawnCard.reversed}):`, {
-                original: originalKeywords,
-                localized: localizedKeywords,
-                display: displayKeywords,
-                displayLength: displayKeywords.length,
-                locale: locale,
-                willDisplay: displayKeywords.length > 0
-              });
 
               return (
                 <Animated.View
@@ -1894,7 +1767,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
                 >
                   <TouchableOpacity
                     onPress={() => {
-                      console.log('📍 Card image pressed:', drawnCard.cardCode);
                       handleCardPress(drawnCard.cardCode, drawnCard.reversed);
                     }}
                     activeOpacity={0.8}
@@ -1907,8 +1779,8 @@ Answer the question. If the user asks about previous readings mentioned in the i
                         source={getCardImage(cardData.code)}
                         style={styles.cardImage}
                         resizeMode="contain"
-                        onLoad={() => console.log('✅ Image loaded for:', cardData.code)}
-                        onError={(e) => console.error('❌ Image error for:', cardData.code, e)}
+                        onLoad={() => {}}
+                        onError={() => {}}
                       />
                     </View>
                   </TouchableOpacity>
@@ -2069,7 +1941,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
               />
               <TouchableOpacity
                 onPress={() => {
-                  console.log('📍 Send pressed, input:', chatInput);
                   handleFollowUpQuestion();
                 }}
                 disabled={!chatInput.trim() || chatLoading}
@@ -2144,7 +2015,6 @@ Answer the question. If the user asks about previous readings mentioned in the i
         <CardDetailModal
           visible={modalVisible}
           onClose={() => {
-            console.log('📍 Modal closing');
             setModalVisible(false);
           }}
           card={selectedCard}

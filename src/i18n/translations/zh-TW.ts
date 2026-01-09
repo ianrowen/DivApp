@@ -87,7 +87,7 @@ export default {
     "more": "更多"
   },
   "history": {
-    "title": "占卜歷史",
+    "title": "歷史",
     "noReadings": "尚無占卜記錄",
     "noReadingsSubtitle": "從首頁開始新的占卜吧！",
     "date": "日期",

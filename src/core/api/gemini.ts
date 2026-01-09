@@ -14,10 +14,7 @@ const GEMINI_MODEL = 'gemini-2.5-flash';
 
 // Don't throw immediately - let the provider handle missing keys gracefully
 if (!GEMINI_API_KEY) {
-  console.error('⚠️ Missing EXPO_PUBLIC_GEMINI_API_KEY environment variable. AI features will not work.');
-  console.error('⚠️ Check that the secret is set in EAS and available to your build profile.');
-} else {
-  console.log('✅ EXPO_PUBLIC_GEMINI_API_KEY is configured (length:', GEMINI_API_KEY.length, ')');
+  // Missing API key - AI features will not work
 }
 
 export class GeminiProvider implements IAIProvider {
@@ -48,7 +45,6 @@ export class GeminiProvider implements IAIProvider {
     // If maxTokens is too low, it uses them all up thinking and produces 0 output.
     // We need at least 3000-4000 total: ~1500 for thinking + ~2000-2500 for output.
     if (this.model.includes('2.5') && maxTokens < 4000) {
-        console.log(`ℹ️ [GeminiProvider] Auto-adjusting maxTokens from ${maxTokens} to 4000 to allow for reasoning/thinking overhead.`);
         maxTokens = 4000;
     }
     // -----------------------------------

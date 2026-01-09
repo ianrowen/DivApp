@@ -1,5 +1,5 @@
 // app/spread-selection.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   AppStateStatus,
 } from 'react-native';
 import { Stack, router, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../src/core/api/supabase';
 import theme from '../src/theme';
 import MysticalBackground from '../src/shared/components/ui/MysticalBackground';
@@ -36,23 +37,9 @@ export default function SpreadSelectionScreen() {
   const isBetaTester = profile?.is_beta_tester || false;
   const routerNav = useRouter();
 
-  useEffect(() => {
-    loadUserDataAndSpreads();
-
-    // Listen for app state changes (background/foreground)
-    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active') {
-        // App came to foreground - reload data
-        loadUserDataAndSpreads();
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  const loadUserDataAndSpreads = async () => {
+  // Use useCallback to ensure loadUserDataAndSpreads always uses latest profile values
+  // This prevents stale closures when profile loads asynchronously
+  const loadUserDataAndSpreads = useCallback(async () => {
     try {
       // Show UI immediately - don't block on data loading
       setLoading(false);
@@ -85,14 +72,16 @@ export default function SpreadSelectionScreen() {
       
       setAllSpreads(allSpreadsData);
 
-      // Use cached profile from context (loaded at sign-in)
+      // Use current profile values from closure (always fresh due to useCallback dependencies)
       // Filter available spreads (client-side, fast)
-      const availableSpreads = isBetaTester 
+      const currentUserTier = (profile?.subscription_tier || 'free') as 'free' | 'adept' | 'apex';
+      const currentIsBetaTester = profile?.is_beta_tester || false;
+      const availableSpreads = currentIsBetaTester 
         ? allSpreadsData 
         : allSpreadsData.filter(spread => {
             // Safety check - ensure spread is valid
             if (!spread || !spread.id) return false;
-            return !spread.is_premium || userTier !== 'free';
+            return !spread.is_premium || currentUserTier !== 'free';
           });
       
       setSpreads(availableSpreads);
@@ -117,7 +106,32 @@ export default function SpreadSelectionScreen() {
       console.error('Error loading spreads:', error);
       setLoading(false);
     }
-  };
+  }, [profile, question]); // Dependencies: profile and question ensure function uses latest values
+
+  // Load data on mount and when profile/question changes
+  useEffect(() => {
+    loadUserDataAndSpreads();
+
+    // Listen for app state changes (background/foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App came to foreground - reload data
+        loadUserDataAndSpreads();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [loadUserDataAndSpreads]); // Now depends on loadUserDataAndSpreads which updates when profile/question changes
+
+  // Refresh data when screen comes into focus (like history.tsx does)
+  useFocusEffect(
+    useCallback(() => {
+      // Reload spreads when screen comes into focus to ensure latest data
+      loadUserDataAndSpreads();
+    }, [loadUserDataAndSpreads])
+  );
 
   const suggestSpreadForQuestion = async (
     userQuestion: string,

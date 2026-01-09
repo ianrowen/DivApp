@@ -175,8 +175,6 @@ async function calculateViaAPI(birthData: BirthData): Promise<ChartData> {
     }
   };
   
-  console.log('Best Astrology API request:', JSON.stringify(requestData, null, 2));
-  
   const response = await axios.post(
     `https://${RAPIDAPI_HOST}/api/v3/charts/natal`,
     requestData,
@@ -189,9 +187,6 @@ async function calculateViaAPI(birthData: BirthData): Promise<ChartData> {
       timeout: 10000
     }
   );
-  
-  console.log('✓ API response received');
-  console.log('Response structure:', JSON.stringify(response.data).substring(0, 500));
   
   const data = response.data;
   
@@ -232,8 +227,6 @@ async function calculateViaAPI(birthData: BirthData): Promise<ChartData> {
 }
 
 function calculateOfflineFallback(birthData: BirthData): ChartData {
-  console.log('Using offline fallback');
-  
   return {
     sun_sign: getSunSign(birthData.date),
     chart_accuracy: 'minimal',
@@ -243,8 +236,6 @@ function calculateOfflineFallback(birthData: BirthData): ChartData {
 }
 
 export async function calculateChart(birthData: BirthData): Promise<ChartData> {
-  console.log('=== Astrology Calculation (Best Astrology API) ===');
-  
   if (!birthData.date) {
     throw new Error('Birth date required');
   }
@@ -252,7 +243,6 @@ export async function calculateChart(birthData: BirthData): Promise<ChartData> {
   const cacheKey = getCacheKey(birthData);
   const cached = await getCachedChart(cacheKey);
   if (cached) {
-    console.log('✓ Using cache');
     return cached;
   }
   
@@ -272,9 +262,6 @@ export async function calculateChart(birthData: BirthData): Promise<ChartData> {
   try {
     const chartData = await calculateViaAPI(birthData);
     await cacheChart(cacheKey, chartData);
-    
-    console.log('✓ Calculated via Best Astrology API');
-    console.log('===\n');
     
     return chartData;
     

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   AppState,
   AppStateStatus,
+  Pressable,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -106,7 +107,6 @@ export default function HistoryScreen() {
       // #endregion
       if (error) throw error;
 
-      console.log('📚 Loaded readings:', data?.length || 0);
       setReadings(data as any[]);
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:setReadings',message:'Set readings',data:{readingsCount:data?.length,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
@@ -467,85 +467,119 @@ export default function HistoryScreen() {
 
         {isExpanded && (
           <View style={styles.expandedContent}>
-            {/* Interpretations Section */}
-            {Object.entries(interpretations)
-              .filter(([style]) => style !== '_metadata')
-              .length > 0 && (
-              <View style={styles.section}>
-                <ThemedText variant="caption" style={styles.sectionLabel}>
-                  {locale === 'zh-TW' ? '解讀' : 'Interpretations'}
-                </ThemedText>
-                {Object.entries(interpretations)
-                  .filter(([style]) => style !== '_metadata')
-                  .map(([style, data]: [string, any]) => {
-                    const translationKey = `reading.${style}`;
-                    const label = t(translationKey as any) || style.charAt(0).toUpperCase() + style.slice(1);
-                    
-                    return (
-                      <View key={style} style={styles.interpretationRow}>
-                        <ThemedText variant="body" style={styles.interpretationLabel}>
-                          {label}
-                        </ThemedText>
-                        <ThemedText variant="body" style={styles.interpretationContent}>
-                          {data?.content || t('reading.noInterpretation')}
-                        </ThemedText>
-                      </View>
-                    );
-                  })}
-              </View>
-            )}
-            
-            {/* Reflection Section */}
-            {metadata.reflection && (
-              <View style={styles.section}>
-                <ThemedText variant="caption" style={styles.sectionLabel}>
-                  {locale === 'zh-TW' ? '反思' : 'Reflection'}
-                </ThemedText>
-                <ThemedText variant="body" style={styles.reflectionContent}>
-                  {metadata.reflection}
-                </ThemedText>
-              </View>
-            )}
-            
-            {/* Chat History Section */}
-            {metadata.conversation && metadata.conversation.length > 0 && (
-              <View style={styles.section}>
-                <ThemedText variant="caption" style={styles.sectionLabel}>
-                  {locale === 'zh-TW' ? '對話記錄' : 'Conversation'}
-                </ThemedText>
-                <View style={styles.chatHistory}>
-                  {metadata.conversation.map((msg: any, idx: number) => (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.chatMessage,
-                        msg.role === 'user' ? styles.chatMessageUser : styles.chatMessageAssistant,
-                      ]}
-                    >
-                      <ThemedText variant="body" style={styles.chatContent}>
-                        {msg.content}
+            {(() => {
+              const hasInterpretations = Object.entries(interpretations).filter(([style]) => style !== '_metadata').length > 0;
+              const hasReflection = !!metadata.reflection;
+              const hasConversation = metadata.conversation && metadata.conversation.length > 0;
+              
+              // Determine which section is last
+              const lastSectionType = hasConversation ? 'conversation' : hasReflection ? 'reflection' : hasInterpretations ? 'interpretations' : null;
+              
+              return (
+                <>
+                  {/* Interpretations Section */}
+                  {hasInterpretations && (
+                    <View style={lastSectionType === 'interpretations' ? [styles.section, styles.lastSection] : styles.section}>
+                      <ThemedText variant="caption" style={styles.sectionLabel}>
+                        {locale === 'zh-TW' ? '解讀' : 'Interpretations'}
+                      </ThemedText>
+                      {Object.entries(interpretations)
+                        .filter(([style]) => style !== '_metadata')
+                        .map(([style, data]: [string, any], idx, arr) => {
+                          const translationKey = `reading.${style}`;
+                          const label = t(translationKey as any) || style.charAt(0).toUpperCase() + style.slice(1);
+                          const isLastRow = lastSectionType === 'interpretations' && idx === arr.length - 1;
+                          
+                          return (
+                            <View key={style} style={isLastRow ? [styles.interpretationRow, styles.lastInterpretationRow] : styles.interpretationRow}>
+                              <ThemedText variant="body" style={styles.interpretationLabel}>
+                                {label}
+                              </ThemedText>
+                              <ThemedText variant="body" style={styles.interpretationContent}>
+                                {data?.content || t('reading.noInterpretation')}
+                              </ThemedText>
+                            </View>
+                          );
+                        })}
+                    </View>
+                  )}
+                  
+                  {/* Reflection Section */}
+                  {hasReflection && (
+                    <View style={lastSectionType === 'reflection' ? [styles.section, styles.lastSection] : styles.section}>
+                      <ThemedText variant="caption" style={styles.sectionLabel}>
+                        {locale === 'zh-TW' ? '反思' : 'Reflection'}
+                      </ThemedText>
+                      <ThemedText variant="body" style={styles.reflectionContent}>
+                        {metadata.reflection}
                       </ThemedText>
                     </View>
-                  ))}
-                </View>
+                  )}
+                  
+                  {/* Chat History Section */}
+                  {hasConversation && (
+                    <View style={[styles.section, styles.lastSection]}>
+                      <ThemedText variant="caption" style={styles.sectionLabel}>
+                        {locale === 'zh-TW' ? '對話記錄' : 'Conversation'}
+                      </ThemedText>
+                      <View style={styles.chatHistory}>
+                        {metadata.conversation.map((msg: any, idx: number) => {
+                          const isLastMessage = idx === metadata.conversation.length - 1;
+                          return (
+                            <View
+                              key={idx}
+                              style={[
+                                styles.chatMessage,
+                                msg.role === 'user' ? styles.chatMessageUser : styles.chatMessageAssistant,
+                                isLastMessage && styles.lastChatMessage,
+                              ]}
+                            >
+                              <ThemedText variant="body" style={styles.chatContent}>
+                                {msg.content}
+                              </ThemedText>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+                </>
+              );
+            })()}
+            <View style={styles.lastSectionContainer}>
+              <View style={styles.badgeWrapper}>
+                <Pressable
+                  onPress={() => toggleExpand(item.id)}
+                  style={styles.expandBadge}
+                >
+                  <ThemedText variant="caption" style={styles.expandBadgeText}>
+                    ↑ {t('history.collapse')}
+                  </ThemedText>
+                </Pressable>
               </View>
-            )}
+            </View>
             <ThemedButton
               title={t('common.delete')}
               onPress={() => handleDeleteReading(item.id)}
-              variant="secondary"
+              variant="ghost"
               style={styles.deleteButton}
+              textStyle={styles.deleteButtonText}
             />
           </View>
         )}
 
-        <ThemedText
-          variant="caption"
-          style={styles.expandIndicator}
-          onPress={() => toggleExpand(item.id)}
-        >
-          {isExpanded ? t('history.collapse') : t('history.expand')}
-        </ThemedText>
+        {!isExpanded && (
+          <View style={styles.badgeWrapper}>
+            <Pressable
+              onPress={() => toggleExpand(item.id)}
+              style={styles.expandBadge}
+            >
+              <ThemedText variant="caption" style={styles.expandBadgeText}>
+                ↓ {t('history.expand')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        )}
       </View>
     );
   };
@@ -587,7 +621,7 @@ export default function HistoryScreen() {
           <View style={styles.headerContainer}>
             <View style={styles.headerRow}>
               <ThemedText variant="h1" style={styles.headerTitle}>
-                History
+                {t('history.title')}
               </ThemedText>
               <View style={styles.statsLinkContainer}>
                 <ThemedButton
@@ -638,7 +672,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   headerTitle: {
     color: theme.colors.primary.gold,
@@ -647,7 +681,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statsLinkContainer: {
-    marginTop: theme.spacing.spacing.xs, // Position slightly below the header
     marginLeft: theme.spacing.spacing.md,
   },
   statsLinkButton: {
@@ -691,16 +724,21 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.spacing.xs,
   },
   expandedContent: {
-    marginTop: theme.spacing.spacing.md,
-    paddingTop: theme.spacing.spacing.md,
+    marginTop: theme.spacing.spacing.sm,
+    paddingTop: theme.spacing.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: theme.colors.neutrals.midGray,
   },
   section: {
-    marginBottom: theme.spacing.spacing.lg,
-    paddingBottom: theme.spacing.spacing.md,
+    marginBottom: theme.spacing.spacing.sm,
+    paddingBottom: theme.spacing.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.neutrals.midGray,
+  },
+  lastSection: {
+    marginBottom: 0,
+    paddingBottom: 0,
+    borderBottomWidth: 0,
   },
   sectionLabel: {
     color: theme.colors.primary.goldDark,
@@ -726,6 +764,11 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.neutrals.black,
+  },
+  lastInterpretationRow: {
+    marginBottom: 0,
+    paddingBottom: 0,
+    borderBottomWidth: 0,
   },
   interpretationLabel: {
     color: theme.colors.primary.gold,
@@ -767,13 +810,38 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.spacing.xs,
   },
   deleteButton: {
-    marginTop: theme.spacing.spacing.md,
+    marginTop: theme.spacing.spacing.sm,
+    alignSelf: 'center',
+  },
+  lastSectionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  badgeWrapper: {
+    alignItems: 'flex-end',
+  },
+  expandBadge: {
+    backgroundColor: theme.colors.neutrals.midGray,
+    paddingHorizontal: theme.spacing.spacing.md,
+    paddingVertical: theme.spacing.spacing.xs,
+    borderRadius: theme.spacing.borderRadius.md,
+  },
+  expandBadgeText: {
+    color: theme.colors.primary.gold,
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
   },
   expandIndicator: {
     color: theme.colors.text.secondary,
     textAlign: 'right',
-    marginTop: theme.spacing.spacing.sm,
-    fontSize: theme.typography.fontSize.xs,
+    marginTop: theme.spacing.spacing.xs,
+    fontSize: theme.typography.fontSize.md,
+  },
+  deleteButtonText: {
+    color: theme.colors.semantic.error,
+    fontSize: theme.typography.fontSize.sm,
   },
   emptyText: {
     color: theme.colors.text.secondary,
@@ -807,6 +875,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.spacing.lg,
     borderRadius: theme.spacing.borderRadius.md,
     maxWidth: '85%',
+  },
+  lastChatMessage: {
+    marginBottom: 0,
   },
   chatMessageUser: {
     backgroundColor: theme.colors.primary.crimsonDark,

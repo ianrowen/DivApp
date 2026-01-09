@@ -103,7 +103,7 @@ export default {
     more: 'More',
   },
   history: {
-    title: 'Reading History',
+    title: 'History',
     noReadings: 'No readings yet',
     noReadingsSubtitle: 'Start a new one from the Home screen!',
     date: 'Date',

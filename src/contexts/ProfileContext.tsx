@@ -48,7 +48,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
             // #region agent log
             debugLog('ProfileContext.tsx:cacheLoaded', 'Loaded profile from cache', {userId}, 'I');
             // #endregion
-            console.log('✅ Loaded profile from cache');
           }
         } catch (e) {
           console.warn('Failed to parse cached profile:', e);
@@ -182,7 +181,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         // #region agent log
         debugLog('ProfileContext.tsx:profileLoaded', 'Profile loaded and cached', {userId}, 'I');
         // #endregion
-        console.log('✅ Loaded and cached profile');
       }
     } catch (error) {
       // #region agent log

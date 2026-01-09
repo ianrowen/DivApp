@@ -81,7 +81,6 @@ export default function AnalysisScreen() {
     const timeout = setTimeout(() => {
       setLoading((currentLoading) => {
         if (currentLoading && !loadingCompleteRef.current) {
-          console.warn('Analysis loading timeout - forcing completion');
           setError((currentError) => {
             if (!currentError && !stats) {
               return 'Loading timeout. Please check your connection and try again.';
@@ -110,27 +109,22 @@ export default function AnalysisScreen() {
     try {
       setLoading(true);
       setError(null);
-      console.log('Analysis: Starting to load readings...');
 
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError) {
-        console.error('Analysis: User fetch error:', userError);
         throw userError;
       }
 
       if (!user) {
-        console.log('Analysis: No user found');
         setUser(null);
         loadingCompleteRef.current = true;
         setLoading(false);
         return;
       }
 
-      console.log('Analysis: User found, fetching readings...');
       setUser(user);
     } catch (err) {
-      console.error('Analysis: User load error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load user');
       loadingCompleteRef.current = true;
       setLoading(false);
@@ -140,7 +134,6 @@ export default function AnalysisScreen() {
   const loadStatistics = async () => {
     // Prevent concurrent loads
     if (loadingStatsRef.current) {
-      console.log('Analysis: loadStatistics already in progress, skipping...');
       return;
     }
     
@@ -155,8 +148,6 @@ export default function AnalysisScreen() {
         return;
       }
 
-      console.log('Analysis: Fetching readings...');
-
       // Load all readings with dates
       const { data: readings, error: readingsError } = await supabase
         .from('readings')
@@ -164,11 +155,8 @@ export default function AnalysisScreen() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: true });
       if (readingsError) {
-        console.error('Analysis: Readings fetch error:', readingsError);
         throw readingsError;
       }
-
-      console.log(`Analysis: Loaded ${readings?.length || 0} readings`);
 
       // Calculate date range
       if (readings && readings.length > 0) {
@@ -395,7 +383,7 @@ export default function AnalysisScreen() {
           );
           setThemeInterpretations(interpretations);
         } catch (err) {
-          console.error('Error generating theme interpretations:', err);
+          // Error generating theme interpretations - silently fail
         } finally {
           setGeneratingInterpretations(false);
         }
@@ -403,12 +391,10 @@ export default function AnalysisScreen() {
 
       loadingCompleteRef.current = true;
     } catch (err) {
-      console.error('Analysis: Fatal error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load analysis');
       loadingCompleteRef.current = true;
     } finally {
       loadingStatsRef.current = false;
-      console.log('Analysis: Loading complete');
       setLoading(false);
     }
   };
@@ -458,12 +444,6 @@ export default function AnalysisScreen() {
         }
         
         if (!card) {
-          console.warn('Analysis: Card not found for element:', {
-            elementId: elem.elementId,
-            cardCode: elem.metadata?.cardCode,
-            cardTitle: elem.metadata?.cardTitle,
-            metadata: elem.metadata,
-          });
           return;
         }
 
@@ -704,8 +684,17 @@ export default function AnalysisScreen() {
   const formatDescriptionWithBold = (text: string, currentLocale: SupportedLocale): React.ReactNode => {
     if (!text) return <ThemedText variant="body">{text}</ThemedText>;
     
+    // Replace LESSONS with 教訓 for Chinese locale
+    let processedText = text;
+    if (currentLocale === 'zh-TW') {
+      processedText = processedText.replace(/\*\*LESSONS:\*\*/g, '**教訓：**');
+      processedText = processedText.replace(/\*\*LESSONS\*\*/g, '**教訓**');
+      processedText = processedText.replace(/LESSONS:/g, '教訓：');
+      processedText = processedText.replace(/LESSONS/g, '教訓');
+    }
+    
     // Split by **bold** and *italic* markers (process bold first, then italic)
-    let parts = text.split(/(\*\*[^*]+\*\*)/g);
+    let parts = processedText.split(/(\*\*[^*]+\*\*)/g);
     
     // Process each part for italic markers
     const processedParts: React.ReactNode[] = [];
@@ -884,6 +873,57 @@ export default function AnalysisScreen() {
         </View>
       )}
 
+      {/* Low Priority Insights - Observations */}
+      {patterns.filter(p => p.severity === 'low').length > 0 && (
+        <View style={styles.priorityGroup}>
+          {patterns
+            .filter(p => p.severity === 'low')
+            .map((pattern, idx) => (
+              <View
+                key={`low-${idx}`}
+                style={[styles.insightCard, styles.insightCardLow]}
+              >
+                <View style={styles.insightHeader}>
+                  <View style={[styles.insightBadge, styles.insightBadgeLow]}>
+                    <ThemedText variant="caption" style={styles.insightBadgeText}>
+                      {pattern.type === 'recurring_theme' 
+                        ? (locale === 'zh-TW' ? '重複' : 'RECURRING')
+                        : pattern.type === 'anomaly'
+                        ? (locale === 'zh-TW' ? '異常' : 'ANOMALY')
+                        : (locale === 'zh-TW' ? '趨勢' : 'TREND')}
+                    </ThemedText>
+                  </View>
+                  {/* Show flame badge only if pattern is high severity */}
+                  {pattern.severity === 'high' && (
+                    <View style={styles.insightSeverity}>
+                      <ThemedText variant="caption" style={styles.severityText}>
+                        🔥 {locale === 'zh-TW' ? '高' : 'HIGH'}
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
+                <ThemedText variant="h3" style={styles.insightTitle}>
+                  {pattern.title}
+                </ThemedText>
+                <View>
+                  {formatDescriptionWithBold(pattern.description, locale)}
+                </View>
+                {/* Show AI-generated interpretation if available */}
+                {themeInterpretations.has(pattern.title) && (
+                  <View style={styles.interpretationContainer}>
+                    <ThemedText variant="caption" style={styles.interpretationLabel}>
+                      {locale === 'zh-TW' ? '✨ 解讀' : '✨ Interpretation'}
+                    </ThemedText>
+                    <View>
+                      {formatDescriptionWithBold(themeInterpretations.get(pattern.title)?.interpretation || '', locale)}
+                    </View>
+                  </View>
+                )}
+              </View>
+            ))}
+        </View>
+      )}
+
       {/* THEMES Section - Standalone Container */}
       {patterns.some(p => p.title === (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes')) && (
         <View style={styles.themesContainer}>
@@ -892,27 +932,29 @@ export default function AnalysisScreen() {
             return themesPattern ? (
               <>
                 {/* Show THEMES: keywords */}
-                <ThemedText variant="caption" style={styles.themesLabel}>
-                  {locale === 'zh-TW' ? '主題' : 'THEMES'}
+                <View style={{ marginBottom: theme.spacing.spacing.sm, paddingTop: 2, paddingBottom: 2, width: '100%' }}>
                   {(() => {
                     const interpretation = themeInterpretations.get(themesPattern.title);
                     const themeNames = interpretation?.themeNames;
                     if (themeNames && themeNames.trim()) {
                       return (
-                        <>
-                          {': '}
-                          <ThemedText variant="body" style={styles.themesSubheading}>
-                            {themeNames}
-                          </ThemedText>
-                        </>
+                        <ThemedText variant="caption" style={styles.themesLabel} includeFontPadding={false}>
+                          <ThemedText variant="caption" style={styles.themesLabel}>{locale === 'zh-TW' ? '主題' : 'THEMES'}</ThemedText>
+                          <ThemedText variant="caption" style={styles.themesLabel}>{': '}</ThemedText>
+                          <ThemedText variant="body" style={styles.themesSubheading}>{themeNames}</ThemedText>
+                        </ThemedText>
                       );
                     }
-                    return null;
+                    return (
+                      <ThemedText variant="caption" style={styles.themesLabel} includeFontPadding={false}>
+                        {locale === 'zh-TW' ? '主題' : 'THEMES'}
+                      </ThemedText>
+                    );
                   })()}
-                </ThemedText>
+                </View>
                 {/* Show AI-generated interpretation if available */}
                 {themeInterpretations.has(themesPattern.title) && (
-                  <View style={{ marginTop: theme.spacing.spacing.md, width: '100%' }}>
+                  <View style={{ width: '100%' }}>
                     {formatDescriptionWithBold(themeInterpretations.get(themesPattern.title)?.interpretation || '', locale)}
                   </View>
                 )}
@@ -931,13 +973,14 @@ export default function AnalysisScreen() {
       )}
 
       {/* Section Break between Themes and Insights */}
-      {patterns.some(p => p.title === (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes')) && 
-       patterns.filter(p => p.title !== (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes')).length > 0 && (
+      {(patterns.some(p => p.title === (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes')) || 
+        patterns.filter(p => p.severity === 'low').length > 0) && 
+       patterns.filter(p => p.title !== (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes') && p.severity !== 'low').length > 0 && (
         <View style={styles.sectionDivider} />
       )}
 
       {/* Enhanced Insights Panels - At Top */}
-      {patterns.filter(p => p.title !== (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes')).length > 0 && (
+      {patterns.filter(p => p.title !== (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes') && p.severity !== 'low').length > 0 && (
         <View style={styles.insightsSection}>
           {/* High Priority Insights - Only show header if there are high severity patterns (excluding THEMES) */}
           {patterns.filter(p => p.severity === 'high' && p.title !== (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes')).length > 0 && (
@@ -1025,75 +1068,6 @@ export default function AnalysisScreen() {
                           ⚡ {locale === 'zh-TW' ? '中' : 'MED'}
                         </ThemedText>
                       </View>
-                    </View>
-                    <ThemedText variant="h3" style={styles.insightTitle}>
-                      {pattern.title}
-                    </ThemedText>
-                    <View>
-                      {formatDescriptionWithBold(pattern.description, locale)}
-                    </View>
-                    {/* Show AI-generated interpretation if available */}
-                    {themeInterpretations.has(pattern.title) && (
-                      <View style={styles.interpretationContainer}>
-                        <ThemedText variant="caption" style={styles.interpretationLabel}>
-                          {locale === 'zh-TW' ? '✨ 解讀' : '✨ Interpretation'}
-                        </ThemedText>
-                        <View>
-                          {formatDescriptionWithBold(themeInterpretations.get(pattern.title)?.interpretation || '', locale)}
-                        </View>
-                      </View>
-                    )}
-                  </View>
-                ))}
-            </View>
-          )}
-
-          {/* Low Priority Insights - Observations */}
-          {patterns.filter(p => p.severity === 'low').length > 0 && (
-            <View style={styles.priorityGroup}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.spacing.md }}>
-                <ThemedText variant="h3" style={styles.priorityLabel}>
-                  💭 {locale === 'zh-TW' ? '觀察' : 'Observations'}
-                </ThemedText>
-                {/* Show HIGHLY SIGNIFICANT header and flame badge only if there are high severity patterns in observations section (shouldn't normally happen) */}
-                {patterns.filter(p => p.severity === 'low').some(p => p.severity === 'high') && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.spacing.xs }}>
-                    <ThemedText variant="h3" style={styles.priorityLabel}>
-                      ⚠️ {locale === 'zh-TW' ? '高度顯著' : 'Highly Significant'}
-                    </ThemedText>
-                    <View style={styles.insightSeverity}>
-                      <ThemedText variant="caption" style={styles.severityText}>
-                        🔥 {locale === 'zh-TW' ? '高' : 'HIGH'}
-                      </ThemedText>
-                    </View>
-                  </View>
-                )}
-              </View>
-              {patterns
-                .filter(p => p.severity === 'low')
-                .map((pattern, idx) => (
-                  <View
-                    key={`low-${idx}`}
-                    style={[styles.insightCard, styles.insightCardLow]}
-                  >
-                    <View style={styles.insightHeader}>
-                      <View style={[styles.insightBadge, styles.insightBadgeLow]}>
-                        <ThemedText variant="caption" style={styles.insightBadgeText}>
-                          {pattern.type === 'recurring_theme' 
-                            ? (locale === 'zh-TW' ? '重複' : 'RECURRING')
-                            : pattern.type === 'anomaly'
-                            ? (locale === 'zh-TW' ? '異常' : 'ANOMALY')
-                            : (locale === 'zh-TW' ? '趨勢' : 'TREND')}
-                        </ThemedText>
-                      </View>
-                      {/* Show flame badge only if pattern is high severity */}
-                      {pattern.severity === 'high' && (
-                        <View style={styles.insightSeverity}>
-                          <ThemedText variant="caption" style={styles.severityText}>
-                            🔥 {locale === 'zh-TW' ? '高' : 'HIGH'}
-                          </ThemedText>
-                        </View>
-                      )}
                     </View>
                     <ThemedText variant="h3" style={styles.insightTitle}>
                       {pattern.title}
@@ -1242,33 +1216,26 @@ export default function AnalysisScreen() {
           : (locale === 'zh-TW' ? '🔄 重新生成主題' : '🔄 Regenerate Themes')}
         onPress={async () => {
           if (!user?.id || !stats) {
-            console.error('Regenerate: Missing user or stats', { userId: user?.id, hasStats: !!stats });
             return;
           }
           
           // Prevent concurrent regenerations
           if (regeneratingRef.current) {
-            console.log('Regenerate: Already in progress, skipping...');
             return;
           }
           
           try {
             regeneratingRef.current = true;
-            console.log('Regenerate: Starting regeneration...');
             setGeneratingInterpretations(true);
             
             // Delete all theme interpretations for this user
-            const { error: deleteError, data: deletedData } = await supabase
+            const { error: deleteError } = await supabase
               .from('theme_interpretations')
               .delete()
-              .eq('user_id', user.id)
-              .select();
+              .eq('user_id', user.id);
             
             if (deleteError) {
-              console.error('Regenerate: Error clearing theme interpretations:', deleteError);
               // Continue anyway - might be table doesn't exist
-            } else {
-              console.log('Regenerate: Cleared existing theme interpretations, deleted:', deletedData?.length || 0);
             }
             
             // Verify delete completed by checking if records still exist
@@ -1279,7 +1246,6 @@ export default function AnalysisScreen() {
               .limit(1);
             
             if (verifyData && verifyData.length > 0) {
-              console.warn('Regenerate: Delete may not have completed, records still exist. Retrying delete...');
               await supabase
                 .from('theme_interpretations')
                 .delete()
@@ -1294,13 +1260,6 @@ export default function AnalysisScreen() {
             
             // Regenerate interpretations
             const detectedPatterns = detectPatterns(stats);
-            console.log('Regenerate: Detected patterns:', detectedPatterns.length);
-            console.log('Regenerate: Pattern details:', detectedPatterns.map(p => ({
-              title: p.title,
-              type: p.type,
-              severity: p.severity,
-              cardsCount: p.cards?.length || 0
-            })));
             
             if (detectedPatterns.length > 0) {
               // Build card occurrence timeline
@@ -1312,11 +1271,8 @@ export default function AnalysisScreen() {
                 .order('created_at', { ascending: true });
               
               if (readingsError) {
-                console.error('Regenerate: Error fetching readings:', readingsError);
                 throw readingsError;
               }
-              
-              console.log('Regenerate: Loaded readings for timeline:', readings?.length || 0);
               
               readings?.forEach((reading: any) => {
                 if (!reading.created_at) return;
@@ -1416,14 +1372,6 @@ export default function AnalysisScreen() {
                   const isMultipleThemes = p.title === (locale === 'zh-TW' ? '多重重複主題' : 'Multiple Recurring Themes');
                   const isHighSeverity = p.severity === 'high';
                   const shouldInclude = !isSingleRecurring && (isMultipleThemes || isHighSeverity);
-                  
-                  console.log(`Regenerate: Pattern "${p.title}":`, {
-                    isSingleRecurring,
-                    isMultipleThemes,
-                    isHighSeverity,
-                    shouldInclude
-                  });
-                  
                   return shouldInclude;
                 })
                 .map(p => {
@@ -1443,14 +1391,6 @@ export default function AnalysisScreen() {
                     totalReadings: readings?.length || 0,
                   };
                   
-                  console.log(`Regenerate: Theme metadata for "${p.title}":`, {
-                    hasStructuralStats: !!structuralStatsOverTime,
-                    hasEarly: !!structuralStatsOverTime?.early,
-                    hasMiddle: !!structuralStatsOverTime?.middle,
-                    hasLate: !!structuralStatsOverTime?.late,
-                    metadataKeys: Object.keys(themeMetadata),
-                  });
-                  
                   return {
                     type: p.type,
                     key: p.title,
@@ -1459,8 +1399,6 @@ export default function AnalysisScreen() {
                   };
                 });
               
-              console.log('Regenerate: Generating interpretations for themes:', themes.length);
-              
               const interpretations = await generateThemeInterpretations(
                 user.id,
                 themes,
@@ -1468,32 +1406,20 @@ export default function AnalysisScreen() {
                 true // Force regenerate when button is clicked
               );
               
-              console.log('Regenerate: Generated interpretations:', interpretations.size);
-              console.log('Regenerate: Interpretation keys:', Array.from(interpretations.keys()));
-              interpretations.forEach((value, key) => {
-                console.log(`Regenerate: ${key} - themeNames:`, value.themeNames);
-              });
-              
               setThemeInterpretations(interpretations);
-            } else {
-              console.log('Regenerate: No patterns detected, nothing to regenerate');
             }
           } catch (err) {
-            console.error('Regenerate: Error regenerating theme interpretations:', err);
-            if (err instanceof Error) {
-              console.error('Regenerate: Error stack:', err.stack);
-            }
+            // Error regenerating theme interpretations - silently fail
           } finally {
             regeneratingRef.current = false;
             setGeneratingInterpretations(false);
-            console.log('Regenerate: Completed');
           }
         }}
         variant="secondary"
         style={styles.regenerateButton}
         disabled={generatingInterpretations || !stats}
       />
-r      
+      
       {/* Subtitle moved to bottom - card count and dates */}
       <ThemedText variant="body" style={styles.subtitle}>
         {(() => {
@@ -1582,10 +1508,15 @@ function StatBar({
         />
       </View>
       <ThemedText variant="caption" style={styles.statHint}>
-        {t('analysis.expected')}: {expectedPercentage.toFixed(1)}%
+        <ThemedText variant="caption" style={styles.statHint}>{t('analysis.expected')}</ThemedText>
+        <ThemedText variant="caption" style={styles.statHint}>{': '}</ThemedText>
+        <ThemedText variant="caption" style={styles.statHint}>{expectedPercentage.toFixed(1)}%</ThemedText>
         {isAnomaly && (
           <ThemedText style={styles.anomalyIndicator}>
-            {' '}• {difference > 0 ? '+' : ''}{difference.toFixed(1)}%
+            <ThemedText style={styles.anomalyIndicator}>{' '}</ThemedText>
+            <ThemedText style={styles.anomalyIndicator}>{' • '}</ThemedText>
+            <ThemedText style={styles.anomalyIndicator}>{difference > 0 ? '+' : ''}</ThemedText>
+            <ThemedText style={styles.anomalyIndicator}>{difference.toFixed(1)}%</ThemedText>
           </ThemedText>
         )}
       </ThemedText>
@@ -1929,16 +1860,17 @@ const styles = StyleSheet.create({
   },
   themesLabel: {
     color: theme.colors.primary.gold,
-    fontSize: theme.typography.fontSize.xs,
+    fontSize: theme.typography.fontSize.lg,
     fontWeight: theme.typography.fontWeight.bold,
     letterSpacing: 1,
-    marginBottom: theme.spacing.spacing.xs,
     textTransform: 'uppercase',
+    lineHeight: theme.typography.fontSize.lg * 1.4,
   },
   themesSubheading: {
     color: theme.colors.text.secondary,
-    fontSize: theme.typography.fontSize.sm,
+    fontSize: theme.typography.fontSize.lg,
     fontStyle: 'italic',
+    lineHeight: theme.typography.fontSize.lg * 1.4,
   },
   interpretationContainer: {
     marginTop: theme.spacing.spacing.md,

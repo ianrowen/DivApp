@@ -5,13 +5,16 @@ import { TouchableOpacity } from 'react-native';
 import AnalysisScreen from '../src/screens/AnalysisScreen';
 import ThemedText from '../src/shared/components/ui/ThemedText';
 import theme from '../src/theme';
+import { useTranslation } from '../src/i18n';
 
 export default function Analysis() {
+  const { t } = useTranslation();
+  
   return (
     <>
       <Stack.Screen 
         options={{
-          title: 'Analysis',
+          title: t('analysis.title') || 'Analysis',
           headerShown: true,
           presentation: 'card',
           headerStyle: { 
@@ -39,7 +42,7 @@ export default function Analysis() {
                 fontSize: 18,
                 fontFamily: 'Lato_400Regular',
               }}>
-                ← Back
+                ← {t('common.back')}
               </ThemedText>
             </TouchableOpacity>
           ),

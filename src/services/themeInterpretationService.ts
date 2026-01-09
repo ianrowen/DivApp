@@ -44,7 +44,6 @@ export async function getThemeInterpretation(
   try {
     // If force regenerate, skip cache check
     if (forceRegenerate) {
-      console.log('Theme retrieval - Force regeneration requested, skipping cache check');
       const interpretation = await generateThemeInterpretation(
         userId,
         themeType,
@@ -77,7 +76,6 @@ export async function getThemeInterpretation(
 
     // If table doesn't exist or other error, skip caching and generate directly
     if (fetchError) {
-      console.warn('Error fetching theme interpretation (table may not exist yet):', fetchError.code);
       // Generate interpretation without caching if table doesn't exist
       const interpretation = await generateThemeInterpretation(
         userId,
@@ -110,12 +108,6 @@ export async function getThemeInterpretation(
     const needsRegenerationDueToMissingStructuralStats = existingData && metadata?.structuralStatsOverTime && !existingData.metadata?.structuralStatsOverTime;
 
     if (needsRegeneration || needsRegenerationDueToMissingKeywords || needsRegenerationDueToMissingStructuralStats) {
-      console.log('Theme retrieval - Regenerating because:', {
-        noExisting: !existing,
-        expired: expiresAt ? expiresAt <= now : false,
-        missingKeywords: needsRegenerationDueToMissingKeywords,
-        missingStructuralStats: needsRegenerationDueToMissingStructuralStats
-      });
       // Generate new interpretation
       const interpretation = await generateThemeInterpretation(
         userId,
@@ -146,8 +138,6 @@ export async function getThemeInterpretation(
       : existingData?.interpretation_en || '';
     
     const themeNames = existingData?.theme_names || undefined;
-    console.log('Theme retrieval - Existing data theme_names:', themeNames);
-    console.log('Theme retrieval - Full existing data:', JSON.stringify(existingData, null, 2));
     
     return {
       summary: '', // No longer used
@@ -155,7 +145,6 @@ export async function getThemeInterpretation(
       themeNames: themeNames,
     };
   } catch (error) {
-    console.error('Error getting theme interpretation:', error);
     return null;
   }
 }
@@ -234,26 +223,9 @@ async function generateThemeInterpretation(
           overall?: { major: number; minor: number; court: number; wands: number; cups: number; swords: number; pentacles: number };
         } | undefined;
         
-        console.log('Theme generation - Structural stats received:', {
-          hasStructuralStats: !!structuralStats,
-          hasEarly: !!structuralStats?.early,
-          hasMiddle: !!structuralStats?.middle,
-          hasLate: !!structuralStats?.late,
-          metadataKeys: metadata ? Object.keys(metadata) : [],
-        });
-        
         let structuralAnalysis = '';
-        console.log('Theme generation - Checking structural stats:', {
-          hasStructuralStats: !!structuralStats,
-          hasEarly: !!structuralStats?.early,
-          hasMiddle: !!structuralStats?.middle,
-          hasLate: !!structuralStats?.late,
-          earlyMajor: structuralStats?.early?.major,
-          lateMajor: structuralStats?.late?.major,
-        });
         
         if (structuralStats && structuralStats.early && structuralStats.middle && structuralStats.late) {
-          console.log('Theme generation - Building structural analysis...');
           // Calculate key shifts
           const majorShift = structuralStats.late.major - structuralStats.early.major;
           const minorShift = structuralStats.late.minor - structuralStats.early.minor;
@@ -292,62 +264,12 @@ async function generateThemeInterpretation(
           structuralAnalysis = locale === 'zh-TW'
             ? `\n\n**統計結構趨勢分析（早期/中期/晚期）：**\n\n**結構性演變模式：**\n${majorDesc ? `- 大阿爾克那：${majorDesc === 'significantly decreased' ? '顯著下降' : majorDesc === 'substantially decreased' ? '大幅下降' : '明顯下降'}（從早期的高比例轉向後期的較低比例，顯示從重大轉變主題轉向日常事務）` : ''}\n${minorDesc ? `- 小阿爾克那：${minorDesc === 'significantly increased' ? '顯著上升' : minorDesc === 'substantially increased' ? '大幅上升' : '明顯上升'}（實務層面的關注增加）` : ''}\n${courtDesc ? `- 宮廷牌：${courtDesc === 'significantly increased' ? '顯著上升' : courtDesc === 'substantially increased' ? '大幅上升' : '明顯上升'}（人物和關係動態的關注增加）` : ''}\n${cupsDesc ? `- 聖杯（情感）：${cupsDesc === 'significantly increased' ? '顯著上升' : cupsDesc === 'substantially increased' ? '大幅上升' : '明顯上升'}，特別是在中期達到高峰（情感主題的強烈湧現）` : ''}\n\n**敘事弧線：**\n早期階段以${earlyDominant === 'Major Arcana' ? '重大轉變和深層主題' : earlyDominant === 'Cups (Emotions)' ? '情感探索' : earlyDominant === 'Wands (Creativity)' ? '創造力' : '平衡'}為主導，逐漸演變為後期以${lateDominant === 'Major Arcana' ? '重大轉變' : lateDominant === 'Cups (Emotions)' ? '情感整合' : lateDominant === 'Wands (Creativity)' ? '創造性行動' : '實務整合'}為焦點。\n\n**你必須在解釋中：**\n1. 明確描述這個結構性演變如何反映用戶的成長軌跡\n2. 將重複卡牌與這些結構性變化結合，說明它們如何反映這個演變過程\n3. 建構一個清晰的敘事弧線，從早期狀態到當前狀態\n4. 使用定性語言描述趨勢（如「從重大轉變轉向實務整合」），而非具體數字`
             : `\n\n**STATISTICAL STRUCTURAL TRENDS OVER TIME (Early/Middle/Late Periods):**\n\n**STRUCTURAL EVOLUTION PATTERNS:**\n${majorDesc ? `- Major Arcana: ${majorDesc} (shifted from high proportion in early period to lower proportion in late period, indicating transition from major transformation themes toward daily practical matters)` : ''}\n${minorDesc ? `- Minor Arcana: ${minorDesc} (increased focus on practical, day-to-day concerns)` : ''}\n${courtDesc ? `- Court Cards: ${courtDesc} (increased attention to people, relationships, and interpersonal dynamics)` : ''}\n${cupsDesc ? `- Cups Suit (Emotions): ${cupsDesc}, peaking notably in the middle period (strong emotional themes emerging)` : ''}\n${wandsDesc ? `- Wands Suit (Creativity): ${wandsDesc} (creative energy shifts)` : ''}\n\n**NARRATIVE ARC:**\nThe early period was dominated by ${earlyDominant === 'Major Arcana' ? 'major transformations and deep themes' : earlyDominant === 'Cups (Emotions)' ? 'emotional exploration' : earlyDominant === 'Wands (Creativity)' ? 'creative impulses' : 'balanced energies'}, gradually evolving toward the late period's focus on ${lateDominant === 'Major Arcana' ? 'major life shifts' : lateDominant === 'Cups (Emotions)' ? 'emotional integration' : lateDominant === 'Wands (Creativity)' ? 'creative action' : 'practical integration'}.\n\n**YOU MUST IN YOUR INTERPRETATION:**\n1. Explicitly describe how this structural evolution reflects the user's growth trajectory\n2. Integrate the recurring cards with these structural changes, explaining how they reflect this evolution\n3. Construct a clear narrative arc from early state to current state\n4. Use qualitative language to describe trends (e.g., "shifted from major transformations toward practical integration") rather than specific percentages\n5. Make the structural analysis central to your interpretation - it should be the foundation, not an afterthought`;
-          
-          console.log('Theme generation - Structural analysis built:', {
-            hasStructuralAnalysis: structuralAnalysis.length > 0,
-            analysisLength: structuralAnalysis.length,
-            majorDesc,
-            cupsDesc,
-            courtDesc,
-            earlyDominant,
-            lateDominant,
-            majorShift,
-            cupsShift,
-            courtShift,
-          });
-          
-          // Log first 500 chars of structural analysis
-          if (structuralAnalysis.length > 0) {
-            console.log('Theme generation - Structural analysis preview:', structuralAnalysis.substring(0, 500));
-          } else {
-            console.error('Theme generation - ERROR: Structural analysis is empty after building!');
-          }
-        } else {
-          console.warn('Theme generation - Structural stats missing or incomplete:', {
-            hasStructuralStats: !!structuralStats,
-            hasEarly: !!structuralStats?.early,
-            hasMiddle: !!structuralStats?.middle,
-            hasLate: !!structuralStats?.late,
-          });
         }
         
-        // Log final prompt length to verify structural analysis is included
         // Put structural analysis FIRST and make it very prominent
         const finalPrompt = locale === 'zh-TW'
-          ? `${structuralAnalysis ? `\n\n${structuralAnalysis}\n\n` : ''}${fullHistory ? `以下是用戶的完整閱讀歷史：\n\n${fullHistory}\n\n` : ''}分析以下重複出現的卡牌：${cardNames}。${temporalAnalysis}\n\n**重要：請嚴格按照以下格式回應，不要偏離格式。**\n\n首先，提供關鍵詞（必須在第一行，格式如下）：\n- 如果卡牌顯示出對立或對比模式，使用「x vs y」格式（例如：「內在 vs 外在」或「幻覺 vs 真相」）\n- 如果卡牌顯示出協同或漸進模式，使用三個關鍵詞「x, y, z」格式（例如：「轉變, 成長, 關係」或「創造力, 探索, 突破」）\n\n然後，提供解釋（必須在第二行開始，標記為「解釋：」）：\n- 寫3-4段簡潔的段落（總共約150-180字，不超過200字）\n- 使用**粗體**標示結構性變化（例如：**大阿爾克那顯著下降**）\n- 使用*斜體*標示卡牌名稱（例如：*惡魔*、*聖杯七*）\n- 必須基於統計結構趨勢建構清晰的敘事弧線\n- 說明早期→中期→晚期的結構性變化如何反映用戶的成長軌跡\n- 將重複卡牌與結構性趨勢結合，揭示深層模式\n- 提供具體、可操作的洞察，而非泛泛而談\n- 最後一段必須以**教訓：**開頭，提供清晰的要點\n\n**回應格式（必須嚴格遵循）：**\n關鍵詞： [根據時間模式和結構趨勢選擇「x vs y」或「x, y, z」格式，僅提供關鍵詞，不要額外文字]\n解釋： [3-4段簡潔段落，使用**粗體**和*斜體*格式，基於統計結構趨勢，最後一段以**教訓：**開頭]`
+          ? `${structuralAnalysis ? `\n\n${structuralAnalysis}\n\n` : ''}${fullHistory ? `以下是用戶的完整閱讀歷史：\n\n${fullHistory}\n\n` : ''}分析以下重複出現的卡牌：${cardNames}。${temporalAnalysis}\n\n**重要：請嚴格按照以下格式回應，不要偏離格式。**\n\n首先，提供關鍵詞（必須在第一行，格式如下）：\n- 如果卡牌顯示出對立或對比模式，使用「x vs y」格式（例如：「內在 vs 外在」或「幻覺 vs 真相」）\n- 如果卡牌顯示出協同或漸進模式，使用三個關鍵詞「x, y, z」格式（例如：「轉變, 成長, 關係」或「創造力, 探索, 突破」）\n\n然後，提供解釋（必須在第二行開始，標記為「解釋：」）：\n- 寫3-4段簡潔的段落（總共約150-180字，不超過200字）\n- 僅在最關鍵的結構性轉折點使用**粗體**（例如：僅在描述最重要的結構性變化時使用，如「**大阿爾克那顯著下降**」或「**聖杯主題在中期達到高峰**」），避免過度使用\n- 卡牌名稱使用一般文字即可，無需斜體（例如：惡魔、聖杯七），僅在首次提及或需要特別強調時才使用*斜體*\n- 必須基於統計結構趨勢建構清晰的敘事弧線\n- 說明早期→中期→晚期的結構性變化如何反映用戶的成長軌跡\n- 將重複卡牌與結構性趨勢結合，揭示深層模式\n- 提供具體、可操作的洞察，而非泛泛而談\n- 最後一段必須以**教訓：**開頭，提供清晰的要點\n\n**回應格式（必須嚴格遵循）：**\n關鍵詞： [根據時間模式和結構趨勢選擇「x vs y」或「x, y, z」格式，僅提供關鍵詞，不要額外文字]\n解釋： [3-4段簡潔段落，謹慎使用**粗體**（僅用於最重要的結構性轉折），卡牌名稱使用一般文字，最後一段以**教訓：**開頭]`
           : `${structuralAnalysis ? `\n\n${structuralAnalysis}\n\n` : ''}${fullHistory ? `Here is the user's full reading history:\n\n${fullHistory}\n\n` : ''}Analyze the following recurring cards: ${cardNames}.${temporalAnalysis}\n\n**CRITICAL: You MUST respond in EXACTLY this format. Start your response with "Keywords:" on the first line, then "Interpretation:" on the second line.**\n\n**Step 1: Keywords (REQUIRED - first line only)**\nProvide keywords in ONE of these formats:\n- Opposition pattern: "x vs y" (e.g., "Illusion vs Truth" or "Struggle vs Liberation")\n- Synergistic pattern: "x, y, z" (e.g., "Transformation, Growth, Relationships" or "Clarity, Freedom, Joy")\n\n**Step 2: Interpretation (REQUIRED - second line onwards)**\n\n**MANDATORY STRUCTURE - Write exactly 3-4 concise paragraphs:**\n\n**Paragraph 1 (REQUIRED - 3-4 sentences):** Start with the STRUCTURAL EVOLUTION. Use **bold** for key structural shifts (e.g., **Major Arcana significantly decreased**, **Cups suit peaked in middle period**). Describe the narrative arc from early (what dominated) to late (what dominates now) in 3-4 concise sentences.\n\n**Paragraph 2 (REQUIRED - 4-5 sentences):** Integrate the recurring cards (Seven of Cups, Five of Pentacles, The Sun, The Devil, Ace of Swords) into the structural narrative. Use *italic* for card names (e.g., *The Devil*, *Seven of Cups*). Explain how these cards reflect the structural shifts.\n\n**Paragraph 3 (OPTIONAL - 3-4 sentences):** Add deeper insight connecting cards to structural evolution if needed.\n\n**Paragraph 4 (REQUIRED - 2-3 sentences):** Conclude with concise, actionable guidance. Start this paragraph with **LESSONS:** (bold) to create a clear takeaway message for the querent.\n\n**FORMATTING RULES:**\n- Use **bold** for structural shifts and key concepts (e.g., **significantly decreased**, **peaked in middle period**)\n- Use *italic* for card names (e.g., *The Devil*, *Ace of Swords*)\n- Keep paragraphs concise: 3-5 sentences each, maximum 4 paragraphs total\n- Total length: approximately 150-180 words (not 200+)\n- Your FIRST sentence MUST reference structural evolution\n- Use qualitative language only (never percentages)\n\n**EXAMPLE RESPONSE FORMAT:**\nKeywords: Illusion vs Truth\nInterpretation: **Your readings show a significant shift** from major transformations toward practical integration. The **Major Arcana proportion decreased substantially**, while **emotional themes (Cups) peaked in the middle period** before stabilizing. This reflects a journey from deep internal work to grounded action.\n\nThe recurring *The Devil* and *Ace of Swords* in your early readings embody this initial transformation phase, while *Seven of Cups* captures the emotional peak of the middle period.\n\n**LESSONS:** Your current focus is on practical integration and creative action. Leverage this clarity to build tangible systems and foster collaborative relationships.\n\n**YOUR RESPONSE (copy this format exactly):**\nKeywords: [your keywords here]\nInterpretation: [3-4 concise paragraphs with bold/italic formatting - START with structural evolution!]`;
-        
-        console.log('Theme generation - Final prompt info:', {
-          promptLength: finalPrompt.length,
-          hasStructuralAnalysis: structuralAnalysis.length > 0,
-          structuralAnalysisLength: structuralAnalysis.length,
-          hasTemporalAnalysis: temporalAnalysis.length > 0,
-          hasFullHistory: !!fullHistory,
-        });
-        
-        // Log a sample of the prompt to verify structural analysis is included
-        if (structuralAnalysis.length > 0) {
-          const structuralSample = structuralAnalysis.substring(0, 400);
-          console.log('Theme generation - Structural analysis sample (first 400 chars):', structuralSample);
-          const containsStructural = finalPrompt.includes('STRUCTURAL EVOLUTION') || finalPrompt.includes('結構性演變') || finalPrompt.includes('Major Arcana');
-          console.log('Theme generation - Prompt contains structural keywords:', containsStructural);
-          console.log('Theme generation - Structural analysis position in prompt:', finalPrompt.indexOf(structuralAnalysis.substring(0, 50)));
-          if (!containsStructural) {
-            console.error('Theme generation - ERROR: Structural analysis not found in prompt!');
-          }
-        } else {
-          console.error('Theme generation - WARNING: Structural analysis is EMPTY!');
-        }
         
         prompt = finalPrompt;
       }
@@ -389,13 +311,6 @@ async function generateThemeInterpretation(
           overall?: { major: number; minor: number; court: number; wands: number; cups: number; swords: number; pentacles: number };
         } | undefined;
         
-        console.log('Theme generation (trend) - Structural stats received:', {
-          hasStructuralStats: !!structuralStats,
-          hasEarly: !!structuralStats?.early,
-          hasMiddle: !!structuralStats?.middle,
-          hasLate: !!structuralStats?.late,
-        });
-        
         // Analyze card distribution over time
         const cardTimeline = metadata?.cardTimeline as Record<string, string[]> | undefined;
         let temporalAnalysis = '';
@@ -415,15 +330,8 @@ async function generateThemeInterpretation(
         
         // Build structural analysis (same logic as recurring_theme)
         let structuralAnalysis = '';
-        console.log('Theme generation (trend) - Checking structural stats:', {
-          hasStructuralStats: !!structuralStats,
-          hasEarly: !!structuralStats?.early,
-          hasMiddle: !!structuralStats?.middle,
-          hasLate: !!structuralStats?.late,
-        });
         
         if (structuralStats && structuralStats.early && structuralStats.middle && structuralStats.late) {
-          console.log('Theme generation (trend) - Building structural analysis...');
           const majorShift = structuralStats.late.major - structuralStats.early.major;
           const minorShift = structuralStats.late.minor - structuralStats.early.minor;
           const courtShift = structuralStats.late.court - structuralStats.early.court;
@@ -457,14 +365,6 @@ async function generateThemeInterpretation(
           structuralAnalysis = locale === 'zh-TW'
             ? `\n\n**統計結構趨勢分析（早期/中期/晚期）：**\n\n**結構性演變模式：**\n${majorDesc ? `- 大阿爾克那：${majorDesc === 'significantly decreased' ? '顯著下降' : majorDesc === 'substantially decreased' ? '大幅下降' : '明顯下降'}（從早期的高比例轉向後期的較低比例，顯示從重大轉變主題轉向日常事務）` : ''}\n${minorDesc ? `- 小阿爾克那：${minorDesc === 'significantly increased' ? '顯著上升' : minorDesc === 'substantially increased' ? '大幅上升' : '明顯上升'}（實務層面的關注增加）` : ''}\n${courtDesc ? `- 宮廷牌：${courtDesc === 'significantly increased' ? '顯著上升' : courtDesc === 'substantially increased' ? '大幅上升' : '明顯上升'}（人物和關係動態的關注增加）` : ''}\n${cupsDesc ? `- 聖杯（情感）：${cupsDesc === 'significantly increased' ? '顯著上升' : cupsDesc === 'substantially increased' ? '大幅上升' : '明顯上升'}，特別是在中期達到高峰（情感主題的強烈湧現）` : ''}\n\n**敘事弧線：**\n早期階段以${earlyDominant === 'Major Arcana' ? '重大轉變和深層主題' : earlyDominant === 'Cups (Emotions)' ? '情感探索' : earlyDominant === 'Wands (Creativity)' ? '創造力' : '平衡'}為主導，逐漸演變為後期以${lateDominant === 'Major Arcana' ? '重大轉變' : lateDominant === 'Cups (Emotions)' ? '情感整合' : lateDominant === 'Wands (Creativity)' ? '創造性行動' : '實務整合'}為焦點。\n\n**你必須在解釋中：**\n1. 明確描述這個結構性演變如何反映用戶的成長軌跡\n2. 將重複卡牌與這些結構性變化結合，說明它們如何反映這個演變過程\n3. 建構一個清晰的敘事弧線，從早期狀態到當前狀態\n4. 使用定性語言描述趨勢（如「從重大轉變轉向實務整合」），而非具體數字`
             : `\n\n**STATISTICAL STRUCTURAL TRENDS OVER TIME (Early/Middle/Late Periods):**\n\n**STRUCTURAL EVOLUTION PATTERNS:**\n${majorDesc ? `- Major Arcana: ${majorDesc} (shifted from high proportion in early period to lower proportion in late period, indicating transition from major transformation themes toward daily practical matters)` : ''}\n${minorDesc ? `- Minor Arcana: ${minorDesc} (increased focus on practical, day-to-day concerns)` : ''}\n${courtDesc ? `- Court Cards: ${courtDesc} (increased attention to people, relationships, and interpersonal dynamics)` : ''}\n${cupsDesc ? `- Cups Suit (Emotions): ${cupsDesc}, peaking notably in the middle period (strong emotional themes emerging)` : ''}\n${wandsDesc ? `- Wands Suit (Creativity): ${wandsDesc} (creative energy shifts)` : ''}\n\n**NARRATIVE ARC:**\nThe early period was dominated by ${earlyDominant === 'Major Arcana' ? 'major transformations and deep themes' : earlyDominant === 'Cups (Emotions)' ? 'emotional exploration' : earlyDominant === 'Wands (Creativity)' ? 'creative impulses' : 'balanced energies'}, gradually evolving toward the late period's focus on ${lateDominant === 'Major Arcana' ? 'major life shifts' : lateDominant === 'Cups (Emotions)' ? 'emotional integration' : lateDominant === 'Wands (Creativity)' ? 'creative action' : 'practical integration'}.\n\n**YOU MUST IN YOUR INTERPRETATION:**\n1. Explicitly describe how this structural evolution reflects the user's growth trajectory\n2. Integrate the recurring cards with these structural changes, explaining how they reflect this evolution\n3. Construct a clear narrative arc from early state to current state\n4. Use qualitative language to describe trends (e.g., "shifted from major transformations toward practical integration") rather than specific percentages\n5. Make the structural analysis central to your interpretation - it should be the foundation, not an afterthought`;
-          
-          console.log('Theme generation (trend) - Structural analysis built:', {
-            hasStructuralAnalysis: structuralAnalysis.length > 0,
-            analysisLength: structuralAnalysis.length,
-            majorDesc,
-            cupsDesc,
-            courtDesc,
-          });
         }
         
         // Build prompt with structural analysis
@@ -497,8 +397,6 @@ async function generateThemeInterpretation(
     
     // Parse the response to extract keywords and interpretation
     const parseThemeResponse = (text: string): { keywords: string; interpretation: string } => {
-      console.log('Theme parsing - Full AI response:', text);
-      
       // Try multiple patterns to extract keywords
       // Pattern 1: "Keywords: x, y, z" or "Keywords: x vs y" (most common)
       let keywordsMatch = text.match(/(?:Keywords|關鍵詞)[:：]\s*([^\n]+?)(?:\n|$)/i);
@@ -633,7 +531,6 @@ async function generateThemeInterpretation(
       
       // Validate keywords - if they're too long (likely wrong extraction), clear them
       if (keywords && keywords.length > 100) {
-        console.warn('Theme parsing - Keywords too long, likely incorrect extraction:', keywords.substring(0, 100));
         keywords = '';
       }
       
@@ -670,10 +567,6 @@ async function generateThemeInterpretation(
         }
       }
       
-      // Log for debugging
-      console.log('Theme parsing - Extracted keywords:', keywords);
-      console.log('Theme parsing - Extracted interpretation length:', interpretation.length);
-      
       return {
         keywords: keywords,
         interpretation: interpretation,
@@ -691,10 +584,6 @@ async function generateThemeInterpretation(
       // Remove quotes if present: "x, y, z" -> x, y, z
       themeNamesEn = themeNamesEn.replace(/^["']|["']$/g, '').trim();
     }
-    
-    console.log('Theme generation - Full AI response (first 500 chars):', fullTextEn.substring(0, 500));
-    console.log('Theme generation - Parsed keywords:', parsedEn.keywords);
-    console.log('Theme generation - Final themeNamesEn (cleaned):', themeNamesEn);
 
     // Generate Chinese interpretation if locale is Chinese
     let interpretationZh: string | undefined;
@@ -710,6 +599,14 @@ async function generateThemeInterpretation(
       const parsedZh = parseThemeResponse(resultZh.text.trim());
       interpretationZh = parsedZh.interpretation || resultZh.text.trim();
       themeNamesZh = parsedZh.keywords || '';
+      
+      // Clean up theme names - remove any extra formatting
+      if (themeNamesZh) {
+        // Remove brackets if present: [x, y, z] -> x, y, z
+        themeNamesZh = themeNamesZh.replace(/^\[|\]$/g, '').trim();
+        // Remove quotes if present: "x, y, z" -> x, y, z
+        themeNamesZh = themeNamesZh.replace(/^["']|["']$/g, '').trim();
+      }
     }
 
     // Japanese not supported in current locale system
@@ -731,7 +628,6 @@ async function generateThemeInterpretation(
     
     // If table doesn't exist, skip saving and just return the interpretation
     if (fetchError && fetchError.code === '42P01') { // Table doesn't exist
-      console.warn('theme_interpretations table does not exist. Please run the migration.');
       // Return interpretation object without saving
       return {
         id: 'temp',
@@ -744,7 +640,7 @@ async function generateThemeInterpretation(
         summary_en: undefined,
         summary_zh: undefined,
         summary_ja: undefined,
-        theme_names: themeNamesEn,
+        theme_names: (locale === 'zh-TW' && themeNamesZh) ? themeNamesZh : themeNamesEn,
         generated_at: new Date().toISOString(),
         expires_at: expiresAt.toISOString(),
         metadata: metadata || {},
@@ -762,7 +658,7 @@ async function generateThemeInterpretation(
       summary_en: undefined,
       summary_zh: undefined,
       summary_ja: undefined,
-      theme_names: themeNamesEn || null,
+      theme_names: (locale === 'zh-TW' && themeNamesZh) ? themeNamesZh : (themeNamesEn || null),
       expires_at: expiresAt.toISOString(),
       metadata: metadata || {},
     };
@@ -791,19 +687,10 @@ async function generateThemeInterpretation(
     }
 
     if (error) {
-      console.error('Error saving theme interpretation:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      console.error('Error hint:', error.hint);
-      console.error('Data being saved:', JSON.stringify(interpretationData, null, 2));
       return null;
     }
 
     if (!data) return null;
-    
-    console.log('Theme saved successfully - theme_names:', (data as any)?.theme_names);
-    console.log('Theme saved successfully - full data:', JSON.stringify(data, null, 2));
     
     return {
       id: (data as any).id || 'temp',
@@ -816,13 +703,12 @@ async function generateThemeInterpretation(
       summary_en: undefined,
       summary_zh: undefined,
       summary_ja: undefined,
-      theme_names: themeNamesEn,
+      theme_names: (locale === 'zh-TW' && themeNamesZh) ? themeNamesZh : themeNamesEn,
       generated_at: new Date().toISOString(),
       expires_at: expiresAt.toISOString(),
       metadata: metadata || {},
     } as ThemeInterpretation;
   } catch (error) {
-    console.error('Error generating theme interpretation:', error);
     return null;
   }
 }
@@ -848,17 +734,6 @@ export async function generateThemeInterpretations(
   for (let i = 0; i < themes.length; i += batchSize) {
     const batch = themes.slice(i, i + batchSize);
     const promises = batch.map(async (theme) => {
-      // Log structural stats if present
-      if (theme.metadata?.structuralStatsOverTime) {
-        console.log(`Theme generation - Structural stats for "${theme.key}":`, {
-          hasEarly: !!theme.metadata.structuralStatsOverTime.early,
-          hasMiddle: !!theme.metadata.structuralStatsOverTime.middle,
-          hasLate: !!theme.metadata.structuralStatsOverTime.late,
-        });
-      } else {
-        console.warn(`Theme generation - No structural stats for "${theme.key}"`);
-      }
-      
       const interpretation = await getThemeInterpretation(
         userId,
         theme.type,
