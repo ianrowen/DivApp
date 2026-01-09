@@ -89,13 +89,9 @@ context.txt
 project_structure.txt
 project-structure.txt
 src_structure.txt
-tatus
-com.facebook.react.common.DebugServerException$Companion
-java.lang.Thread
 
 # Supabase migrations (not needed in app bundle)
 supabase/migrations/
 
 # Public HTML files (web-only, not needed in mobile app)
 public/*.html
-
