@@ -82,15 +82,24 @@ export default function RootLayout() {
     try {
       // Check if API key is available before registering
       const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+      const buildProfile = process.env.EAS_BUILD_PROFILE || 'development';
+      
       if (!apiKey) {
         console.error('❌ EXPO_PUBLIC_GEMINI_API_KEY not found at app startup. AI features will not work.');
+        console.error('❌ Build profile:', buildProfile);
         console.error('❌ This usually means the EAS secret is not available to your build profile.');
+        console.error('❌ Run: eas env:list to check if EXPO_PUBLIC_GEMINI_API_KEY exists for', buildProfile);
+      } else {
+        console.log('✅ EXPO_PUBLIC_GEMINI_API_KEY is configured');
+        console.log('✅ Build profile:', buildProfile);
+        console.log('✅ API key length:', apiKey.length);
+        console.log('✅ API key prefix:', apiKey.substring(0, 10) + '...');
       }
       
       AIProvider.register('gemini', geminiProvider);
       AIProvider.setProvider('gemini');
     } catch (error) {
-      // Error initializing AI Provider - silently fail
+      console.error('❌ Error initializing AI Provider:', error);
     }
 
     // Configure Android system UI for edge-to-edge mode and proper navigation bar styling

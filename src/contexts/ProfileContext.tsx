@@ -1,5 +1,6 @@
 // src/contexts/ProfileContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { supabase } from '../core/api/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { debugLog } from '../utils/debugLog';
@@ -28,6 +29,29 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Set loading to false immediately on mount - don't block app on profile load
+  // Profile will load in background and update when ready
+  useEffect(() => {
+    // Very short delay to allow cache check, then set loading false
+    const quickTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 100); // 100ms max - just enough for cache check
+    
+    return () => clearTimeout(quickTimeout);
+  }, []); // Run once on mount
+  
+  // Global failsafe: Force loading to false after 2 seconds to prevent app-wide blocking
+  useEffect(() => {
+    const globalFailsafe = setTimeout(() => {
+      if (isLoading) {
+        console.warn('ProfileContext: Global failsafe triggered - forcing isLoading to false after 2s');
+        setIsLoading(false);
+      }
+    }, 2000); // Reduced to 2s since we set it false early
+    
+    return () => clearTimeout(globalFailsafe);
+  }, [isLoading]);
 
   // Load profile from cache or database
   const loadProfile = useCallback(async (userId: string) => {
@@ -63,24 +87,55 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       // #endregion
       // Query profile with timeout - if timeout, just continue without profile (user can still use app)
       let data, error;
+      let queryAttempted = false;
       try {
+        queryAttempted = true;
         const queryPromise = supabase
           .from('profiles')
           .select('subscription_tier, is_beta_tester, beta_access_expires_at, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
           .eq('user_id', userId)
           .single();
         
+        // Increased timeout to 15s for slow networks (existing users may have complex profiles)
+        // Index exists on user_id, so query should be fast, but network can be slow
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Profile query timeout')), 5000) // Reduced to 5s - faster timeout
+          setTimeout(() => reject(new Error('Profile query timeout')), 15000)
         );
         
         const result = await Promise.race([queryPromise, timeoutPromise]) as any;
         data = result.data;
         error = result.error;
       } catch (timeoutError: any) {
-        // Timeout occurred - log but don't fail, user can still use the app
-        console.warn('Profile query timed out, continuing without profile:', timeoutError?.message);
-        error = { code: 'TIMEOUT', message: 'Profile query timeout' };
+        // Timeout occurred - retry once (network might be slow, or database busy)
+        console.warn('Profile query timed out, retrying once:', timeoutError?.message);
+        try {
+          const retryPromise = supabase
+            .from('profiles')
+            .select('subscription_tier, is_beta_tester, beta_access_expires_at, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
+            .eq('user_id', userId)
+            .single();
+          
+          // Longer timeout for retry (10s) - give it more time
+          const retryTimeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Retry timeout')), 10000)
+          );
+          
+          const retryResult = await Promise.race([retryPromise, retryTimeoutPromise]) as any;
+          if (retryResult?.data) {
+            // Profile found on retry - use it
+            data = retryResult.data;
+            error = null;
+          } else if (retryResult?.error) {
+            // Got an error response (not timeout) - use it
+            error = retryResult.error;
+          } else {
+            // Retry also timed out - treat as timeout
+            error = { code: 'TIMEOUT', message: 'Profile query timeout (retry also failed)' };
+          }
+        } catch (retryError: any) {
+          // Retry also timed out - treat as timeout
+          error = { code: 'TIMEOUT', message: 'Profile query timeout (retry also failed)' };
+        }
       }
 
       // #region agent log
@@ -88,12 +143,10 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       // #endregion
 
       if (error) {
-        // PGRST116 = no rows returned - this is OK, user just doesn't have a profile yet
+        // PGRST116 = no rows returned - user doesn't have a profile yet, create one
         if (error.code === 'PGRST116') {
-          // User doesn't have a profile - use upsert to create one with beta tester status
           console.log('📝 Creating new profile with beta tester status for user:', userId);
           try {
-            // Use upsert to handle race conditions (if profile gets created between check and insert)
             const { data: newProfile, error: createError } = await supabase
               .from('profiles')
               .upsert({
@@ -108,21 +161,18 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
               .single();
             
             if (createError) {
-              console.error('❌ Error creating profile:', createError);
-              console.error('❌ Create error code:', createError.code);
-              console.error('❌ Create error message:', createError.message);
-              console.error('❌ Create error details:', createError.details);
-              console.error('❌ Create error hint:', createError.hint);
-              // Try to fetch the profile again in case it was created by another process
+              // Profile may have been created by trigger - try to fetch it
               const { data: fetchedProfile } = await supabase
                 .from('profiles')
                 .select('subscription_tier, is_beta_tester, beta_access_expires_at, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
                 .eq('user_id', userId)
                 .single();
               if (fetchedProfile) {
-                console.log('✅ Profile found after failed create, using it');
+                console.log('✅ Profile found after create attempt, using it');
                 setProfile(fetchedProfile);
                 await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fetchedProfile));
+              } else {
+                console.warn('⚠️ Could not create or fetch profile, user will continue without profile');
               }
             } else if (newProfile) {
               setProfile(newProfile);
@@ -132,7 +182,31 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           } catch (createErr) {
             console.error('❌ Exception creating profile:', createErr);
           }
-        } else if (error.code !== 'TIMEOUT') {
+        } else if (error.code === 'TIMEOUT') {
+          // Query timed out - for existing users, profile exists but query is slow
+          // Don't try to create (would fail with conflict), just log and continue
+          // Schedule a background retry after a delay (non-blocking)
+          console.warn('⚠️ Profile query timed out for existing user, continuing without profile. Will retry in background.');
+          
+          // Schedule background retry after 5 seconds (non-blocking)
+          setTimeout(async () => {
+            try {
+              const { data: backgroundProfile } = await supabase
+                .from('profiles')
+                .select('subscription_tier, is_beta_tester, beta_access_expires_at, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
+                .eq('user_id', userId)
+                .single();
+              
+              if (backgroundProfile) {
+                console.log('✅ Profile loaded successfully in background retry');
+                setProfile(backgroundProfile);
+                await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(backgroundProfile));
+              }
+            } catch (bgError) {
+              // Silently fail - will retry on next app load
+            }
+          }, 5000);
+        } else {
           console.error('Error loading profile:', error);
         }
         return;
@@ -140,15 +214,17 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
       if (data) {
         // PRODUCTION DEBUG: Log what we actually received from database
-        console.log('🔍 PROFILE LOADED:', {
-          userId,
-          subscription_tier: data.subscription_tier,
-          is_beta_tester: data.is_beta_tester,
-          beta_tester_type: typeof data.is_beta_tester,
-          beta_tester_value: JSON.stringify(data.is_beta_tester),
-          beta_access_expires_at: data.beta_access_expires_at,
-          rawData: JSON.stringify(data)
-        });
+        if (__DEV__) {
+          console.log('🔍 PROFILE LOADED:', {
+            userId,
+            subscription_tier: data.subscription_tier,
+            is_beta_tester: data.is_beta_tester,
+            beta_tester_type: typeof data.is_beta_tester,
+            beta_tester_value: JSON.stringify(data.is_beta_tester),
+            beta_access_expires_at: data.beta_access_expires_at,
+            rawData: JSON.stringify(data)
+          });
+        }
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:profileLoaded',message:'Profile loaded from DB',data:{userId,subscriptionTier:data.subscription_tier,isBetaTester:data.is_beta_tester,betaTesterType:typeof data.is_beta_tester,betaTesterValue:JSON.stringify(data.is_beta_tester),betaExpiresAt:data.beta_access_expires_at,rawData:JSON.stringify(data)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
@@ -254,35 +330,106 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     console.log('✅ Cleared profile cache');
   }, []);
 
+  // Refresh profile when app comes to foreground (after long background periods)
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App came to foreground - refresh profile if we have a user
+        // Use timeout to prevent hanging if session refresh fails
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        );
+        
+        Promise.race([sessionPromise, timeoutPromise])
+          .then((result: any) => {
+            const { data: { session } } = result;
+            if (session?.user) {
+              // Refresh profile in background (non-blocking)
+              refreshProfile().catch((err) => {
+                // Silently handle background refresh failures
+              });
+            }
+          })
+          .catch((error) => {
+            // Suppress timeout and "Invalid Refresh Token" errors - expected after long background
+          });
+      }
+    });
+    
+    return () => subscription.remove();
+  }, [refreshProfile]);
+
   // Listen for auth state changes
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('🔐 User signed in, loading profile...');
-        await loadProfile(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        console.log('🔐 User signed out, clearing profile...');
-        await clearProfile();
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        // Optionally refresh profile on token refresh
-        console.log('🔄 Token refreshed, checking profile...');
-        await refreshProfile();
+      try {
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('🔐 User signed in, loading profile...');
+          await loadProfile(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          console.log('🔐 User signed out, clearing profile...');
+          await clearProfile();
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Optionally refresh profile on token refresh
+          console.log('🔄 Token refreshed, checking profile...');
+          await refreshProfile();
+        }
+      } catch (error: any) {
+        // Suppress "Invalid Refresh Token" errors - these are expected when session expires
+        if (error?.message?.includes('Invalid Refresh Token') || 
+            error?.message?.includes('Refresh Token Not Found')) {
+          // Expected behavior - session expired, user needs to sign in again
+          // Silently handle it
+          return;
+        }
+        // Log other errors
+        console.warn('Error in auth state change handler:', error?.message || error);
       }
     });
 
     // Load profile on mount if user is already signed in (non-blocking)
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        // Load profile in background - don't await, let it run async
-        loadProfile(session.user.id).catch((err) => {
-          console.warn('Background profile load failed:', err);
-        });
-      } else {
+    // Add timeout to prevent hanging if getSession() hangs (common on reload)
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Session check timeout')), 5000)
+    );
+    
+    Promise.race([sessionPromise, timeoutPromise])
+      .then(async (result: any) => {
+        const { data: { session }, error } = result;
+        // Suppress "Invalid Refresh Token" errors - these are expected when session expires
+        if (error && error.message?.includes('Invalid Refresh Token')) {
+          // This is expected - session expired, user needs to sign in again
+          // Silently handle it - don't log as error
+          setIsLoading(false);
+          return;
+        }
+        
+        if (session?.user) {
+          // Load profile in background - don't await, let it run async
+          loadProfile(session.user.id).catch((err) => {
+            console.warn('Background profile load failed:', err);
+          });
+        } else {
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => {
+        // Timeout or other error
+        if (error?.message?.includes('timeout')) {
+          // Timeout expected - continue without blocking
+        } else if (error?.message?.includes('Invalid Refresh Token') || 
+                   error?.message?.includes('Refresh Token Not Found')) {
+          // Expected behavior - session expired, user needs to sign in again
+          // Silently handle it
+        } else {
+          // Log other errors
+          console.warn('Error getting session:', error?.message || error);
+        }
+        // CRITICAL: Always set loading to false to prevent blocking UI/navigation
         setIsLoading(false);
-      }
-    }).catch(() => {
-      setIsLoading(false);
-    });
+      });
 
     return () => {
       subscription.unsubscribe();

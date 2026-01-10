@@ -55,7 +55,7 @@ export default {
     questionPlaceholder: 'What is your question?',
     suggestSpread: 'Suggest a Spread',
     chooseSpread: 'Choose Spread',
-    
+    fullSpread: 'Full Spread',
   },
   spreads: {
     selectSpread: 'Select a Spread',
@@ -238,6 +238,13 @@ export default {
       water: 'Water',
       air: 'Air',
       earth: 'Earth',
+    },
+    correspondences: {
+      astrology: 'Astrology',
+      element: 'Element',
+      numerology: 'Numerology',
+      in: 'in',
+      of: 'of',
     },
   },
   tiers: {

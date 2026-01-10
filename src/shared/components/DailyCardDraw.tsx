@@ -45,7 +45,9 @@ export default function DailyCardDraw() {
         }
 
         // Check for existing daily card reading from today
-        console.log('🔍 DailyCardDraw: Checking for existing daily card reading...');
+        if (__DEV__) {
+          console.log('🔍 DailyCardDraw: Checking for existing daily card reading...');
+        }
         const { data: existingReading, error: fetchError } = await supabase
           .from('readings')
           .select('id, created_at, elements_drawn')
@@ -63,13 +65,15 @@ export default function DailyCardDraw() {
           return;
         }
 
-        console.log('🔍 DailyCardDraw: Query result:', {
-          hasReading: !!existingReading?.id,
-          readingId: existingReading?.id,
-          created_at: existingReading?.created_at,
-          hasElementsDrawn: !!existingReading?.elements_drawn,
-          elementsDrawn: existingReading?.elements_drawn
-        });
+        if (__DEV__) {
+          console.log('🔍 DailyCardDraw: Query result:', {
+            hasReading: !!existingReading?.id,
+            readingId: existingReading?.id,
+            created_at: existingReading?.created_at,
+            hasElementsDrawn: !!existingReading?.elements_drawn,
+            elementsDrawn: existingReading?.elements_drawn
+          });
+        }
 
         if (existingReading?.id) {
           // Check if it's from today - use date strings to avoid timezone issues
@@ -83,13 +87,15 @@ export default function DailyCardDraw() {
           fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:dateCheck',message:'Checking if reading is from today',data:{readingId:existingReading.id,readingDate:existingReading.created_at,readingDateStr,todayDateStr,datesMatch:readingDateStr === todayDateStr,elementsDrawn:existingReading.elements_drawn},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
           // #endregion
           
-          console.log('🔍 DailyCardDraw: Date comparison:', {
-            readingDate: readingDate.toISOString(),
-            readingDateStr,
-            today: today.toISOString(),
-            todayDateStr,
-            datesMatch: readingDateStr === todayDateStr
-          });
+          if (__DEV__) {
+            console.log('🔍 DailyCardDraw: Date comparison:', {
+              readingDate: readingDate.toISOString(),
+              readingDateStr,
+              today: today.toISOString(),
+              todayDateStr,
+              datesMatch: readingDateStr === todayDateStr
+            });
+          }
           
           if (readingDateStr === todayDateStr) {
             // #region agent log
@@ -111,13 +117,15 @@ export default function DailyCardDraw() {
               fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:cardElement',message:'Extracted card element',data:{cardCode,reversed,elementId:cardElement.elementId,hasMetadata:!!cardElement.metadata,metadataCardCode:cardElement.metadata?.cardCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
               // #endregion
 
-              console.log('🔍 DailyCardDraw: Extracted card info:', {
-                cardCode,
-                reversed,
-                elementId: cardElement.elementId,
-                hasMetadata: !!cardElement.metadata,
-                metadataCardCode: cardElement.metadata?.cardCode
-              });
+              if (__DEV__) {
+                console.log('🔍 DailyCardDraw: Extracted card info:', {
+                  cardCode,
+                  reversed,
+                  elementId: cardElement.elementId,
+                  hasMetadata: !!cardElement.metadata,
+                  metadataCardCode: cardElement.metadata?.cardCode
+                });
+              }
 
               const foundCard = LOCAL_RWS_CARDS.find(c => c.code === cardCode);
               console.log('🔍 DailyCardDraw: Card lookup:', {
@@ -134,7 +142,9 @@ export default function DailyCardDraw() {
                 fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:83',message:'Card set from existing reading',data:{cardCode:cardWithReversal.code,reversed:cardWithReversal.reversed},timestamp:cardSetTime,sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
                 // #endregion
                 // Set card and flip state simultaneously
-                console.log('✅ DailyCardDraw: Setting card from existing reading:', cardWithReversal.code);
+                if (__DEV__) {
+                  console.log('✅ DailyCardDraw: Setting card from existing reading:', cardWithReversal.code);
+                }
                 setCard(cardWithReversal);
                 setIsFlipped(true);
                 // Set animation value immediately (no need for requestAnimationFrame)
@@ -416,9 +426,11 @@ export default function DailyCardDraw() {
                     {localizedCard.title}
                   </ThemedText>
                   {card.reversed && (
-                    <ThemedText variant="caption" style={styles.reversedLabel}>
-                      {locale === 'zh-TW' ? '逆位' : 'Reversed'}
-                    </ThemedText>
+                    <View style={styles.reversedBadge}>
+                      <ThemedText variant="caption" style={styles.reversedText}>
+                        {locale === 'zh-TW' ? '逆位' : 'Reversed'}
+                      </ThemedText>
+                    </View>
                   )}
                   {/* Keywords Display - Always show if available, regardless of reversed state */}
                   {/* CRITICAL: Keywords must display for both upright and reversed cards */}
@@ -475,7 +487,7 @@ export default function DailyCardDraw() {
       )}
       {isFlipped && card && (
         <ThemedButton
-          title={locale === 'zh-TW' ? '查看完整解讀' : 'View Full Reading'}
+          title={locale === 'zh-TW' ? '解讀' : 'Interpret'}
           onPress={() => {
             router.push({
               pathname: '/reading',
@@ -511,22 +523,22 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 600,
     alignSelf: 'center',
-    marginBottom: theme.spacing.spacing.lg,
+    marginBottom: 0,
   },
   title: {
     textAlign: 'center',
-    marginBottom: theme.spacing.spacing.md,
+    marginBottom: theme.spacing.spacing.xs,
     color: theme.colors.primary.gold,
   },
   cardContainer: {
     width: '100%',
-    minHeight: 280,
+    minHeight: 300,
     marginBottom: theme.spacing.spacing.sm,
     padding: theme.spacing.spacing.xs,
   },
   cardWrapper: {
     width: '100%',
-    height: 280,
+    height: 300,
     position: 'relative',
   },
   cardFace: {
@@ -542,42 +554,63 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    width: '100%',
+    height: '100%',
   },
   cardBackImage: {
     width: '100%',
     height: '100%',
-    maxWidth: 320,
-    maxHeight: 270,
     alignSelf: 'center',
   },
   cardBack: {
     backgroundColor: theme.colors.neutrals.darkGray,
     padding: theme.spacing.spacing.md,
+    paddingBottom: theme.spacing.spacing.xs * 0.3,
+    overflow: 'hidden', // Keep hidden for card flip animation
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardBackContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingBottom: theme.spacing.spacing.md,
+    paddingBottom: 0,
+    paddingTop: 0,
+    width: '100%',
+    minHeight: 0,
+    overflow: 'visible',
   },
   cardImage: {
-    width: 180,
-    height: 180,
+    width: 170,
+    height: 170,
     marginBottom: theme.spacing.spacing.xs,
     borderRadius: theme.spacing.borderRadius.md,
   },
   cardReversedImage: {
     transform: [{ rotate: '180deg' }],
   },
+  reversedBadge: {
+    alignSelf: 'center',
+    backgroundColor: theme.colors.semantic.error,
+    paddingHorizontal: theme.spacing.spacing.xs,
+    paddingVertical: theme.spacing.spacing.xs / 2,
+    borderRadius: theme.spacing.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.primary.gold,
+    ...theme.shadows.shadows.sm,
+    marginBottom: theme.spacing.spacing.xs,
+  },
+  reversedText: {
+    color: theme.colors.text.primary,
+    fontWeight: theme.typography.fontWeight.semibold,
+    fontSize: theme.typography.fontSize.sm,
+    letterSpacing: 0.3,
+  },
   cardTitle: {
     color: theme.colors.primary.gold,
     marginBottom: theme.spacing.spacing.xs,
     textAlign: 'center',
-  },
-  reversedLabel: {
-    color: theme.colors.semantic.error,
-    textAlign: 'center',
-    marginBottom: theme.spacing.spacing.xs,
+    fontSize: theme.typography.fontSize.lg,
     fontWeight: theme.typography.fontWeight.semibold,
   },
   keywordsContainer: {
@@ -585,17 +618,23 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: theme.spacing.spacing.xs,
-    paddingHorizontal: theme.spacing.spacing.sm,
-    paddingBottom: theme.spacing.spacing.xs,
+    alignContent: 'flex-start',
+    marginTop: theme.spacing.spacing.xs * 0.5,
+    marginBottom: -theme.spacing.spacing.md * 0.7,
+    paddingHorizontal: theme.spacing.spacing.xs,
+    width: '100%',
+    maxWidth: '100%',
+    paddingBottom: 0,
   },
   keyword: {
     color: theme.colors.text.secondary,
-    fontSize: theme.typography.fontSize.xs,
+    fontSize: theme.typography.fontSize.sm,
+    flexShrink: 0,
+    lineHeight: theme.typography.fontSize.sm * 1.4,
   },
   keywordSeparator: {
     color: theme.colors.text.tertiary,
-    fontSize: theme.typography.fontSize.xs,
+    fontSize: theme.typography.fontSize.sm,
     opacity: 0.5,
   },
   hint: {
@@ -604,7 +643,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   viewFullButton: {
-    marginTop: theme.spacing.spacing.md,
+    marginTop: -theme.spacing.spacing.md * 2.7,
   },
 });
 

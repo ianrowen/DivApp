@@ -50,7 +50,8 @@ export default {
     "questionPlaceholder": "您想為哪些事尋求指引？",
     "suggestSpread": "推薦牌陣",
     "chooseSpread": "選擇陣型",
-    "ask": "求問"
+    "ask": "求問",
+    "fullSpread": "完整牌陣"
   },
   "reading": {
     "title": "塔羅占卜",
@@ -222,6 +223,13 @@ export default {
       "water": "水",
       "air": "風",
       "earth": "土"
+    },
+    "correspondences": {
+      "astrology": "占星",
+      "element": "元素",
+      "numerology": "數字學",
+      "in": "在",
+      "of": "的"
     },
     "keywords": {
       "innocence": "天真",

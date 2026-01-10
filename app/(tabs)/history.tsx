@@ -35,67 +35,80 @@ export default function HistoryScreen() {
   const loadReadings = React.useCallback(async () => {
     // Prevent concurrent loads
     if (isLoadingRef.current) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings skipped - already loading',data:{appState:AppState.currentState,isLoadingRef:isLoadingRef.current,loading},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       return;
     }
+    
     const appState = AppState.currentState;
-    const callStack = new Error().stack;
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:loadReadings',message:'loadReadings entry',data:{appState,isLoadingRef:isLoadingRef.current,loading,callStack:callStack?.split('\n').slice(0,5).join('|')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     isLoadingRef.current = true;
     setLoading(true);
+    
+    // Safety: Reset loading ref if it's been stuck for too long (prevents hangs on reload)
+    // Reduced to 5s - queries should complete faster or timeout
+    let resetTimeout: NodeJS.Timeout | null = setTimeout(() => {
+      if (isLoadingRef.current) {
+        console.warn('history.tsx: Loading ref stuck, resetting after 5s timeout');
+        isLoadingRef.current = false;
+        setLoading(false);
+      }
+    }, 5000); // 5 second safety timeout
+    
     try {
-      // Use getSession() - try once immediately, if no session wait briefly and try once more
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      // Check if session is expired
-      const isExpired = session?.expires_at ? (session.expires_at * 1000 < Date.now()) : false;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSession',message:'getSession first attempt',data:{hasSession:!!session,hasError:!!sessionError,error:sessionError?.message,userId:session?.user?.id,isExpired,expiresAt:session?.expires_at,currentTime:Date.now(),appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      let user = session?.user;
+      // Use getSession() with timeout - don't wait too long
+      const sessionPromise = supabase.auth.getSession();
+      const sessionTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Session fetch timeout')), 3000) // 3s timeout
+      );
       
-      // If session expired or no session, try refreshing
-      if (!user || isExpired) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:refreshSession',message:'Attempting to refresh session',data:{isExpired,hasSession:!!session,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:refreshSessionResult',message:'Session refresh result',data:{hasSession:!!refreshedSession,hasError:!!refreshError,error:refreshError?.message,userId:refreshedSession?.user?.id,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        if (refreshedSession?.user) {
-          user = refreshedSession.user;
-        } else if (!user) {
-          // Fallback: wait 100ms and try getSession again
-          await new Promise(resolve => setTimeout(resolve, 100));
-          const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSessionRetry',message:'getSession retry attempt',data:{hasSession:!!retrySession,hasError:!!retryError,error:retryError?.message,userId:retrySession?.user?.id,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
-          user = retrySession?.user;
+      let user;
+      try {
+        const { data: { session }, error: sessionError } = await Promise.race([
+          sessionPromise,
+          sessionTimeoutPromise
+        ]) as any;
+        
+        // Check if session is expired
+        const isExpired = session?.expires_at ? (session.expires_at * 1000 < Date.now()) : false;
+        user = session?.user;
+        
+        // If session expired or no session, try refreshing (with timeout to prevent hangs)
+        if ((!user || isExpired) && !sessionError) {
+          try {
+            // Add timeout to prevent hanging on reload when refresh token is missing
+            const refreshPromise = supabase.auth.refreshSession();
+            const refreshTimeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Session refresh timeout')), 3000) // 3s timeout
+            );
+            
+            const { data: { session: refreshedSession }, error: refreshError } = await Promise.race([
+              refreshPromise,
+              refreshTimeoutPromise
+            ]) as any;
+            
+            // Suppress "Invalid Refresh Token" errors - expected when session expires
+            if (refreshError && (
+              refreshError.message?.includes('Invalid Refresh Token') ||
+              refreshError.message?.includes('Refresh Token Not Found')
+            )) {
+              // Expected - session expired, skip refresh
+            } else if (refreshedSession?.user) {
+              user = refreshedSession.user;
+            }
+          } catch (timeoutError: any) {
+            // Timeout or other error - skip refresh
+          }
         }
+      } catch (timeoutError: any) {
+        // Session fetch timed out - continue without user
+        console.warn('history.tsx: Session fetch timed out, continuing without readings');
       }
       
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:getSessionResult',message:'getSession final result',data:{hasUser:!!user,userId:user?.id,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       if (!user) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:noUser',message:'No user found',data:{appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         isLoadingRef.current = false;
         setLoading(false);
         return;
       }
 
       // Optimize query: only select needed fields and limit results
-      const queryStart = Date.now();
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:queryReadings',message:'Querying readings',data:{userId:user.id,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       const { data, error } = await supabase
         .from('readings')
         .select('id, question, reading_type, elements_drawn, interpretations, created_at')
@@ -103,27 +116,18 @@ export default function HistoryScreen() {
         .order('created_at', { ascending: false })
         .limit(100); // Limit to 100 most recent readings
 
-      const queryDuration = Date.now() - queryStart;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:queryResult',message:'Readings query result',data:{hasData:!!data,dataLength:data?.length,hasError:!!error,error:error?.message,queryDuration,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       if (error) throw error;
 
       setReadings(data as any[]);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:setReadings',message:'Set readings',data:{readingsCount:data?.length,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       // Note: Don't reset expandedIds here - let useFocusEffect handle it
       // This prevents resetting when real-time updates come in
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:error',message:'Error loading readings',data:{error:error?.message,appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       console.error('Error loading readings:', error);
     } finally {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history.tsx:finally',message:'Setting loading to false',data:{appState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
+      if (resetTimeout) {
+        clearTimeout(resetTimeout);
+        resetTimeout = null;
+      }
       isLoadingRef.current = false;
       setLoading(false);
     }
@@ -502,6 +506,17 @@ export default function HistoryScreen() {
           </ThemedText>
         </View>
 
+        <View style={styles.badgeWrapper}>
+          <Pressable
+            onPress={() => toggleExpand(item.id)}
+            style={styles.expandBadge}
+          >
+            <ThemedText variant="caption" style={styles.expandBadgeText}>
+              {isExpanded ? `↑ ${t('history.collapse')}` : `↓ ${t('history.expand')}`}
+            </ThemedText>
+          </Pressable>
+        </View>
+
         {isExpanded && (
           <View style={styles.expandedContent}>
             {(() => {
@@ -583,18 +598,6 @@ export default function HistoryScreen() {
                 </>
               );
             })()}
-            <View style={styles.lastSectionContainer}>
-              <View style={styles.badgeWrapper}>
-                <Pressable
-                  onPress={() => toggleExpand(item.id)}
-                  style={styles.expandBadge}
-                >
-                  <ThemedText variant="caption" style={styles.expandBadgeText}>
-                    ↑ {t('history.collapse')}
-                  </ThemedText>
-                </Pressable>
-              </View>
-            </View>
             <ThemedButton
               title={t('common.delete')}
               onPress={() => handleDeleteReading(item.id)}
@@ -602,19 +605,6 @@ export default function HistoryScreen() {
               style={styles.deleteButton}
               textStyle={styles.deleteButtonText}
             />
-          </View>
-        )}
-
-        {!isExpanded && (
-          <View style={styles.badgeWrapper}>
-            <Pressable
-              onPress={() => toggleExpand(item.id)}
-              style={styles.expandBadge}
-            >
-              <ThemedText variant="caption" style={styles.expandBadgeText}>
-                ↓ {t('history.expand')}
-              </ThemedText>
-            </Pressable>
           </View>
         )}
       </View>

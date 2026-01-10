@@ -164,10 +164,20 @@ export default function ReadingScreen() {
         // App came to foreground - refresh session and check if reading needs update
         // Only refresh if we have a readingId (reading was already initialized)
         if (readingIdRef.current) {
-          // Refresh auth session to ensure it's still valid
-          supabase.auth.getSession().catch(() => {
-            // Silently handle session refresh errors
-          });
+          // Refresh auth session to ensure it's still valid (with timeout to prevent hangs)
+          const sessionPromise = supabase.auth.getSession();
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Session refresh timeout')), 5000)
+          );
+          
+          Promise.race([sessionPromise, timeoutPromise])
+            .catch((error) => {
+              // Suppress timeout and "Invalid Refresh Token" errors - expected after long background
+              if (!error?.message?.includes('timeout') && 
+                  !error?.message?.includes('Invalid Refresh Token')) {
+                console.warn('[DEBUG] reading.tsx: Session refresh error on foreground:', error?.message);
+              }
+            });
         }
       }
     });
@@ -831,18 +841,27 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       }
 
     } catch (error: any) {
-      console.error('Error generating interpretation:', error);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:generateInterpretation',message:'Interpretation generation failed',data:{error:error?.message,errorStack:error?.stack?.substring(0,200),style,userTier:currentTier,isBetaTester:isBeta,hasCards:cardsToInterpret?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
-      // Log the error details for debugging
+      console.error('[Interpretation] Error generating interpretation:', error?.message || error);
       if (error?.message) {
-        console.error('Error message:', error.message);
+        console.error('[Interpretation] Error details:', {
+          message: error.message,
+          name: error.name,
+          isTimeout: error.message?.includes('timeout') || error.message?.includes('60 seconds'),
+          isApiKeyError: error.message?.includes('API key'),
+        });
       }
       if (error?.stack) {
-        console.error('Error stack:', error.stack);
+        console.error('[Interpretation] Error stack:', error.stack.substring(0, 500));
       }
-      Alert.alert(t('common.error'), 'Failed to generate interpretation');
+      
+      // Show user-friendly error message
+      const userMessage = error?.message?.includes('timeout') 
+        ? 'Interpretation timed out. Please try again.'
+        : error?.message?.includes('API key')
+        ? 'AI service is not configured. Please contact support.'
+        : 'Failed to generate interpretation. Please try again.';
+      
+      Alert.alert(t('common.error'), userMessage);
       setGenerating(false);
     }
     // Note: setGenerating(false) is now called immediately after streaming/non-streaming completes
@@ -1870,7 +1889,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
                   )}
                   
                   <ThemedText variant="body" style={styles.cardName}>
-                    {localizedCard.title}{drawnCard.reversed ? (locale === 'zh-TW' ? ' (逆位)' : ' (Reversed)') : ''}
+                    {localizedCard.title}
                   </ThemedText>
                   
                   {/* CRITICAL: Keywords must display for both upright and reversed cards */}
@@ -1911,6 +1930,14 @@ Answer the question. If the user asks about previous readings mentioned in the i
                       });
                       return null;
                     })()
+                  )}
+                  
+                  {drawnCard.reversed && (
+                    <View style={styles.reversedBadge}>
+                      <ThemedText variant="body" style={styles.reversedText}>
+                        {locale === 'zh-TW' ? '逆位' : 'Reversed'}
+                      </ThemedText>
+                    </View>
                   )}
                 </Animated.View>
               );
@@ -2133,7 +2160,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   questionCard: {
     marginBottom: theme.spacing.spacing.md,
@@ -2192,6 +2219,23 @@ const styles = StyleSheet.create({
   cardReversed: {
     transform: [{ rotate: '180deg' }],
   },
+  reversedBadge: {
+    alignSelf: 'center',
+    backgroundColor: theme.colors.semantic.error,
+    paddingHorizontal: theme.spacing.spacing.md,
+    paddingVertical: theme.spacing.spacing.sm,
+    borderRadius: theme.spacing.borderRadius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.primary.gold,
+    ...theme.shadows.shadows.md,
+    marginBottom: theme.spacing.spacing.xs,
+  },
+  reversedText: {
+    color: theme.colors.text.primary,
+    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: theme.typography.fontSize.sm,
+    letterSpacing: 0.5,
+  },
   cardImage: {
     width: '100%',
     height: '100%',
@@ -2219,24 +2263,26 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: theme.spacing.spacing.sm,
+    alignContent: 'center',
+    marginBottom: 0,
     paddingHorizontal: theme.spacing.spacing.xs,
     maxWidth: '100%',
-    minHeight: 16, // Ensure consistent height even when wrapping
+    minHeight: 16,
   },
   keyword: {
     color: theme.colors.text.tertiary,
-    fontSize: theme.typography.fontSize.xs,
-    flexShrink: 0, // Prevent keywords from shrinking
+    fontSize: theme.typography.fontSize.sm,
+    flexShrink: 0,
   },
   keywordSeparator: {
     color: theme.colors.text.tertiary,
-    fontSize: theme.typography.fontSize.xs,
+    fontSize: theme.typography.fontSize.sm,
     opacity: 0.5,
-    flexShrink: 0, // Prevent separators from shrinking
+    flexShrink: 0,
   },
   interpretationCard: {
     marginBottom: theme.spacing.spacing.lg,
+    marginTop: -18,
   },
   sectionTitle: {
     color: theme.colors.primary.goldLight,

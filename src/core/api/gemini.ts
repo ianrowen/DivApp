@@ -28,14 +28,10 @@ export class GeminiProvider implements IAIProvider {
 
   async generate(params: AIGenerateParams): Promise<AIGenerateResult> {
     // Check for API key before proceeding
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'gemini.ts:generate',message:'Gemini generate called',data:{hasApiKey:!!this.apiKey,apiKeyLength:this.apiKey?.length||0,apiKeyPrefix:this.apiKey?.substring(0,10)||'none',model:this.model},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     if (!this.apiKey || this.apiKey.trim() === '') {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'gemini.ts:generate',message:'API key missing',data:{hasApiKey:!!this.apiKey,envVar:process.env.EXPO_PUBLIC_GEMINI_API_KEY?.substring(0,10)||'none'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
-      throw new Error('Gemini API key is not configured. Please set EXPO_PUBLIC_GEMINI_API_KEY environment variable.');
+      const errorMsg = 'Gemini API key is not configured. Please set EXPO_PUBLIC_GEMINI_API_KEY environment variable.';
+      console.error('[Gemini]', errorMsg);
+      throw new Error(errorMsg);
     }
 
     let {
@@ -75,41 +71,75 @@ export class GeminiProvider implements IAIProvider {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        contents: [
-                            {
-                                role: 'user',
-                                parts: [
-                                    { text: prompt },
-                                ],
-                            },
-                        ],
-                        systemInstruction: enhancedSystemPrompt ? {
-                            parts: [{ text: enhancedSystemPrompt }]
-                        } : undefined,
-                        
-                        generationConfig: {
-                            temperature,
-                            maxOutputTokens: maxTokens,
-                            candidateCount: 1,
-                            responseMimeType: 'text/plain',
-                        },
-                    }),
+            // Add timeout to prevent hanging (30 seconds max - reasonable for AI API)
+            // Most Gemini API calls complete in 2-10 seconds, 30s is a good safety margin
+            // Check if AbortController is available (should be in React Native 0.60+)
+            let controller: AbortController | null = null;
+            let timeoutId: NodeJS.Timeout | null = null;
+            
+            if (typeof AbortController !== 'undefined') {
+              controller = new AbortController();
+              timeoutId = setTimeout(() => {
+                if (controller) {
+                  controller.abort();
                 }
-            );
+              }, 30000); // 30 second timeout (reduced from 60s - faster failure)
+            }
+            
+            let response: Response;
+            try {
+                response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            contents: [
+                                {
+                                    role: 'user',
+                                    parts: [
+                                        { text: prompt },
+                                    ],
+                                },
+                            ],
+                            systemInstruction: enhancedSystemPrompt ? {
+                                parts: [{ text: enhancedSystemPrompt }]
+                            } : undefined,
+                            
+                            generationConfig: {
+                                temperature,
+                                maxOutputTokens: maxTokens,
+                                candidateCount: 1,
+                                responseMimeType: 'text/plain',
+                            },
+                        }),
+                        ...(controller ? { signal: controller.signal } : {}),
+                    }
+                );
+            } catch (fetchError: any) {
+                if (timeoutId) clearTimeout(timeoutId);
+                if (fetchError.name === 'AbortError' || fetchError.message?.includes('aborted')) {
+                    const timeoutError = new Error('Request timeout: Gemini API did not respond within 30 seconds');
+                    console.error('[Gemini] Request timeout after 30s:', timeoutError.message);
+                    throw timeoutError;
+                }
+                console.error('[Gemini] Fetch error:', fetchError.name, fetchError.message);
+                throw fetchError;
+            }
+            if (timeoutId) clearTimeout(timeoutId);
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(
-                    `Gemini API error (${response.status}): ${errorData.error?.message || response.statusText}`
-                );
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    errorData = { error: { message: response.statusText } };
+                }
+                const errorMsg = `Gemini API error (${response.status}): ${errorData.error?.message || response.statusText}`;
+                console.error('[Gemini]', errorMsg);
+                throw new Error(errorMsg);
             }
 
             const data = await response.json();

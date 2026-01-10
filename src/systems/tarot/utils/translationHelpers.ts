@@ -6,7 +6,7 @@
  * with fallback to original text if translation not found.
  */
 
-import { i18n } from '../../../i18n';
+import { i18n, getLocale } from '../../../i18n';
 
 /**
  * Translate a keyword, falling back to original if no translation exists
@@ -42,6 +42,13 @@ export function translateKeyword(keyword: string): string {
  * @returns Translated astrology or original if translation not found
  */
 export function translateAstro(astro: string): string {
+  const locale = getLocale();
+  const isChinese = locale === 'zh-TW';
+  
+  // Get connector words based on locale
+  const inConnector = isChinese ? i18n.t('tarot.correspondences.in') : 'in';
+  const ofConnector = isChinese ? i18n.t('tarot.correspondences.of') : 'of';
+  
   // Handle compound astro like "Sun in Aries" or "Mars in Leo"
   if (astro.includes(' in ')) {
     const parts = astro.split(' in ');
@@ -51,7 +58,7 @@ export function translateAstro(astro: string): string {
     if (planet && sign) {
       const translatedPlanet = translatePlanet(planet);
       const translatedSign = translateZodiac(sign);
-      return `${translatedPlanet} in ${translatedSign}`;
+      return `${translatedPlanet} ${inConnector} ${translatedSign}`;
     }
   }
   
@@ -61,7 +68,7 @@ export function translateAstro(astro: string): string {
     if (parts.length === 2) {
       const elem1 = translateElement(parts[0].trim());
       const elem2 = translateElement(parts[1].trim());
-      return `${elem1} of ${elem2}`;
+      return `${elem1} ${ofConnector} ${elem2}`;
     }
   }
   

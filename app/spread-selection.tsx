@@ -43,6 +43,7 @@ export default function SpreadSelectionScreen() {
   const loadUserDataAndSpreads = useCallback(async () => {
     try {
       // Show UI immediately - don't block on data loading
+      // Don't wait for profile to load - use defaults if profile is still loading
       setLoading(false);
 
       // Load spreads FIRST (most important, cacheable)
@@ -116,6 +117,14 @@ export default function SpreadSelectionScreen() {
 
   // Load data on mount and when profile/question changes
   useEffect(() => {
+    // Failsafe: Ensure loading is set to false after max 10 seconds
+    const failsafeTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('spread-selection: Loading timeout, forcing UI to show');
+        setLoading(false);
+      }
+    }, 10000);
+    
     loadUserDataAndSpreads();
 
     // Listen for app state changes (background/foreground)
@@ -127,6 +136,7 @@ export default function SpreadSelectionScreen() {
     });
 
     return () => {
+      clearTimeout(failsafeTimeout);
       subscription.remove();
       // Clean up suggestion timeout
       if (suggestionTimeoutRef.current) {
@@ -134,7 +144,7 @@ export default function SpreadSelectionScreen() {
         suggestionTimeoutRef.current = null;
       }
     };
-  }, [loadUserDataAndSpreads]); // Now depends on loadUserDataAndSpreads which updates when profile/question changes
+  }, [loadUserDataAndSpreads, loading]); // Now depends on loadUserDataAndSpreads which updates when profile/question changes
 
   // Refresh data when screen comes into focus (like history.tsx does)
   useFocusEffect(
@@ -230,7 +240,7 @@ export default function SpreadSelectionScreen() {
     try {
       // Validate spread object
       if (!spread || !spread.id || !spread.spread_key) {
-        console.error('Invalid spread object:', spread);
+        console.error('spread-selection: Invalid spread object:', spread);
         return;
       }
 
@@ -261,7 +271,7 @@ export default function SpreadSelectionScreen() {
             params,
           });
         } catch (error) {
-          console.error('Error navigating to reading:', error);
+          console.error('spread-selection: Error navigating to reading:', error);
           // Fallback: try again after a small delay
           setTimeout(() => {
             try {
@@ -270,13 +280,13 @@ export default function SpreadSelectionScreen() {
                 params,
               });
             } catch (retryError) {
-              console.error('Retry navigation also failed:', retryError);
+              console.error('spread-selection: Retry navigation also failed:', retryError);
             }
           }, 100);
         }
       });
     } catch (error) {
-      console.error('Error selecting spread:', error);
+      console.error('spread-selection: Error selecting spread:', error);
       // Don't crash - just log the error
     }
   };

@@ -478,16 +478,11 @@ export default function ProfileScreen({ navigation }: Props) {
   const getSignDisplayName = (sign: string | null): string => {
     if (!sign) return t('profile.notCalculated');
     
-    // Translate sign name to Chinese if locale is zh-TW
-    let displaySign = sign;
-    if (locale === 'zh-TW') {
-      // Convert sign name to lowercase for lookup (e.g., "Scorpio" -> "scorpio")
-      const signKey = sign.toLowerCase();
-      const translatedSign = t(`zodiac.${signKey}`, { defaultValue: sign });
-      displaySign = translatedSign;
-    }
+    // Translate sign name using the correct translation key path
+    const signKey = sign.toLowerCase();
+    const translatedSign = t(`tarot.zodiac.${signKey}`, { defaultValue: sign });
     
-    return `${displaySign} ${SIGN_EMOJIS[sign] || ''}`;
+    return `${translatedSign} ${SIGN_EMOJIS[sign] || ''}`;
   };
 
   const getAccuracyText = (): string => {
@@ -831,14 +826,16 @@ export default function ProfileScreen({ navigation }: Props) {
           </View>
 
           {/* Sign Out Button */}
-          <ThemedButton
-            title={signingOut ? t('common.loading') : t('common.signOut')}
+          <TouchableOpacity
             onPress={handleSignOut}
             disabled={signingOut}
-            variant="ghost"
-            style={styles.signOutButton}
-            textStyle={styles.signOutText}
-          />
+            style={styles.signOutBadge}
+            activeOpacity={0.8}
+          >
+            <ThemedText variant="body" style={styles.signOutText}>
+              {signingOut ? t('common.loading') : t('common.signOut')}
+            </ThemedText>
+          </TouchableOpacity>
         </ThemedCard>
       </ScrollView>
     </MysticalBackground>
@@ -1017,12 +1014,23 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: theme.spacing.spacing.md,
   },
-  signOutButton: {
+  signOutBadge: {
+    alignSelf: 'center',
+    backgroundColor: theme.colors.semantic.error,
+    paddingHorizontal: theme.spacing.spacing.md,
+    paddingVertical: theme.spacing.spacing.sm,
+    borderRadius: theme.spacing.borderRadius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.primary.gold,
+    ...theme.shadows.shadows.md,
     marginTop: theme.spacing.spacing.lg,
-    paddingHorizontal: theme.spacing.spacing.lg,
   },
   signOutText: {
-    color: theme.colors.semantic.error,
+    color: theme.colors.text.primary,
+    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: theme.typography.fontSize.md,
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   aboutSection: {
     marginTop: theme.spacing.spacing.xl,

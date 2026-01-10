@@ -101,19 +101,13 @@ export default function HomeScreen() {
             <View style={styles.dailyCardContainer}>
               <DailyCardDraw />
             </View>
-
-            {/* OR Separator */}
-            <View style={styles.orContainer}>
-              <View style={styles.orLine} />
-              <ThemedText variant="body" style={styles.orText}>
-                {t('common.or')}
-              </ThemedText>
-              <View style={styles.orLine} />
-            </View>
           </ScrollView>
 
           {/* Fixed Question Input Card at Bottom */}
           <ThemedCard variant="elevated" style={styles.questionCard}>
+            <ThemedText variant="h3" style={styles.questionCardTitle}>
+              {t('home.fullSpread')}
+            </ThemedText>
             <View style={styles.questionInputContainer}>
               <TextInput
                 style={styles.questionInput}
@@ -169,8 +163,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.spacing.lg,
-    paddingTop: theme.spacing.spacing.xxl + 20,
-    paddingBottom: theme.spacing.spacing.lg,
+    paddingTop: theme.spacing.spacing.xxl + 30,
+    paddingBottom: theme.spacing.spacing.xs,
   },
   header: {
     alignItems: 'center',
@@ -181,29 +175,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.spacing.xs,
   },
-  orContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: theme.spacing.spacing.xs,
-    marginBottom: theme.spacing.spacing.md,
-    paddingHorizontal: theme.spacing.spacing.md,
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: theme.colors.primary.goldDark,
-    opacity: 0.3,
-  },
-  orText: {
-    marginHorizontal: theme.spacing.spacing.md,
-    color: theme.colors.text.tertiary,
-    fontSize: theme.typography.fontSize.sm,
-  },
   questionCard: {
-    margin: theme.spacing.spacing.lg,
-    marginTop: theme.spacing.spacing.sm,
+    marginHorizontal: theme.spacing.spacing.lg,
+    marginTop: 0,
     marginBottom: theme.spacing.spacing.lg,
     // Fixed at bottom, above tab bar
+  },
+  questionCardTitle: {
+    textAlign: 'center',
+    marginBottom: theme.spacing.spacing.md,
+    color: theme.colors.primary.gold,
   },
   questionInputContainer: {
     position: 'relative',

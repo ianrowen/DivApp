@@ -16,13 +16,33 @@ export default function Index() {
   useEffect(() => {
     // Get initial session - wrap in try-catch to prevent crashes
     try {
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+      // Suppress "Invalid Refresh Token" errors - these are expected when session expires
+      if (error && (error.message?.includes('Invalid Refresh Token') || 
+                    error.message?.includes('Refresh Token Not Found'))) {
+        // Expected behavior - session expired, user needs to sign in again
+        // Silently handle it - don't log as error
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+      
       // #region agent log
       debugLog('index.tsx:17', 'Initial session loaded', { hasSession: !!session, userId: session?.user?.id }, 'C');
       // #endregion
       setSession(session);
       setLoading(false);
     }).catch((error) => {
+      // Suppress "Invalid Refresh Token" errors - these are expected when session expires
+      if (error?.message?.includes('Invalid Refresh Token') || 
+          error?.message?.includes('Refresh Token Not Found')) {
+        // Expected behavior - session expired, user needs to sign in again
+        // Silently handle it
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+      
       console.error('Error getting session:', error);
       // #region agent log
       debugLog('index.tsx:21', 'Error getting initial session', { error: error?.message }, 'C');

@@ -70,15 +70,73 @@ export default function CardDetailModal({
     'Pisces': { symbol: '♓', color: theme.colors.text.secondary },
   };
 
-  function getAstroData(astro: string): { symbol: string; color: string } | null {
+  function getAstroData(astro: string): { symbols: string[]; colors: string[] } | null {
+    const symbols: string[] = [];
+    const colors: string[] = [];
+    
+    // Check for court card elements like "Fire of Earth", "Earth of Fire"
+    // These should show both element symbols
+    if (astro.includes(' of ')) {
+      const parts = astro.split(' of ');
+      if (parts.length === 2) {
+        const elem1 = parts[0]?.trim();
+        const elem2 = parts[1]?.trim();
+        
+        // Get first element icon
+        if (elem1 && ELEMENT_DATA[elem1]) {
+          symbols.push(ELEMENT_DATA[elem1].symbol);
+          colors.push(ELEMENT_DATA[elem1].color);
+        }
+        
+        // Get second element icon
+        if (elem2 && ELEMENT_DATA[elem2]) {
+          symbols.push(ELEMENT_DATA[elem2].symbol);
+          colors.push(ELEMENT_DATA[elem2].color);
+        }
+        
+        if (symbols.length > 0) {
+          return { symbols, colors };
+        }
+      }
+    }
+    
+    // Check for compound astro like "Sun in Aries" - get both planet and zodiac
+    if (astro.includes(' in ')) {
+      const parts = astro.split(' in ');
+      const planet = parts[0]?.trim();
+      const sign = parts[1]?.trim();
+      
+      // Get planet icon
+      if (planet && PLANET_DATA[planet]) {
+        symbols.push(PLANET_DATA[planet].symbol);
+        colors.push(PLANET_DATA[planet].color);
+      }
+      
+      // Get zodiac icon
+      if (sign && ZODIAC_DATA[sign]) {
+        symbols.push(ZODIAC_DATA[sign].symbol);
+        colors.push(ZODIAC_DATA[sign].color);
+      }
+      
+      if (symbols.length > 0) {
+        return { symbols, colors };
+      }
+    }
+    
     // Check for planet
     for (const [planet, data] of Object.entries(PLANET_DATA)) {
-      if (astro.includes(planet)) return data;
+      if (astro.includes(planet)) {
+        return { symbols: [data.symbol], colors: [data.color] };
+      }
     }
+    
     // Check for zodiac
     for (const [sign, data] of Object.entries(ZODIAC_DATA)) {
-      if (astro.includes(sign)) return data;
+      if (astro.includes(sign)) {
+        return { symbols: [data.symbol], colors: [data.color] };
+      }
     }
+    
     return null;
   }
 
@@ -117,13 +175,6 @@ export default function CardDetailModal({
               ]}
               resizeMode="contain"
             />
-            {reversed && (
-              <View style={styles.reversedBadge}>
-                <ThemedText variant="caption" style={styles.reversedText}>
-                  {locale === 'zh-TW' ? '逆位' : 'Reversed'}
-                </ThemedText>
-              </View>
-            )}
           </View>
 
           {/* Card Metadata */}
@@ -192,45 +243,94 @@ export default function CardDetailModal({
             {localizedCard.element && (
               <View style={styles.correspondenceRow}>
                 <ThemedText variant="body" style={styles.correspondenceLabel}>
-                  {locale === 'zh-TW' ? '元素' : 'Element'}:
+                  {t('tarot.correspondences.element')}:
                 </ThemedText>
                 <View style={styles.correspondenceValueRow}>
-                  {ELEMENT_DATA[localizedCard.element] && (
-                    <ThemedText 
-                      variant="body" 
-                      style={[
-                        styles.correspondenceSymbol,
-                        { color: ELEMENT_DATA[localizedCard.element].color }
-                      ]}
-                    >
-                      {ELEMENT_DATA[localizedCard.element].symbol}
-                    </ThemedText>
-                  )}
+                  {(() => {
+                    // For court cards, show both elements from astro (e.g., "Fire of Earth")
+                    if (card.arcana === 'Court' && card.astro && card.astro.includes(' of ')) {
+                      const parts = card.astro.split(' of ');
+                      const elem1 = parts[0]?.trim();
+                      const elem2 = parts[1]?.trim();
+                      return (
+                        <>
+                          {elem1 && ELEMENT_DATA[elem1] && (
+                            <ThemedText 
+                              variant="body" 
+                              style={[
+                                styles.correspondenceSymbol,
+                                { color: ELEMENT_DATA[elem1].color }
+                              ]}
+                            >
+                              {ELEMENT_DATA[elem1].symbol}
+                            </ThemedText>
+                          )}
+                          {elem2 && ELEMENT_DATA[elem2] && (
+                            <ThemedText 
+                              variant="body" 
+                              style={[
+                                styles.correspondenceSymbol,
+                                { color: ELEMENT_DATA[elem2].color }
+                              ]}
+                            >
+                              {ELEMENT_DATA[elem2].symbol}
+                            </ThemedText>
+                          )}
+                        </>
+                      );
+                    }
+                    // For non-court cards, show single element
+                    if (card.element && ELEMENT_DATA[card.element]) {
+                      return (
+                        <ThemedText 
+                          variant="body" 
+                          style={[
+                            styles.correspondenceSymbol,
+                            { color: ELEMENT_DATA[card.element].color }
+                          ]}
+                        >
+                          {ELEMENT_DATA[card.element].symbol}
+                        </ThemedText>
+                      );
+                    }
+                    return null;
+                  })()}
                   <ThemedText variant="body" style={styles.correspondenceValue}>
-                    {localizedCard.element}
+                    {card.arcana === 'Court' && localizedCard.astro 
+                      ? localizedCard.astro  // For court cards, show both elements (e.g., "Fire 的 Earth")
+                      : localizedCard.element // For other cards, show single element
+                    }
                   </ThemedText>
                 </View>
               </View>
             )}
 
-            {localizedCard.astro && (
+            {/* Only show astrology for Major and Minor arcana, not Court cards */}
+            {/* Court cards show both elements in the Element line instead */}
+            {localizedCard.astro && card.arcana !== 'Court' && (
               <View style={styles.correspondenceRow}>
                 <ThemedText variant="body" style={styles.correspondenceLabel}>
-                  {locale === 'zh-TW' ? '占星' : 'Astrology'}:
+                  {t('tarot.correspondences.astrology')}:
                 </ThemedText>
                 <View style={styles.correspondenceValueRow}>
                   {(() => {
-                    const astroData = getAstroData(localizedCard.astro);
+                    // Use original card.astro for icon lookup (English), but display translated text
+                    const astroData = card.astro ? getAstroData(card.astro) : null;
                     return astroData ? (
-                      <ThemedText 
-                        variant="body" 
-                        style={[
-                          styles.correspondenceSymbol,
-                          { color: astroData.color }
-                        ]}
-                      >
-                        {astroData.symbol}
-                      </ThemedText>
+                      <>
+                        {astroData.symbols.map((symbol, index) => (
+                          <ThemedText 
+                            key={index}
+                            variant="body" 
+                            style={[
+                              styles.correspondenceSymbol,
+                              { color: astroData.colors[index] || theme.colors.text.primary }
+                            ]}
+                          >
+                            {symbol}
+                          </ThemedText>
+                        ))}
+                      </>
                     ) : null;
                   })()}
                   <ThemedText variant="body" style={styles.correspondenceValue}>
@@ -243,7 +343,7 @@ export default function CardDetailModal({
             {card.numerology && (
               <View style={styles.correspondenceRow}>
                 <ThemedText variant="body" style={styles.correspondenceLabel}>
-                  {locale === 'zh-TW' ? '數字學' : 'Numerology'}:
+                  {t('tarot.correspondences.numerology')}:
                 </ThemedText>
                 <ThemedText variant="body" style={styles.correspondenceValue}>
                   {card.numerology}
@@ -303,27 +403,14 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   cardImage: {
-    width: 200,
-    height: 350,
+    width: 240,
+    height: 420,
     borderRadius: theme.spacing.borderRadius.md,
     borderWidth: 2,
     borderColor: theme.colors.primary.gold,
   },
   cardImageReversed: {
     transform: [{ rotate: '180deg' }],
-  },
-  reversedBadge: {
-    position: 'absolute',
-    top: theme.spacing.spacing.sm,
-    right: theme.spacing.spacing.sm,
-    backgroundColor: theme.colors.semantic.error,
-    paddingHorizontal: theme.spacing.spacing.sm,
-    paddingVertical: theme.spacing.spacing.xs,
-    borderRadius: theme.spacing.borderRadius.sm,
-  },
-  reversedText: {
-    color: theme.colors.text.primary,
-    fontWeight: theme.typography.fontWeight.bold,
   },
   metadata: {
     alignItems: 'center',
@@ -356,6 +443,7 @@ const styles = StyleSheet.create({
   },
   keywordText: {
     color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.md,
   },
   correspondenceRow: {
     flexDirection: 'row',
