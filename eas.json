@@ -7,9 +7,6 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": {
-        "package": "com.divin8.divin8.dev"
-      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://bawkzybwbpoxftgawvha.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhd2t6eWJ3YnBveGZ0Z2F3dmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTI3NzcsImV4cCI6MjA3Nzg4ODc3N30.GLRosL14pt3gpYLh8Yde3n_Eh0e_8vyB_8PYlhg2juc"
@@ -48,7 +45,6 @@
     "production": {
       "channel": "production",
       "android": {
-        "package": "com.divin8.app",
         "buildType": "app-bundle",
         "autoIncrement": true,
         "gradleCommand": ":app:bundleRelease"

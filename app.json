@@ -52,7 +52,7 @@
       ]
     },
     "android": {
-      "package": "com.divin8.divin8.dev",
+      "package": "com.divin8.app",
       "versionCode": 12,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
