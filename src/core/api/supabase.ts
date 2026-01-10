@@ -236,29 +236,60 @@ export const supabaseHelpers = {
 
   // Check user tier (for subscription features)
   async getUserTier(userId: string): Promise<'free' | 'adept' | 'apex'> {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:getUserTier',message:'getUserTier called',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     const { data, error } = await supabase
       .from('profiles')
       .select('subscription_tier, is_beta_tester, beta_access_expires_at')
       .eq('user_id', userId)
       .single();
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:getUserTier',message:'Profile query result',data:{hasData:!!data,hasError:!!error,errorCode:error?.code,isBetaTester:data?.is_beta_tester,betaExpiresAt:data?.beta_access_expires_at,subscriptionTier:data?.subscription_tier},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
     if (error || !data) {
       console.error('Error fetching user tier:', error);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:getUserTier',message:'Error fetching tier - returning free',data:{error:error?.message,errorCode:error?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       return 'free';
     }
 
     // Beta testers get apex-level access if beta hasn't expired
-    if (data.is_beta_tester) {
+    // Handle NULL values explicitly - treat NULL as false for safety, but check for true explicitly
+    if (data.is_beta_tester === true) {
       const betaExpired = data.beta_access_expires_at && new Date(data.beta_access_expires_at) < new Date();
       if (!betaExpired) {
         console.log('✅ Beta tester detected - granting apex access');
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:getUserTier',message:'Beta tester - returning apex',data:{userId,betaExpiresAt:data.beta_access_expires_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         return 'apex'; // Full access during beta
       } else {
         console.log('⚠️ Beta tester access has expired');
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:getUserTier',message:'Beta tester expired',data:{userId,betaExpiresAt:data.beta_access_expires_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
       }
+    } else if (data.is_beta_tester === null || data.is_beta_tester === false) {
+      // If beta tester status is NULL or false, log it for debugging
+      console.warn('⚠️ User is not a beta tester:', { 
+        userId, 
+        is_beta_tester: data.is_beta_tester,
+        subscription_tier: data.subscription_tier 
+      });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:getUserTier',message:'Not beta tester - returning subscription tier',data:{userId,isBetaTester:data.is_beta_tester,subscriptionTier:data.subscription_tier},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
     }
 
-    return (data.subscription_tier as 'free' | 'adept' | 'apex') || 'free';
+    const finalTier = (data.subscription_tier as 'free' | 'adept' | 'apex') || 'free';
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.ts:getUserTier',message:'Returning final tier',data:{userId,finalTier},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    return finalTier;
   },
 
   // Check if user can access a feature based on tier

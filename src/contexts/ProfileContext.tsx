@@ -66,7 +66,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       try {
         const queryPromise = supabase
           .from('profiles')
-          .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
+          .select('subscription_tier, is_beta_tester, beta_access_expires_at, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
           .eq('user_id', userId)
           .single();
         
@@ -104,7 +104,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
                 onConflict: 'user_id',
                 ignoreDuplicates: false
               })
-              .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
+              .select('subscription_tier, is_beta_tester, beta_access_expires_at, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
               .single();
             
             if (createError) {
@@ -116,7 +116,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
               // Try to fetch the profile again in case it was created by another process
               const { data: fetchedProfile } = await supabase
                 .from('profiles')
-                .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
+                .select('subscription_tier, is_beta_tester, beta_access_expires_at, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
                 .eq('user_id', userId)
                 .single();
               if (fetchedProfile) {
@@ -139,10 +139,30 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data) {
+        // PRODUCTION DEBUG: Log what we actually received from database
+        console.log('🔍 PROFILE LOADED:', {
+          userId,
+          subscription_tier: data.subscription_tier,
+          is_beta_tester: data.is_beta_tester,
+          beta_tester_type: typeof data.is_beta_tester,
+          beta_tester_value: JSON.stringify(data.is_beta_tester),
+          beta_access_expires_at: data.beta_access_expires_at,
+          rawData: JSON.stringify(data)
+        });
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:profileLoaded',message:'Profile loaded from DB',data:{userId,subscriptionTier:data.subscription_tier,isBetaTester:data.is_beta_tester,betaTesterType:typeof data.is_beta_tester,betaTesterValue:JSON.stringify(data.is_beta_tester),betaExpiresAt:data.beta_access_expires_at,rawData:JSON.stringify(data)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
         // Ensure beta tester status is set (migration might not have caught all users)
         // Also handle case where is_beta_tester is null (should be treated as false)
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:checkBetaTester',message:'Checking beta tester status',data:{userId,isBetaTester:data.is_beta_tester,isBetaTesterType:typeof data.is_beta_tester,isBetaTesterValue:JSON.stringify(data.is_beta_tester),needsUpdate:!data.is_beta_tester || data.is_beta_tester === null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         if (!data.is_beta_tester || data.is_beta_tester === null) {
           console.log('📝 Updating profile to set beta tester status for user:', userId, 'current value:', data.is_beta_tester);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:updatingBetaTester',message:'Updating profile to beta tester',data:{userId,currentValue:data.is_beta_tester},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
           try {
             // Use upsert to ensure the update happens even if there's a race condition
             const { data: updatedProfile, error: updateError } = await supabase
@@ -150,12 +170,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
               .upsert({
                 user_id: userId,
                 is_beta_tester: true,
+                beta_access_expires_at: null, // Explicitly set to null for indefinite access
                 subscription_tier: data.subscription_tier || 'free', // Preserve existing tier
               }, {
                 onConflict: 'user_id',
                 ignoreDuplicates: false
               })
-              .select('subscription_tier, is_beta_tester, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
+              .select('subscription_tier, is_beta_tester, beta_access_expires_at, sun_sign, moon_sign, rising_sign, user_id, use_birth_data_for_readings')
               .single();
             
             if (updateError) {
@@ -167,7 +188,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
               // Continue with existing data even if update fails
             } else if (updatedProfile) {
               data = updatedProfile;
-              console.log('✅ Updated profile to beta tester status');
+              console.log('✅ Updated profile to beta tester status:', {
+                is_beta_tester: updatedProfile.is_beta_tester,
+                beta_access_expires_at: updatedProfile.beta_access_expires_at
+              });
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:profileUpdated',message:'Profile updated to beta tester',data:{userId,isBetaTester:updatedProfile.is_beta_tester,betaExpiresAt:updatedProfile.beta_access_expires_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+              // #endregion
             }
           } catch (updateErr) {
             console.error('❌ Exception updating beta tester status:', updateErr);
@@ -180,6 +207,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
         // #region agent log
         debugLog('ProfileContext.tsx:profileLoaded', 'Profile loaded and cached', {userId}, 'I');
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProfileContext.tsx:profileSet',message:'Profile set in state and cached',data:{userId,isBetaTester:data.is_beta_tester,subscriptionTier:data.subscription_tier,betaExpiresAt:data.beta_access_expires_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
         // #endregion
       }
     } catch (error) {
@@ -193,12 +221,29 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh profile from database
   const refreshProfile = useCallback(async () => {
+    console.log('🔄 Force refreshing profile from database...');
+    // Clear cache first to force fresh load
+    await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setProfile(null);
-      await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
       return;
     }
+    
+    // Try calling database function to force refresh (if it exists)
+    try {
+      const { data: refreshedData, error: rpcError } = await supabase.rpc('refresh_user_profile');
+      if (!rpcError && refreshedData) {
+        console.log('✅ Profile refreshed via database function');
+        setProfile(refreshedData as any);
+        await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(refreshedData));
+        return;
+      }
+    } catch (e) {
+      // Function might not exist, fall back to normal refresh
+      console.log('Database function not available, using normal refresh');
+    }
+    
     await loadProfile(user.id);
   }, [loadProfile]);
 

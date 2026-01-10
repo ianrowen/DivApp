@@ -45,6 +45,7 @@ export default function DailyCardDraw() {
         }
 
         // Check for existing daily card reading from today
+        console.log('🔍 DailyCardDraw: Checking for existing daily card reading...');
         const { data: existingReading, error: fetchError } = await supabase
           .from('readings')
           .select('id, created_at, elements_drawn')
@@ -62,21 +63,69 @@ export default function DailyCardDraw() {
           return;
         }
 
+        console.log('🔍 DailyCardDraw: Query result:', {
+          hasReading: !!existingReading?.id,
+          readingId: existingReading?.id,
+          created_at: existingReading?.created_at,
+          hasElementsDrawn: !!existingReading?.elements_drawn,
+          elementsDrawn: existingReading?.elements_drawn
+        });
+
         if (existingReading?.id) {
-          // Check if it's from today
+          // Check if it's from today - use date strings to avoid timezone issues
           const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const readingDate = new Date(existingReading.created_at);
-          readingDate.setHours(0, 0, 0, 0);
+          const todayDateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
           
-          if (readingDate.getTime() === today.getTime()) {
+          const readingDate = new Date(existingReading.created_at);
+          const readingDateStr = readingDate.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:dateCheck',message:'Checking if reading is from today',data:{readingId:existingReading.id,readingDate:existingReading.created_at,readingDateStr,todayDateStr,datesMatch:readingDateStr === todayDateStr,elementsDrawn:existingReading.elements_drawn},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          
+          console.log('🔍 DailyCardDraw: Date comparison:', {
+            readingDate: readingDate.toISOString(),
+            readingDateStr,
+            today: today.toISOString(),
+            todayDateStr,
+            datesMatch: readingDateStr === todayDateStr
+          });
+          
+          if (readingDateStr === todayDateStr) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:dateMatch',message:'Reading is from today - loading card',data:{readingId:existingReading.id,readingDate:existingReading.created_at,hasElementsDrawn:!!existingReading.elements_drawn,isArray:Array.isArray(existingReading.elements_drawn),elementsLength:existingReading.elements_drawn?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
             // Load the card from elements_drawn
+            console.log('🔍 DailyCardDraw: Attempting to load card from elements_drawn:', {
+              hasElementsDrawn: !!existingReading.elements_drawn,
+              isArray: Array.isArray(existingReading.elements_drawn),
+              length: existingReading.elements_drawn?.length || 0,
+              firstElement: existingReading.elements_drawn?.[0]
+            });
+            
             if (existingReading.elements_drawn && Array.isArray(existingReading.elements_drawn) && existingReading.elements_drawn.length > 0) {
               const cardElement = existingReading.elements_drawn[0] as any;
               const cardCode = cardElement.elementId || cardElement.metadata?.cardCode;
               const reversed = cardElement.metadata?.reversed || false;
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:cardElement',message:'Extracted card element',data:{cardCode,reversed,elementId:cardElement.elementId,hasMetadata:!!cardElement.metadata,metadataCardCode:cardElement.metadata?.cardCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+              // #endregion
+
+              console.log('🔍 DailyCardDraw: Extracted card info:', {
+                cardCode,
+                reversed,
+                elementId: cardElement.elementId,
+                hasMetadata: !!cardElement.metadata,
+                metadataCardCode: cardElement.metadata?.cardCode
+              });
 
               const foundCard = LOCAL_RWS_CARDS.find(c => c.code === cardCode);
+              console.log('🔍 DailyCardDraw: Card lookup:', {
+                cardCode,
+                found: !!foundCard,
+                mounted
+              });
+              
               if (foundCard && mounted) {
                 const cardWithReversal = { ...foundCard, reversed };
                 // #region agent log
@@ -85,21 +134,39 @@ export default function DailyCardDraw() {
                 fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DailyCardDraw.tsx:83',message:'Card set from existing reading',data:{cardCode:cardWithReversal.code,reversed:cardWithReversal.reversed},timestamp:cardSetTime,sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
                 // #endregion
                 // Set card and flip state simultaneously
+                console.log('✅ DailyCardDraw: Setting card from existing reading:', cardWithReversal.code);
                 setCard(cardWithReversal);
                 setIsFlipped(true);
                 // Set animation value immediately (no need for requestAnimationFrame)
                 flipAnimation.setValue(1);
                 return; // Don't reset isFlipped
               } else if (!mounted) {
+                console.warn('⚠️ DailyCardDraw: Component unmounted, skipping card set');
                 return;
               } else {
-                console.warn('⚠️ Card not found for code:', cardCode);
+                console.warn('⚠️ DailyCardDraw: Card not found for code:', cardCode);
               }
+            } else {
+              console.warn('⚠️ DailyCardDraw: elements_drawn is invalid:', {
+                hasElementsDrawn: !!existingReading.elements_drawn,
+                isArray: Array.isArray(existingReading.elements_drawn),
+                length: existingReading.elements_drawn?.length || 0
+              });
             }
+          } else {
+            console.log('⚠️ DailyCardDraw: Reading exists but not from today:', {
+              readingDate: readingDate.toISOString(),
+              readingDateStr,
+              today: today.toISOString(),
+              todayDateStr
+            });
           }
+        } else {
+          console.log('⚠️ DailyCardDraw: No existing reading found');
         }
         
         // No existing card found for today, start with card back
+        console.log('🔍 DailyCardDraw: No card found, starting with card back');
         if (mounted) setIsFlipped(false);
       } catch (error: any) {
         if (mounted) {
@@ -190,12 +257,13 @@ export default function DailyCardDraw() {
             .maybeSingle() as any;
 
           if (!fetchError && existingReading?.id) {
+            // Use date strings to avoid timezone issues
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            const todayDateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
             const readingDate = new Date(existingReading.created_at);
-            readingDate.setHours(0, 0, 0, 0);
+            const readingDateStr = readingDate.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
 
-            if (readingDate.getTime() === today.getTime()) {
+            if (readingDateStr === todayDateStr) {
               // Card already pulled today, load it instead of drawing new
               if (existingReading.elements_drawn && Array.isArray(existingReading.elements_drawn) && existingReading.elements_drawn.length > 0) {
                 const cardElement = existingReading.elements_drawn[0] as any;

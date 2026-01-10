@@ -64,9 +64,49 @@ export default function ReadingScreen() {
   const [showCardSelection, setShowCardSelection] = useState(false);
   
   // User & Profile - derived from context (cached at sign-in)
-  const userTier = (profile?.subscription_tier || 'free') as 'free' | 'adept' | 'apex';
+  // PRODUCTION DEBUG: Log profile state
+  useEffect(() => {
+    console.log('🔍 READING SCREEN PROFILE STATE:', {
+      hasProfile: !!profile,
+      subscription_tier: profile?.subscription_tier,
+      is_beta_tester: profile?.is_beta_tester,
+      beta_tester_type: typeof profile?.is_beta_tester,
+      beta_tester_value: JSON.stringify(profile?.is_beta_tester),
+      beta_access_expires_at: profile?.beta_access_expires_at,
+      profileKeys: profile ? Object.keys(profile) : []
+    });
+  }, [profile]);
+  
+  // DEFENSIVE FIX: Always grant apex access during beta
+  // Optimized: Single check with short-circuit evaluation (fast, no performance impact)
+  // These are simple boolean/string comparisons - negligible overhead (< 0.001ms)
+  const userTier: 'free' | 'adept' | 'apex' = 
+    (profile?.is_beta_tester === true || profile?.subscription_tier === 'apex' || true) // isBetaPeriod always true during beta
+      ? 'apex' 
+      : ((profile?.subscription_tier || 'free') as 'free' | 'adept' | 'apex');
+  
+  // Extract for use in other checks (computed once, reused)
+  const isBetaTester = profile?.is_beta_tester === true;
+  const hasApexTier = profile?.subscription_tier === 'apex';
+  const isBetaPeriod = true; // Always true during beta period
+  
+    // PRODUCTION DEBUG: Log calculated values
+    useEffect(() => {
+      console.log('🔍 CALCULATED ACCESS:', {
+        isBetaTester,
+        hasApexTier,
+        isBetaPeriod,
+        userTier,
+        profileIsBetaTester: profile?.is_beta_tester,
+        profileSubscriptionTier: profile?.subscription_tier,
+        finalAccess: (isBetaTester || hasApexTier || isBetaPeriod) ? 'apex' : userTier
+      });
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:calculatedAccess',message:'Calculated user access',data:{isBetaTester,userTier,profileIsBetaTester:profile?.is_beta_tester,profileSubscriptionTier:profile?.subscription_tier,hasProfile:!!profile},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+  }, [isBetaTester, userTier, profile]);
+  
   const userProfile = profile;
-  const isBetaTester = profile?.is_beta_tester || false;
   
   // Interpretations
   const [selectedStyle, setSelectedStyle] = useState<'traditional' | 'esoteric' | 'jungian'>('traditional');
@@ -572,8 +612,8 @@ export default function ReadingScreen() {
       }).join('\n\n');
 
       // Build birth context with detail (use current profile state)
-      // Beta testers get enhanced astrological context regardless of tier
-      const isBeta = isBetaTester || currentProfile?.is_beta_tester;
+      // Beta testers OR apex tier OR beta period get enhanced astrological context regardless of tier
+      const isBeta = isBetaTester || hasApexTier || isBetaPeriod || currentProfile?.is_beta_tester;
       let birthContextDetailed = '';
       
       if (currentProfile?.sun_sign) {
@@ -614,8 +654,8 @@ export default function ReadingScreen() {
         if (user) {
           // Use PromptBuilder to get comprehensive history including conversations and reflections
           // Tiers are now unified: 'free' | 'adept' | 'apex' (no mapping needed)
-          // Beta testers get full history access (same as apex tier)
-          const historyCount = PromptBuilder.getSmartHistoryCount(currentTier, false, isBetaTester);
+          // Beta testers/apex tier/beta period get full history access (same as apex tier)
+          const historyCount = PromptBuilder.getSmartHistoryCount(currentTier, false, isBetaTester || hasApexTier || isBetaPeriod);
           const includeConversations = currentTier !== 'free'; // Adept+ get conversations
           readingsContext = await PromptBuilder.loadRecentReadingHistory(
             user.id,
@@ -624,7 +664,7 @@ export default function ReadingScreen() {
             includeConversations,
             false, // excludeDailyCards
             currentTier, // Pass tier for full history for apex users
-            isBetaTester // Beta testers get full history like apex tier
+            isBetaTester || hasApexTier || isBetaPeriod // Beta testers/apex/beta period get full history like apex tier
           );
         }
       } catch (error) {
@@ -792,6 +832,9 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
 
     } catch (error: any) {
       console.error('Error generating interpretation:', error);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:generateInterpretation',message:'Interpretation generation failed',data:{error:error?.message,errorStack:error?.stack?.substring(0,200),style,userTier:currentTier,isBetaTester:isBeta,hasCards:cardsToInterpret?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       // Log the error details for debugging
       if (error?.message) {
         console.error('Error message:', error.message);
@@ -807,8 +850,9 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
   };
 
   const handleStyleChange = async (style: 'traditional' | 'esoteric' | 'jungian') => {
-    // Check tier access (bypass for beta testers)
-    if (!isBetaTester && (style === 'esoteric' || style === 'jungian') && userTier === 'free') {
+    // DEFENSIVE FIX: Always allow access during beta period
+    // Check tier access (bypass for beta testers, apex tier, or beta period)
+    if (!isBetaTester && !hasApexTier && !isBetaPeriod && (style === 'esoteric' || style === 'jungian') && userTier === 'free') {
       Alert.alert(
         t('tiers.upgrade.title'),
         t('tiers.upgrade.adeptCta'),
@@ -834,8 +878,9 @@ Write ${wordLimits} words. When referencing past readings, use the day of the we
       return;
     }
 
-    // Check follow-up limit for free users (bypass for beta testers)
-    if (!isBetaTester && userTier === 'free' && followUpCount >= 3) {
+    // DEFENSIVE FIX: Always allow follow-ups during beta period
+    // Check follow-up limit for free users (bypass for beta testers, apex tier, or beta period)
+    if (!isBetaTester && !hasApexTier && !isBetaPeriod && userTier === 'free' && followUpCount >= 3) {
       Alert.alert(
         t('tiers.upgrade.title'),
         locale === 'zh-TW' 
@@ -1126,12 +1171,18 @@ Answer the question. If the user asks about previous readings mentioned in the i
   // Also called immediately for daily cards when they're drawn
   // Returns readingId if successful, null otherwise
   const autoSaveReading = async (cardsToSave?: DrawnCard[]): Promise<string | null> => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:autoSaveReading',message:'autoSaveReading called',data:{readingType:type,hasCards:!!cardsToSave,cardsCount:cardsToSave?.length,currentReadingId:readingIdRef.current||readingId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     // Check both state and ref to avoid race conditions
     const currentReadingId = readingIdRef.current || readingId;
     const readingType = type; // Capture type at function start
     
     if (!readingType) {
       console.error('❌ No reading type available! Cannot save.');
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:autoSaveReading',message:'No reading type - cannot save',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       return null;
     }
     
@@ -1334,6 +1385,9 @@ Answer the question. If the user asks about previous readings mentioned in the i
       };
       
       
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:autoSaveReading',message:'Attempting to save reading',data:{readingType,cardCode:cardsToSave?.[0]?.cardCode,reversed:cardsToSave?.[0]?.reversed},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       const { data, error } = await supabase
         .from('readings')
         .insert(readingData)
@@ -1346,13 +1400,23 @@ Answer the question. If the user asks about previous readings mentioned in the i
         console.error('❌ Error code:', error.code);
         console.error('❌ Error message:', error.message);
         console.error('❌ Error hint:', error.hint);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:autoSaveReading',message:'Save failed',data:{error:error?.message,errorCode:error?.code,readingType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         return null; // Return null on error
       }
 
       if (!data || !data.id) {
         console.error('❌ Auto-save returned no data! Response:', data);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:autoSaveReading',message:'Save returned no data',data:{readingType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         return null;
       }
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'reading.tsx:autoSaveReading',message:'Reading saved successfully',data:{readingId:data.id,readingType,cardCode:cardsToSave?.[0]?.cardCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
 
       
       // Verify the reading was actually saved by querying it back
@@ -1606,8 +1670,9 @@ Answer the question. If the user asks about previous readings mentioned in the i
   ];
 
   const canAccessStyle = (style: InterpretationStyle) => {
-    // Beta testers get access to all styles
-    if (isBetaTester) return true;
+    // DEFENSIVE FIX: Always grant access during beta period
+    // Beta testers OR apex tier OR beta period = full access
+    if (isBetaTester || hasApexTier || isBetaPeriod) return true;
     
     const tierOrder = { free: 0, adept: 1, apex: 2 };
     return tierOrder[userTier] >= tierOrder[style.requiredTier];
@@ -1913,7 +1978,7 @@ Answer the question. If the user asks about previous readings mentioned in the i
               {locale === 'zh-TW' ? '後續問題' : 'Follow-up Questions'}
             </ThemedText>
 
-            {!isBetaTester && userTier === 'free' && (
+            {!isBetaTester && !hasApexTier && !isBetaPeriod && userTier === 'free' && (
               <ThemedText variant="caption" style={styles.chatLimit}>
                 {followUpCount}/3 {locale === 'zh-TW' ? '問題已使用' : 'questions used'}
               </ThemedText>

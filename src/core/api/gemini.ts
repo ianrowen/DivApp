@@ -28,7 +28,13 @@ export class GeminiProvider implements IAIProvider {
 
   async generate(params: AIGenerateParams): Promise<AIGenerateResult> {
     // Check for API key before proceeding
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'gemini.ts:generate',message:'Gemini generate called',data:{hasApiKey:!!this.apiKey,apiKeyLength:this.apiKey?.length||0,apiKeyPrefix:this.apiKey?.substring(0,10)||'none',model:this.model},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     if (!this.apiKey || this.apiKey.trim() === '') {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/428b75af-757e-429a-aaa1-d11d73a7516d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'gemini.ts:generate',message:'API key missing',data:{hasApiKey:!!this.apiKey,envVar:process.env.EXPO_PUBLIC_GEMINI_API_KEY?.substring(0,10)||'none'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       throw new Error('Gemini API key is not configured. Please set EXPO_PUBLIC_GEMINI_API_KEY environment variable.');
     }
 

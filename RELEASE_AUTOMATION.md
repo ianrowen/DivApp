@@ -210,40 +210,60 @@ eas update --branch preview --message "Preview update"
 
 ### Android (Google Play)
 - **Service Account**: `./google-service-account.json`
-- **Track**: Internal (can change to `production`, `beta`, `alpha`)
+- **Track**: Alpha (Closed Testing) - can change to `production`, `beta`, `alpha`, `internal`
 - **Release Status**: Completed (auto-releases)
 
 ## Track Configuration
 
 ### Android Tracks
 
-**Internal** (current):
+**Internal**:
 - Fastest review
 - Limited to 100 testers
 - Good for initial testing
+- Track name: `"internal"`
 
-**Alpha/Beta**:
-- More testers
-- Longer review time
-- Good for beta testing
+**Alpha** (current - Closed Testing):
+- Alpha closed testing track
+- More testers than internal (unlimited)
+- Longer review time than internal
+- Good for beta testing with larger groups
+- Track name: `"alpha"`
+
+**Beta** (Closed Testing):
+- Beta closed testing track
+- More testers than internal (unlimited)
+- Longer review time than internal
+- Good for staged beta testing before production
+- Track name: `"beta"`
 
 **Production**:
 - Public release
 - Full review process
 - Use for public releases
+- Track name: `"production"`
 
 **To change track**, edit `eas.json`:
 ```json
 "android": {
-  "track": "production"  // or "beta", "alpha", "internal"
+  "track": "alpha"  // Valid options: "internal", "alpha", "beta", "production"
 }
 ```
+
+**Note**: `"closed"` is NOT a valid track name. Use `"alpha"` or `"beta"` for closed testing tracks.
 
 ## Monitoring Releases
 
 ### Check Build Status
 ```bash
-eas build:list
+# List recent builds (non-interactive)
+eas build:list --non-interactive
+
+# List Android builds only
+eas build:list --platform android --limit 1 --non-interactive
+
+# List iOS builds only
+eas build:list --platform ios --limit 1 --non-interactive
 ```
 
 ### Check Submission Status

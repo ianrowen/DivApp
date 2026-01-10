@@ -43,6 +43,7 @@
       }
     },
     "production": {
+      "channel": "production",
       "android": {
         "buildType": "app-bundle",
         "autoIncrement": true,
@@ -64,7 +65,7 @@
   "submit": {
     "production": {
       "android": {
-        "track": "internal"
+        "track": "alpha"
       },
       "ios": {
         "appleId": "irowen@gmail.com",

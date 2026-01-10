@@ -18,18 +18,21 @@ BEGIN
   -- Delete all readings for this user
   DELETE FROM public.readings WHERE user_id = delete_user_account.user_id;
   
-  -- Delete user profile (will cascade if foreign key is set up)
-  DELETE FROM public.users WHERE id = delete_user_account.user_id;
+  -- Delete user profile from profiles table (will cascade if foreign key is set up)
+  DELETE FROM public.profiles WHERE user_id = delete_user_account.user_id;
+  
+  -- Delete from legacy users table if it exists (for backwards compatibility)
+  -- Note: The current system uses 'profiles' table, but this handles legacy 'users' table
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'public' AND table_name = 'users'
+  ) THEN
+    DELETE FROM public.users WHERE id = delete_user_account.user_id;
+  END IF;
   
   -- Delete the auth user account
   -- This requires SECURITY DEFINER to access auth.users
   DELETE FROM auth.users WHERE id = delete_user_account.user_id;
-  
-  -- Note: If you have other tables with user data, add DELETE statements here
-  -- Example (if profiles table exists):
-  -- DELETE FROM public.profiles WHERE user_id = delete_user_account.user_id;
-  -- Note: This migration was created when the table was named 'user_profiles'
-  -- The table has since been renamed to 'profiles' (see migration 20260105115302)
   
 END;
 $$;
